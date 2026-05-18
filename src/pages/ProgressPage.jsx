@@ -74,9 +74,17 @@ export default function ProgressPage({ user, profile }) {
   return (
     <Shell C={C}>
       {/* Header */}
-      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:22}}>
-        <button onClick={() => navigate(`/${stream}`)} style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:10,padding:'7px 14px',cursor:'pointer',fontWeight:700,color:C.muted,fontSize:13}}>← Back</button>
-        <div style={{fontSize:20,fontWeight:900,color:C.navy}}>My Progress</div>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,marginBottom:22}}>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <button onClick={() => navigate(`/${stream}`)} style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:10,padding:'7px 14px',cursor:'pointer',fontWeight:700,color:C.muted,fontSize:13}}>← Back</button>
+          <div style={{fontSize:20,fontWeight:900,color:C.navy}}>My Progress</div>
+        </div>
+        <button
+          onClick={() => navigate(`/${stream}/plan`)}
+          style={{background:`linear-gradient(135deg,${C.primary},${stream==='alevel'?'#312E81':'#0F766E'})`,color:'white',border:'none',borderRadius:10,padding:'7px 14px',cursor:'pointer',fontWeight:700,fontSize:12,display:'flex',alignItems:'center',gap:6}}
+        >
+          📅 Study Plan
+        </button>
       </div>
 
       {/* Stat cards */}

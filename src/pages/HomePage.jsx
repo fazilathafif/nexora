@@ -196,13 +196,21 @@ export default function HomePage({ user, profile, refreshProfile, signOut }) {
         ))}
       </div>
 
-      {/* Progress link */}
-      <button
-        onClick={() => navigate(`/${stream}/progress`)}
-        style={{width:'100%',background:'transparent',border:`1.5px solid ${C.border}`,borderRadius:14,padding:'13px',fontSize:13,fontWeight:700,color:C.muted,cursor:'pointer'}}
-      >
-        View My Progress 📊
-      </button>
+      {/* Progress + Plan links */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:0}}>
+        <button
+          onClick={() => navigate(`/${stream}/progress`)}
+          style={{background:'transparent',border:`1.5px solid ${C.border}`,borderRadius:14,padding:'13px',fontSize:13,fontWeight:700,color:C.muted,cursor:'pointer'}}
+        >
+          Progress 📊
+        </button>
+        <button
+          onClick={() => navigate(`/${stream}/plan`)}
+          style={{background:`${C.primary}18`,border:`1.5px solid ${C.primary}40`,borderRadius:14,padding:'13px',fontSize:13,fontWeight:700,color:C.primary,cursor:'pointer'}}
+        >
+          Study Plan 📅
+        </button>
+      </div>
 
       {stream === 'alevel' && (
         <div style={{marginTop:14,padding:'12px 14px',background:C.primary+'18',border:`1px solid ${C.primary}30`,borderRadius:12,fontSize:12,color:dark?'#A5B4FC':C.primary,lineHeight:1.5}}>

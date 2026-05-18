@@ -11,6 +11,7 @@ import TeacherPage         from './pages/TeacherPage.jsx'
 import AuthGate            from './pages/AuthGate.jsx'
 import SysAdminPage        from './pages/SysAdminPage.jsx'
 import UpdatePasswordPage  from './pages/UpdatePasswordPage.jsx'
+import StudyPlanPage       from './pages/StudyPlanPage.jsx'
 import LoadingSpinner      from './components/LoadingSpinner.jsx'
 
 export default function App() {
@@ -52,6 +53,9 @@ export default function App() {
       } />
       <Route path="/:stream/progress" element={
         <ProgressPage user={user} profile={profile} />
+      } />
+      <Route path="/:stream/plan" element={
+        <StudyPlanPage user={user} profile={profile} refreshProfile={refreshProfile} />
       } />
 
       {/* Catch-all */}
