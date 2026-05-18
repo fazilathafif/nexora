@@ -139,7 +139,7 @@ function TopicBar({ topic, pct, C, onDrill }) {
         {pct < 70 && onDrill && (
           <button
             onClick={onDrill}
-            style={{background:'#EF444418',border:'1px solid #EF444440',borderRadius:6,padding:'2px 8px',fontSize:10,fontWeight:700,color:'#EF4444',cursor:'pointer',marginRight:8,fontFamily:'Georgia,serif'}}
+            style={{background:'#EF444418',border:'1px solid #EF444440',borderRadius:6,padding:'2px 8px',fontSize:10,fontWeight:700,color:'#EF4444',cursor:'pointer',marginRight:8,fontFamily:'Inter,sans-serif'}}
           >
             Drill
           </button>

@@ -9,6 +9,7 @@ import { getQuestions, TIMER_CONFIG }  from '../data/questions.js'
 import { useProgress }                 from '../hooks/useProgress.js'
 import { useTimer }                    from '../hooks/useTimer.js'
 import { scheduleReview, sortByDue, getDueIds } from '../lib/srs.js'
+import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
 import { getColors, Shell, Badge }     from './HomePage.jsx'
 
 export default function QuizPage({ user, profile, refreshProfile }) {
@@ -26,12 +27,14 @@ export default function QuizPage({ user, profile, refreshProfile }) {
     : sortByDue(allQs)
   const { startQuizSession, submitAnswer, finishQuizSession } = useProgress(user, profile, refreshProfile)
 
-  const [qIndex,    setQIndex]    = useState(0)
-  const [chosen,    setChosen]    = useState(null)   // null=unanswered | -1=timed out | ≥0=option index
-  const [score,     setScore]     = useState(0)
-  const [answers,   setAnswers]   = useState([])
-  const [hintShown, setHintShown] = useState(false)
-  const [started,   setStarted]   = useState(false)
+  const [qIndex,      setQIndex]      = useState(0)
+  const [chosen,      setChosen]      = useState(null)   // null=unanswered | -1=timed out | ≥0=option index
+  const [score,       setScore]       = useState(0)
+  const [answers,     setAnswers]     = useState([])
+  const [hintShown,   setHintShown]   = useState(false)
+  const [started,     setStarted]     = useState(false)
+  const [aiText,      setAiText]      = useState(null)   // null | 'loading' | string
+  const [aiOpen,      setAiOpen]      = useState(false)
 
   // Stable refs so timer callback never captures stale values
   const chosenRef   = useRef(null)
@@ -40,6 +43,9 @@ export default function QuizPage({ user, profile, refreshProfile }) {
   useEffect(() => { chosenRef.current   = chosen },           [chosen])
   useEffect(() => { hintRef.current     = hintShown },        [hintShown])
   useEffect(() => { currentQRef.current = questions[qIndex] }, [qIndex]) // eslint-disable-line
+
+  // Reset AI panel when question changes
+  useEffect(() => { setAiText(null); setAiOpen(false) }, [qIndex])
 
   const currentQ = questions[qIndex]
   const total    = questions.length
@@ -100,6 +106,21 @@ export default function QuizPage({ user, profile, refreshProfile }) {
       navigate(`/${stream}/result`, {
         state: { answers, score, total, subject, xpEarned: xpEarned ?? score * (dark ? 15 : 10) },
       })
+    }
+  }
+
+  async function handleAiExplain() {
+    if (aiText && aiText !== 'loading') { setAiOpen(o => !o); return }
+    setAiOpen(true)
+    setAiText('loading')
+    try {
+      const chosenIdx = chosen === -1 ? currentQ.ans : chosen  // timed-out: explain correct
+      const { data, error } = await supabase.functions.invoke('explain', {
+        body: { question: currentQ, chosenIdx, stream },
+      })
+      setAiText(error ? 'Work through the hint step by step — the method will click with practice. 💪' : (data?.explanation ?? ''))
+    } catch {
+      setAiText('Work through the hint step by step — the method will click with practice. 💪')
     }
   }
 
@@ -201,6 +222,46 @@ export default function QuizPage({ user, profile, refreshProfile }) {
           )
         })}
       </div>
+
+      {/* Post-answer AI explanation */}
+      {chosen !== null && isSupabaseConfigured && (
+        <div style={{marginBottom:12}}>
+          <button
+            onClick={handleAiExplain}
+            style={{
+              width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+              background: aiOpen ? (dark?'#1E1B4B':'#EFF6FF') : 'transparent',
+              border:`1.5px solid ${dark?'#4F46E5':'#6366F1'}40`,
+              borderRadius:12, padding:'10px 14px', fontSize:13, fontWeight:700,
+              color: dark?'#A5B4FC':'#4F46E5', cursor:'pointer', transition:'all 0.2s',
+            }}
+          >
+            <span style={{fontSize:16}}>✨</span>
+            {aiText === 'loading' ? 'Thinking…' : aiOpen ? 'Hide AI Explanation' : 'Explain with AI'}
+          </button>
+
+          {aiOpen && aiText && aiText !== 'loading' && (
+            <div style={{
+              marginTop:8, background:dark?'#1A1A2E':'#F8FAFF',
+              border:`1px solid ${dark?'#4F46E5':'#6366F1'}30`,
+              borderRadius:12, padding:'14px 16px',
+              fontSize:13, color:C.navy, lineHeight:1.75,
+              animation:'fadeIn 0.3s ease',
+            }}>
+              <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:8}}>
+                <span style={{fontSize:14}}>🤖</span>
+                <span style={{fontSize:10,fontWeight:800,color:dark?'#818CF8':'#6366F1',letterSpacing:'0.1em'}}>AI TUTOR</span>
+              </div>
+              {aiText}
+            </div>
+          )}
+          {aiOpen && aiText === 'loading' && (
+            <div style={{marginTop:8,background:dark?'#1A1A2E':'#F8FAFF',border:`1px solid ${dark?'#4F46E5':'#6366F1'}30`,borderRadius:12,padding:'16px',textAlign:'center'}}>
+              <div style={{display:'inline-block',width:20,height:20,border:`2px solid ${dark?'#818CF8':'#6366F1'}`,borderTopColor:'transparent',borderRadius:'50%',animation:'spin 0.8s linear infinite'}} />
+            </div>
+          )}
+        </div>
+      )}
 
       {chosen !== null && (
         <button

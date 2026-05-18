@@ -31,7 +31,7 @@ export default function WelcomeModal({ user, C, dark }) {
           border: `1.5px solid ${C.border}`,
           borderRadius:24, padding:'32px 26px', width:'100%', maxWidth:380,
           boxShadow:'0 24px 80px rgba(0,0,0,0.5)',
-          fontFamily:'Georgia,serif',
+          fontFamily:'Inter,sans-serif',
         }}
       >
         {/* Badge */}
@@ -72,7 +72,7 @@ export default function WelcomeModal({ user, C, dark }) {
               flex:1, background:C.primary, color:'white', border:'none',
               borderRadius:12, padding:'12px', fontSize:14, fontWeight:800,
               cursor:'pointer', textAlign:'center', textDecoration:'none',
-              fontFamily:'Georgia,serif',
+              fontFamily:'Inter,sans-serif',
             }}
           >
             Share Feedback ✉️
@@ -82,7 +82,7 @@ export default function WelcomeModal({ user, C, dark }) {
             style={{
               flex:1, background:'transparent', border:`1.5px solid ${C.border}`,
               borderRadius:12, padding:'12px', fontSize:14, fontWeight:700,
-              color:C.muted, cursor:'pointer', fontFamily:'Georgia,serif',
+              color:C.muted, cursor:'pointer', fontFamily:'Inter,sans-serif',
             }}
           >
             Start Learning →

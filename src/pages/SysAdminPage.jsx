@@ -41,7 +41,7 @@ export default function SysAdminPage({ user }) {
   ] : []
 
   return (
-    <div style={{minHeight:'100vh',background:C.bg,fontFamily:'Georgia,serif',color:C.navy}}>
+    <div style={{minHeight:'100vh',background:C.bg,fontFamily:'Inter,sans-serif',color:C.navy}}>
       <style>{`*{box-sizing:border-box}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
 
       {/* Header */}
@@ -54,7 +54,7 @@ export default function SysAdminPage({ user }) {
           <span style={{fontSize:12,color:C.muted}}>{user?.email}</span>
           <button
             onClick={() => navigate('/')}
-            style={{background:'transparent',border:`1px solid ${C.border}`,borderRadius:8,padding:'5px 14px',color:C.muted,cursor:'pointer',fontSize:12,fontFamily:'Georgia,serif'}}
+            style={{background:'transparent',border:`1px solid ${C.border}`,borderRadius:8,padding:'5px 14px',color:C.muted,cursor:'pointer',fontSize:12,fontFamily:'Inter,sans-serif'}}
           >
             ← App
           </button>

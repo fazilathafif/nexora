@@ -78,10 +78,10 @@ export default function AuthModal({ C, dark, onClose }) {
     width:'100%', padding:'11px 14px', borderRadius:10, fontSize:14,
     background: dark ? '#1A1A2E' : '#F8FAFC',
     border: `1.5px solid ${C.border}`,
-    color: C.navy, outline:'none', fontFamily:'Georgia,serif',
+    color: C.navy, outline:'none', fontFamily:'Inter,sans-serif',
   }
   const labelStyle = { fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.06em', display:'block', marginBottom:4 }
-  const linkStyle  = { background:'none', border:'none', cursor:'pointer', color:C.primary, fontWeight:700, fontSize:11, fontFamily:'Georgia,serif' }
+  const linkStyle  = { background:'none', border:'none', cursor:'pointer', color:C.primary, fontWeight:700, fontSize:11, fontFamily:'Inter,sans-serif' }
 
   return (
     <div
@@ -112,7 +112,7 @@ export default function AuthModal({ C, dark, onClose }) {
               We sent a confirmation link to <strong style={{color:C.primary}}>{email}</strong>.
               Click it to activate your account.
             </div>
-            <button onClick={onClose} style={{marginTop:18,background:C.primary,color:'white',border:'none',borderRadius:12,padding:'11px 28px',fontWeight:700,cursor:'pointer',fontSize:14,fontFamily:'Georgia,serif'}}>
+            <button onClick={onClose} style={{marginTop:18,background:C.primary,color:'white',border:'none',borderRadius:12,padding:'11px 28px',fontWeight:700,cursor:'pointer',fontSize:14,fontFamily:'Inter,sans-serif'}}>
               Got it
             </button>
           </div>
@@ -126,7 +126,7 @@ export default function AuthModal({ C, dark, onClose }) {
               Check your inbox at <strong style={{color:C.primary}}>{email}</strong>.<br/>
               Click the link to set a new password.
             </div>
-            <button onClick={() => switchMode('signin')} style={{marginTop:18,background:C.primary,color:'white',border:'none',borderRadius:12,padding:'11px 28px',fontWeight:700,cursor:'pointer',fontSize:14,fontFamily:'Georgia,serif'}}>
+            <button onClick={() => switchMode('signin')} style={{marginTop:18,background:C.primary,color:'white',border:'none',borderRadius:12,padding:'11px 28px',fontWeight:700,cursor:'pointer',fontSize:14,fontFamily:'Inter,sans-serif'}}>
               Back to Sign In
             </button>
           </div>
@@ -153,7 +153,7 @@ export default function AuthModal({ C, dark, onClose }) {
             )}
             <button
               type="submit" disabled={loading}
-              style={{width:'100%',background:loading?C.muted:C.primary,color:'white',border:'none',borderRadius:12,padding:'13px',fontWeight:800,cursor:loading?'default':'pointer',fontSize:15,fontFamily:'Georgia,serif',transition:'background 0.2s'}}
+              style={{width:'100%',background:loading?C.muted:C.primary,color:'white',border:'none',borderRadius:12,padding:'13px',fontWeight:800,cursor:loading?'default':'pointer',fontSize:15,fontFamily:'Inter,sans-serif',transition:'background 0.2s'}}
             >
               {loading ? 'Sending…' : 'Send Reset Link'}
             </button>
@@ -197,7 +197,7 @@ export default function AuthModal({ C, dark, onClose }) {
 
             <button
               type="submit" disabled={loading}
-              style={{width:'100%',background:loading?C.muted:C.primary,color:'white',border:'none',borderRadius:12,padding:'13px',fontWeight:800,cursor:loading?'default':'pointer',fontSize:15,fontFamily:'Georgia,serif',transition:'background 0.2s'}}
+              style={{width:'100%',background:loading?C.muted:C.primary,color:'white',border:'none',borderRadius:12,padding:'13px',fontWeight:800,cursor:loading?'default':'pointer',fontSize:15,fontFamily:'Inter,sans-serif',transition:'background 0.2s'}}
             >
               {loading ? 'Please wait…' : mode === 'signup' ? 'Create Account' : 'Sign In'}
             </button>
@@ -207,7 +207,7 @@ export default function AuthModal({ C, dark, onClose }) {
               <button
                 type="button"
                 onClick={() => switchMode(mode === 'signin' ? 'signup' : 'signin')}
-                style={{background:'none',border:'none',cursor:'pointer',color:C.primary,fontWeight:700,fontSize:12,fontFamily:'Georgia,serif'}}
+                style={{background:'none',border:'none',cursor:'pointer',color:C.primary,fontWeight:700,fontSize:12,fontFamily:'Inter,sans-serif'}}
               >
                 {mode === 'signin' ? 'Sign Up' : 'Sign In'}
               </button>

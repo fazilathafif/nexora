@@ -30,7 +30,7 @@ export default function TeacherPage() {
   }
 
   return (
-    <div style={{minHeight:'100vh',background:C.bg,fontFamily:'Georgia,serif',padding:'0 0 60px'}}>
+    <div style={{minHeight:'100vh',background:C.bg,fontFamily:'Inter,sans-serif',padding:'0 0 60px'}}>
       <style>{`*{box-sizing:border-box}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
 
       {/* Header bar */}

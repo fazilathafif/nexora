@@ -90,7 +90,7 @@ export default function LandingPage({ user, profile, refreshProfile }) {
 }
 
 const styles = {
-  root:      { minHeight:'100vh', background:'#0A0A14', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'24px 20px', fontFamily:'Georgia, serif', position:'relative', overflow:'hidden' },
+  root:      { minHeight:'100vh', background:'#0A0A14', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'24px 20px', fontFamily:'Inter,sans-serif', position:'relative', overflow:'hidden' },
   mapWrap:   { position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', pointerEvents:'none' },
   mapSvg:    { width:'100%', height:'100%', opacity:0.12, transform:'scaleY(2)', transformOrigin:'center' },
   logo:      { textAlign:'center', marginBottom:40 },

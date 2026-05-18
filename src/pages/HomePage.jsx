@@ -75,7 +75,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut }) {
       {/* Header */}
       <div style={row('space-between','flex-start',{marginBottom:20})}>
         <div>
-          <div style={{fontSize:24,fontWeight:900,color:C.navy,letterSpacing:'-0.5px'}}>
+          <div style={{fontSize:26,fontWeight:900,color:C.navy,letterSpacing:'-0.5px',fontFamily:"'Playfair Display', Georgia, serif"}}>
             Nexora <span style={{color:C.primary}}>✦</span>
           </div>
           <div style={row('flex-start','center',{gap:6,marginTop:4})}>
@@ -121,10 +121,10 @@ export default function HomePage({ user, profile, refreshProfile, signOut }) {
           <span style={{fontSize:12,color:C.muted,fontWeight:700}}>📅 Exam date:</span>
           <input
             type="date" value={dateInput} onChange={e => setDateInput(e.target.value)}
-            style={{flex:1,minWidth:130,padding:'6px 10px',borderRadius:8,border:`1.5px solid ${C.border}`,background:dark?'#1A1A2E':'#F8FAFC',color:C.navy,fontSize:13,fontFamily:'Georgia,serif'}}
+            style={{flex:1,minWidth:130,padding:'6px 10px',borderRadius:8,border:`1.5px solid ${C.border}`,background:dark?'#1A1A2E':'#F8FAFC',color:C.navy,fontSize:13,fontFamily:'Inter,sans-serif'}}
           />
-          <button onClick={() => saveExamDate(dateInput)} style={{background:C.primary,color:'white',border:'none',borderRadius:8,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'Georgia,serif'}}>Save</button>
-          <button onClick={() => setEditingDate(false)} style={{background:'none',border:'none',color:C.muted,fontSize:12,cursor:'pointer',fontFamily:'Georgia,serif'}}>Cancel</button>
+          <button onClick={() => saveExamDate(dateInput)} style={{background:C.primary,color:'white',border:'none',borderRadius:8,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>Save</button>
+          <button onClick={() => setEditingDate(false)} style={{background:'none',border:'none',color:C.muted,fontSize:12,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>Cancel</button>
         </div>
       ) : days !== null ? (
         <div style={{
@@ -143,7 +143,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut }) {
       ) : (
         <button
           onClick={() => setEditingDate(true)}
-          style={{width:'100%',background:'transparent',border:`1px dashed ${C.border}`,borderRadius:12,padding:'9px 14px',fontSize:12,color:C.muted,cursor:'pointer',marginBottom:16,textAlign:'left',fontFamily:'Georgia,serif'}}
+          style={{width:'100%',background:'transparent',border:`1px dashed ${C.border}`,borderRadius:12,padding:'9px 14px',fontSize:12,color:C.muted,cursor:'pointer',marginBottom:16,textAlign:'left',fontFamily:'Inter,sans-serif'}}
         >
           📅 Set your exam date for a countdown
         </button>
@@ -172,7 +172,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut }) {
           </div>
           <button
             onClick={() => navigate(`/${stream}/quiz/${cfg.subjects[0].id}?review=1`)}
-            style={{background:dark?'#A3E635':C.primary,color:dark?'#0F0F1A':'white',border:'none',borderRadius:10,padding:'7px 14px',fontWeight:800,cursor:'pointer',fontSize:12,fontFamily:'Georgia,serif',flexShrink:0}}
+            style={{background:dark?'#A3E635':C.primary,color:dark?'#0F0F1A':'white',border:'none',borderRadius:10,padding:'7px 14px',fontWeight:800,cursor:'pointer',fontSize:12,fontFamily:'Inter,sans-serif',flexShrink:0}}
           >
             Review →
           </button>
@@ -231,7 +231,7 @@ function SubjectCard({ subject, C, dark, compact, onClick, onMock }) {
       <button
         onClick={onMock}
         title="Mock exam"
-        style={{marginTop:4,background:'transparent',border:`1px solid ${C.border}`,borderRadius:8,padding:'4px 0',fontSize:9,fontWeight:700,color:C.muted,cursor:'pointer',width:'100%',fontFamily:'Georgia,serif',letterSpacing:'0.04em'}}
+        style={{marginTop:4,background:'transparent',border:`1px solid ${C.border}`,borderRadius:8,padding:'4px 0',fontSize:9,fontWeight:700,color:C.muted,cursor:'pointer',width:'100%',fontFamily:'Inter,sans-serif',letterSpacing:'0.04em'}}
         onMouseEnter={e=>{e.currentTarget.style.borderColor=C.secondary??C.primary;e.currentTarget.style.color=C.secondary??C.primary}}
         onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.color=C.muted}}
       >
@@ -243,7 +243,7 @@ function SubjectCard({ subject, C, dark, compact, onClick, onMock }) {
 
 export function Shell({ C, children }) {
   return (
-    <div style={{minHeight:'100vh',background:C.bg,display:'flex',justifyContent:'center',fontFamily:'Georgia,serif'}}>
+    <div style={{minHeight:'100vh',background:C.bg,display:'flex',justifyContent:'center',fontFamily:'Inter,sans-serif'}}>
       <style>{`*{box-sizing:border-box}button{font-family:inherit}
         @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
