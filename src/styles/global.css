@@ -1,0 +1,45 @@
+/* ── Reset ────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: Georgia, 'Palatino Linotype', serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;        /* prevents pull-to-refresh on mobile */
+}
+button { font-family: inherit; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+img, svg { display: block; max-width: 100%; }
+
+/* ── Scrollbar ────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+
+/* ── Animations ───────────────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Utility classes ──────────────────────────────────────────────────────── */
+.animate-fade-up  { animation: fadeUp  0.4s ease both; }
+.animate-fade-in  { animation: fadeIn  0.3s ease both; }
+.animate-float    { animation: float   3s ease-in-out infinite; }
+
+/* Safe area for notched phones */
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 16px); }
