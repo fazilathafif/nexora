@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
-import { signInAnonymously, getProfile, upsertProfile } from '../lib/db.js'
-import { loadGuestProfile, saveGuestProfile, defaultGuestProfile } from '../lib/guest.js'
+import { getProfile, upsertProfile } from '../lib/db.js'
+import { loadGuestProfile, defaultGuestProfile } from '../lib/guest.js'
 
 const GUEST_USER = { id: 'guest_local', email: null, isGuest: true }
 
@@ -11,25 +11,21 @@ export function useAuth() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // No Supabase — local guest mode (dev / offline)
     if (!isSupabaseConfigured) {
-      const p = loadGuestProfile() ?? defaultGuestProfile()
       setUser(GUEST_USER)
-      setProfile(p)
+      setProfile(loadGuestProfile() ?? defaultGuestProfile())
       setLoading(false)
       return
     }
 
+    // Supabase configured — require explicit sign-in, no anonymous fallback
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user)
         await loadProfile(session.user.id)
-      } else {
-        const { data, error } = await signInAnonymously()
-        if (!error && data.user) {
-          setUser(data.user)
-          await ensureProfile(data.user)
-        }
       }
+      // No session → user stays null, app shows auth gate
       setLoading(false)
     })
 
@@ -45,12 +41,14 @@ export function useAuth() {
 
   async function loadProfile(userId) {
     const { data } = await getProfile(userId)
-    setProfile(data)
+    // Profile may not exist yet (first sign-up before trigger fires)
+    if (!data) await ensureProfile({ id: userId })
+    else setProfile(data)
     return data
   }
 
-  async function ensureProfile(user) {
-    const { data } = await upsertProfile(user.id, {
+  async function ensureProfile(u) {
+    const { data } = await upsertProfile(u.id, {
       display_name: 'Student', xp: 0, streak: 0, stream: null,
     })
     setProfile(data)

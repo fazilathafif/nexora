@@ -1,18 +1,23 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth.js'
-import LandingPage   from './pages/LandingPage.jsx'
-import HomePage      from './pages/HomePage.jsx'
-import QuizPage      from './pages/QuizPage.jsx'
-import MockPage      from './pages/MockPage.jsx'
-import ResultPage    from './pages/ResultPage.jsx'
-import ProgressPage  from './pages/ProgressPage.jsx'
-import TeacherPage   from './pages/TeacherPage.jsx'
+import { isSupabaseConfigured } from './lib/supabase.js'
+import LandingPage    from './pages/LandingPage.jsx'
+import HomePage       from './pages/HomePage.jsx'
+import QuizPage       from './pages/QuizPage.jsx'
+import MockPage       from './pages/MockPage.jsx'
+import ResultPage     from './pages/ResultPage.jsx'
+import ProgressPage   from './pages/ProgressPage.jsx'
+import TeacherPage    from './pages/TeacherPage.jsx'
+import AuthGate       from './pages/AuthGate.jsx'
 import LoadingSpinner from './components/LoadingSpinner.jsx'
 
 export default function App() {
   const { user, profile, loading, refreshProfile, signOut } = useAuth()
 
   if (loading) return <LoadingSpinner />
+
+  // Require sign-in when Supabase is configured
+  if (isSupabaseConfigured && !user) return <AuthGate />
 
   return (
     <Routes>
