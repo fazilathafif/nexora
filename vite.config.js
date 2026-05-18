@@ -25,7 +25,9 @@ export default defineConfig({
         ]
       },
       workbox: {
-        // Cache all static assets + question bank offline
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
