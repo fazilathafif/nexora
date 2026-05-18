@@ -19,14 +19,42 @@ export default function AuthModal({ C, dark, onClose }) {
     setLoading(true)
     setError(null)
 
-    const { error: err } = mode === 'signup'
-      ? await supabase.auth.signUp({ email, password })
-      : await supabase.auth.signInWithPassword({ email, password })
+    if (mode === 'signup') {
+      const { data, error: err } = await supabase.auth.signUp({ email, password })
+      setLoading(false)
 
-    setLoading(false)
-    if (err) { setError(err.message); return }
-    if (mode === 'signup') { setDone(true); return }
-    onClose()
+      if (!err && data?.user?.identities?.length === 0) {
+        setMode('signin')
+        setError('An account with this email already exists. Please sign in below.')
+        return
+      }
+      if (err) {
+        const msg = err.message.toLowerCase()
+        if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('email address is already')) {
+          setMode('signin')
+          setError('An account with this email already exists. Please sign in below.')
+        } else {
+          setError(err.message)
+        }
+        return
+      }
+      setDone(true)
+    } else {
+      const { error: err } = await supabase.auth.signInWithPassword({ email, password })
+      setLoading(false)
+      if (err) {
+        const msg = err.message.toLowerCase()
+        if (msg.includes('invalid login') || msg.includes('invalid credentials')) {
+          setError('Incorrect email or password. Please try again.')
+        } else if (msg.includes('email not confirmed')) {
+          setError('Please confirm your email first — check your inbox.')
+        } else {
+          setError(err.message)
+        }
+        return
+      }
+      onClose()
+    }
   }
 
   const inputStyle = {
