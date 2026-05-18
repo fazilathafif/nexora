@@ -6,9 +6,10 @@ import { loadGuestProfile, defaultGuestProfile } from '../lib/guest.js'
 const GUEST_USER = { id: 'guest_local', email: null, isGuest: true }
 
 export function useAuth() {
-  const [user,    setUser]    = useState(null)
-  const [profile, setProfile] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user,               setUser]               = useState(null)
+  const [profile,            setProfile]            = useState(null)
+  const [loading,            setLoading]            = useState(true)
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
 
   useEffect(() => {
     // No Supabase — local guest mode (dev / offline)
@@ -31,6 +32,8 @@ export function useAuth() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        if (_event === 'PASSWORD_RECOVERY') { setIsPasswordRecovery(true); return }
+        if (_event === 'USER_UPDATED')       { setIsPasswordRecovery(false) }
         setUser(session?.user ?? null)
         if (session?.user) await loadProfile(session.user.id)
         else setProfile(null)
@@ -67,5 +70,5 @@ export function useAuth() {
     await supabase.auth.signOut()
   }
 
-  return { user, profile, loading, refreshProfile, signOut }
+  return { user, profile, loading, refreshProfile, signOut, isPasswordRecovery }
 }

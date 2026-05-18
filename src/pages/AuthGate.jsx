@@ -2,33 +2,45 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 
 export default function AuthGate() {
-  const [mode,     setMode]     = useState('signin')
-  const [email,    setEmail]    = useState('')
-  const [password, setPassword] = useState('')
-  const [error,    setError]    = useState(null)
-  const [loading,  setLoading]  = useState(false)
-  const [done,     setDone]     = useState(false)
+  const [mode,      setMode]      = useState('signin') // 'signin' | 'signup' | 'forgot'
+  const [email,     setEmail]     = useState('')
+  const [password,  setPassword]  = useState('')
+  const [error,     setError]     = useState(null)
+  const [loading,   setLoading]   = useState(false)
+  const [done,      setDone]      = useState(false)
+  const [resetSent, setResetSent] = useState(false)
+
+  function switchMode(next) {
+    setMode(next); setError(null); setDone(false); setResetSent(false)
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
+    if (mode === 'forgot') {
+      const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/update-password`,
+      })
+      setLoading(false)
+      if (err) { setError(err.message); return }
+      setResetSent(true)
+      return
+    }
+
     if (mode === 'signup') {
       const { data, error: err } = await supabase.auth.signUp({ email, password })
-
       setLoading(false)
-
-      // Supabase returns a user with identities=[] when the email already exists
       if (!err && data?.user?.identities?.length === 0) {
-        setMode('signin')
+        switchMode('signin')
         setError('An account with this email already exists. Please sign in below.')
         return
       }
       if (err) {
         const msg = err.message.toLowerCase()
         if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('email address is already')) {
-          setMode('signin')
+          switchMode('signin')
           setError('An account with this email already exists. Please sign in below.')
         } else {
           setError(err.message)
@@ -36,23 +48,28 @@ export default function AuthGate() {
         return
       }
       setDone(true)
-    } else {
-      const { error: err } = await supabase.auth.signInWithPassword({ email, password })
-      setLoading(false)
-      if (err) {
-        const msg = err.message.toLowerCase()
-        if (msg.includes('invalid login') || msg.includes('invalid credentials')) {
-          setError('Incorrect email or password. Please try again.')
-        } else if (msg.includes('email not confirmed')) {
-          setError('Please confirm your email first — check your inbox for the confirmation link.')
-        } else {
-          setError(err.message)
-        }
-        return
-      }
-      // onAuthStateChange in useAuth fires automatically
+      return
     }
+
+    // sign in
+    const { error: err } = await supabase.auth.signInWithPassword({ email, password })
+    setLoading(false)
+    if (err) {
+      const msg = err.message.toLowerCase()
+      if (msg.includes('invalid login') || msg.includes('invalid credentials')) {
+        setError('Incorrect email or password. Please try again.')
+      } else if (msg.includes('email not confirmed')) {
+        setError('Please confirm your email first — check your inbox for the confirmation link.')
+      } else {
+        setError(err.message)
+      }
+    }
+    // on success onAuthStateChange in useAuth fires automatically
   }
+
+  const subLabel = mode === 'signup' ? 'CREATE ACCOUNT'
+    : mode === 'forgot' ? 'RESET PASSWORD'
+    : 'SIGN IN TO CONTINUE'
 
   return (
     <div style={s.root}>
@@ -79,11 +96,13 @@ export default function AuthGate() {
       <div style={s.logo} className="animate-fade-up">
         <div style={s.star}>✦</div>
         <h1 style={s.title}>Nexora</h1>
-        <p style={s.sub}>UK EXAM PREP · {mode === 'signup' ? 'CREATE ACCOUNT' : 'SIGN IN TO CONTINUE'}</p>
+        <p style={s.sub}>UK EXAM PREP · {subLabel}</p>
       </div>
 
       {/* Card */}
       <div style={s.card} className="animate-fade-up">
+
+        {/* Sign-up confirmation */}
         {done ? (
           <div style={{textAlign:'center',padding:'12px 0'}}>
             <div style={{fontSize:40,marginBottom:12}}>📬</div>
@@ -92,13 +111,53 @@ export default function AuthGate() {
               Confirmation link sent to <strong style={{color:'#0D9488'}}>{email}</strong>.<br/>
               Click it then come back to sign in.
             </div>
-            <button
-              onClick={() => { setDone(false); setMode('signin') }}
-              style={{marginTop:18,...s.btn}}
-            >
+            <button onClick={() => switchMode('signin')} style={{marginTop:18,...s.btn}}>
               Back to Sign In
             </button>
           </div>
+
+        /* Password reset sent */
+        ) : resetSent ? (
+          <div style={{textAlign:'center',padding:'12px 0'}}>
+            <div style={{fontSize:40,marginBottom:12}}>🔑</div>
+            <div style={{fontWeight:800,color:'#F8FAFC',fontSize:16,marginBottom:8}}>Reset link sent</div>
+            <div style={{fontSize:13,color:'#94A3B8',lineHeight:1.6}}>
+              Check your inbox at <strong style={{color:'#0D9488'}}>{email}</strong>.<br/>
+              Click the link to set a new password.
+            </div>
+            <button onClick={() => switchMode('signin')} style={{marginTop:18,...s.btn}}>
+              Back to Sign In
+            </button>
+          </div>
+
+        /* Forgot password form */
+        ) : mode === 'forgot' ? (
+          <form onSubmit={handleSubmit}>
+            <div style={{marginBottom:6,fontWeight:800,color:'#F8FAFC',fontSize:15}}>Forgot your password?</div>
+            <div style={{fontSize:13,color:'#64748B',marginBottom:18,lineHeight:1.6}}>
+              Enter your email and we'll send you a reset link.
+            </div>
+            <div style={s.field}>
+              <label style={s.label}>EMAIL</label>
+              <input
+                type="email" required value={email} onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com" style={s.input}
+                onFocus={e => e.target.style.borderColor='#0D9488'}
+                onBlur={e  => e.target.style.borderColor='#1E293B'}
+              />
+            </div>
+            {error && <div style={s.errBox}>{error}</div>}
+            <button type="submit" disabled={loading} style={{...s.btn, opacity: loading ? 0.6 : 1}}>
+              {loading ? 'Sending…' : 'Send Reset Link'}
+            </button>
+            <div style={s.toggle}>
+              <button type="button" onClick={() => switchMode('signin')} style={s.link}>
+                ← Back to Sign In
+              </button>
+            </div>
+          </form>
+
+        /* Sign in / Sign up form */
         ) : (
           <form onSubmit={handleSubmit}>
             <div style={s.field}>
@@ -111,7 +170,14 @@ export default function AuthGate() {
               />
             </div>
             <div style={s.field}>
-              <label style={s.label}>PASSWORD</label>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
+                <label style={{...s.label,marginBottom:0}}>PASSWORD</label>
+                {mode === 'signin' && (
+                  <button type="button" onClick={() => switchMode('forgot')} style={{...s.link,fontSize:11}}>
+                    Forgot password?
+                  </button>
+                )}
+              </div>
               <input
                 type="password" required minLength={6} value={password} onChange={e => setPassword(e.target.value)}
                 placeholder="6+ characters" style={s.input}
@@ -119,22 +185,13 @@ export default function AuthGate() {
                 onBlur={e  => e.target.style.borderColor='#1E293B'}
               />
             </div>
-
-            {error && (
-              <div style={s.errBox}>{error}</div>
-            )}
-
+            {error && <div style={s.errBox}>{error}</div>}
             <button type="submit" disabled={loading} style={{...s.btn, opacity: loading ? 0.6 : 1}}>
               {loading ? 'Please wait…' : mode === 'signup' ? 'Create Account' : 'Sign In →'}
             </button>
-
             <div style={s.toggle}>
               {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
-              <button
-                type="button"
-                onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(null) }}
-                style={s.link}
-              >
+              <button type="button" onClick={() => switchMode(mode === 'signin' ? 'signup' : 'signin')} style={s.link}>
                 {mode === 'signin' ? 'Sign Up' : 'Sign In'}
               </button>
             </div>
@@ -161,7 +218,7 @@ const s = {
   sub:    { fontSize:11, color:'#64748B', marginTop:6, letterSpacing:'0.1em' },
   card:   { background:'#0F172A', border:'1.5px solid #1E293B', borderRadius:24, padding:'28px 24px', width:'100%', maxWidth:360, boxShadow:'0 24px 64px rgba(0,0,0,0.5)' },
   field:  { marginBottom:16 },
-  label:  { display:'block', fontSize:10, fontWeight:700, color:'#64748B', letterSpacing:'0.08em', marginBottom:5 },
+  label:  { display:'block', fontSize:10, fontWeight:700, color:'#64748B', letterSpacing:'0.08em' },
   input:  { width:'100%', padding:'11px 14px', borderRadius:10, fontSize:14, background:'#1E293B', border:'1.5px solid #1E293B', color:'#F8FAFC', outline:'none', fontFamily:'Georgia,serif', transition:'border-color 0.2s', boxSizing:'border-box' },
   errBox: { background:'#EF444420', border:'1px solid #EF4444', borderRadius:8, padding:'8px 12px', fontSize:12, color:'#F87171', marginBottom:14 },
   btn:    { width:'100%', background:'linear-gradient(135deg,#0D9488,#0F766E)', color:'white', border:'none', borderRadius:12, padding:'13px', fontWeight:800, cursor:'pointer', fontSize:15, fontFamily:'Georgia,serif', transition:'opacity 0.2s' },
