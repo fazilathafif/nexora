@@ -36,7 +36,7 @@ export default function TeacherPage() {
       {/* Header bar */}
       <div style={{background:'white',borderBottom:`1px solid ${C.border}`,padding:'16px 24px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div>
-          <span style={{fontSize:20,fontWeight:900,color:C.navy}}>BrightPath</span>
+          <span style={{fontSize:20,fontWeight:900,color:C.navy}}>Nexora</span>
           <span style={{marginLeft:10,fontSize:12,color:C.muted,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.07em'}}>Teacher Dashboard</span>
         </div>
         <div style={{background:C.primary+'18',color:C.primary,border:`1px solid ${C.primary}40`,borderRadius:20,padding:'4px 14px',fontSize:12,fontWeight:700}}>
@@ -126,9 +126,9 @@ export default function TeacherPage() {
 
             {/* CTA */}
             <div style={{marginTop:20,padding:'16px 20px',background:C.primary+'15',border:`1.5px solid ${C.primary}30`,borderRadius:14,textAlign:'center'}}>
-              <div style={{fontSize:14,fontWeight:800,color:C.navy,marginBottom:6}}>Want BrightPath for your whole school?</div>
+              <div style={{fontSize:14,fontWeight:800,color:C.navy,marginBottom:6}}>Want Nexora for your whole school?</div>
               <div style={{fontSize:12,color:C.muted}}>School licences from £200/year · Full class management · GDPR compliant · UK curriculum aligned</div>
-              <a href="mailto:schools@brightpathuk.com" style={{display:'inline-block',marginTop:12,background:C.primary,color:'white',borderRadius:12,padding:'10px 24px',fontSize:14,fontWeight:700}}>
+              <a href="mailto:schools@nexorauk.com" style={{display:'inline-block',marginTop:12,background:C.primary,color:'white',borderRadius:12,padding:'10px 24px',fontSize:14,fontWeight:700}}>
                 Get in touch →
               </a>
             </div>

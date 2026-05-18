@@ -122,7 +122,7 @@ export default function ResultPage({ user, profile }) {
             <div style={{background:dark?'linear-gradient(135deg,#1E1B4B,#312E81)':'linear-gradient(135deg,#134E4A,#0F766E)',borderRadius:16,padding:'18px',color:'white'}}>
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
                 <div style={{width:30,height:30,borderRadius:'50%',background:'rgba(255,255,255,0.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>🤖</div>
-                <span style={{fontWeight:800,fontSize:14}}>BrightPath AI Tutor</span>
+                <span style={{fontWeight:800,fontSize:14}}>Nexora AI Tutor</span>
               </div>
               {aiLoading ? (
                 <div style={{display:'flex',alignItems:'center',gap:8}}>

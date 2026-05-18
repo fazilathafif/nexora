@@ -64,5 +64,10 @@ export function useAuth() {
     if (user) await loadProfile(user.id)
   }
 
-  return { user, profile, loading, refreshProfile }
+  async function signOut() {
+    if (!isSupabaseConfigured) return
+    await supabase.auth.signOut()
+  }
+
+  return { user, profile, loading, refreshProfile, signOut }
 }

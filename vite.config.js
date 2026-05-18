@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icons/*.png'],
       manifest: {
-        name: 'BrightPath – UK Exam Prep',
-        short_name: 'BrightPath',
+        name: 'Nexora – UK Exam Prep',
+        short_name: 'Nexora',
         description: 'UK competitive exam prep for Years 8–12. GCSE, UCAT, LNAT, TMUA, ESAT, TSA, STEP.',
         theme_color: '#0F766E',
         background_color: '#F0FDFA',

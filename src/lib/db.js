@@ -1,5 +1,5 @@
 /**
- * db.js — typed wrappers around every Supabase query BrightPath needs.
+ * db.js — typed wrappers around every Supabase query Nexora needs.
  * All functions return { data, error } matching Supabase's convention.
  * When Supabase is not configured, guest mode uses localStorage instead.
  */
@@ -9,8 +9,8 @@ import { loadGuestProfile, saveGuestProfile } from './guest.js'
 
 // ── Guest-mode helpers ────────────────────────────────────────────────────────
 
-const GUEST_ACTIVITY_KEY = 'bp_guest_activity'
-const GUEST_ANSWERS_KEY  = 'bp_guest_answers'
+const GUEST_ACTIVITY_KEY = 'nx_guest_activity'
+const GUEST_ANSWERS_KEY  = 'nx_guest_answers'
 
 function noop() { return { data: null, error: null } }
 
@@ -140,7 +140,7 @@ export async function recordAnswer({ sessionId, userId, questionId, topic, chose
     return guestRecordAnswer({ topic, is_correct: chosenIndex === correctIndex, stream: stream ?? 'gcse', answered_at: new Date().toISOString() })
   }
   return supabase.from('answers').insert({
-    session_id: sessionId, user_id: userId, question_id: questionId, topic,
+    session_id: sessionId, user_id: userId, question_id: questionId, topic, stream,
     chosen_index: chosenIndex, correct_index: correctIndex,
     is_correct: chosenIndex === correctIndex, hint_used: hintUsed,
     answered_at: new Date().toISOString(),

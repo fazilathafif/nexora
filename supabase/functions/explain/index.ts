@@ -6,17 +6,23 @@
  *
  * Deploy: supabase functions deploy explain
  * Secrets: supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+ *
+ * Note: IDE type errors on deno.land imports and Deno global are expected —
+ * this file runs on the Deno runtime (Supabase), not Node.js.
  */
 
+// @ts-ignore — Deno-only import, not resolvable by VS Code without Deno extension
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+// @ts-ignore — Deno global available at runtime
+declare const Deno: { env: { get(key: string): string | undefined } };
 
 const CORS = {
   "Access-Control-Allow-Origin":  "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
-  // Handle CORS preflight
+serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: CORS });
   }
@@ -35,7 +41,7 @@ serve(async (req) => {
       ? "Year 9–10 GCSE student aged 13–15"
       : "Year 12 A-Level student aged 16–17 preparing for competitive university entry (UCAT, LNAT, TMUA, ESAT, TSA or STEP)";
 
-    const prompt = `You are BrightPath, a warm and expert UK tutor helping a ${level}.
+    const prompt = `You are Nexora, a warm and expert UK tutor helping a ${level}.
 
 Question: ${question.q}
 Topic: ${question.topic}
@@ -56,15 +62,13 @@ Write a clear explanation in 3-4 sentences. Explain WHY the correct answer is ri
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 300,
         messages: [{ role: "user", content: prompt }],
       }),
     });
 
-    if (!response.ok) {
-      throw new Error(`Anthropic API error: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`Anthropic API error: ${response.status}`);
 
     const data = await response.json();
     const explanation = data.content?.[0]?.text ?? "Review the hint carefully and try again — you've got this!";

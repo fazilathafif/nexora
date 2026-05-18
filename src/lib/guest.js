@@ -1,7 +1,7 @@
 // Shared localStorage helpers for guest (offline) mode.
 // Kept in a separate file to break the db.js ↔ useAuth.js circular dependency.
 
-const GUEST_KEY = 'bp_guest_profile'
+const GUEST_KEY = 'nx_guest_profile'
 
 export function loadGuestProfile() {
   try { return JSON.parse(localStorage.getItem(GUEST_KEY)) ?? null } catch { return null }

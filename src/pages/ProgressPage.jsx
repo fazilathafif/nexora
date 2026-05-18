@@ -9,6 +9,15 @@ import { getWeeklyActivity, getTopicStats } from '../lib/db.js'
 import { STREAM_CONFIG } from '../data/questions.js'
 import { getColors, Shell, SectionLabel } from './HomePage.jsx'
 
+// Map topic name → subject id for drill routing
+function guessSubjectForTopic(topic, cfg) {
+  const t = topic.toLowerCase()
+  for (const s of cfg.subjects) {
+    if (t.includes(s.label.toLowerCase()) || t.includes(s.id)) return s.id
+  }
+  return cfg.subjects[0]?.id
+}
+
 export default function ProgressPage({ user, profile }) {
   const { stream } = useParams()
   const navigate   = useNavigate()
@@ -105,23 +114,36 @@ export default function ProgressPage({ user, profile }) {
             <TopicBar key={s.id} topic={s.label} pct={[72,58,85,64][i]} C={C} />
           ))
         ) : (
-          topics.map(t => <TopicBar key={t.topic} topic={t.topic} pct={t.pct} C={C} />)
+        topics.map(t => (
+            <TopicBar
+              key={t.topic} topic={t.topic} pct={t.pct} C={C}
+              onDrill={() => navigate(`/${stream}/quiz/${guessSubjectForTopic(t.topic, cfg)}?topic=${encodeURIComponent(t.topic)}`)}
+            />
+          ))
         )}
       </div>
 
       {/* Teacher nudge */}
       <div style={{padding:'14px 16px',background:C.primary+'15',border:`1.5px solid ${C.primary}30`,borderRadius:14,fontSize:13,color:dark?'#A5B4FC':C.primary,lineHeight:1.5}}>
-        🏫 <strong>Share with your teacher</strong> — ask them about BrightPath School Edition for the whole class!
+        🏫 <strong>Share with your teacher</strong> — ask them about Nexora School Edition for the whole class!
       </div>
     </Shell>
   )
 }
 
-function TopicBar({ topic, pct, C }) {
+function TopicBar({ topic, pct, C, onDrill }) {
   return (
     <div style={{marginBottom:12}}>
-      <div style={{display:'flex',justifyContent:'space-between',fontSize:12,fontWeight:700,color:C.navy,marginBottom:5}}>
-        <span>{topic}</span>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:12,fontWeight:700,color:C.navy,marginBottom:5}}>
+        <span style={{flex:1,marginRight:8}}>{topic}</span>
+        {pct < 70 && onDrill && (
+          <button
+            onClick={onDrill}
+            style={{background:'#EF444418',border:'1px solid #EF444440',borderRadius:6,padding:'2px 8px',fontSize:10,fontWeight:700,color:'#EF4444',cursor:'pointer',marginRight:8,fontFamily:'Georgia,serif'}}
+          >
+            Drill
+          </button>
+        )}
         <span style={{color: pct>=75?C.success:pct>=50?C.primary:'#EF4444'}}>{pct}%</span>
       </div>
       <div style={{background:C.border,borderRadius:6,height:7}}>

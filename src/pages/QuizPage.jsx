@@ -3,30 +3,62 @@
  * then navigates to ResultPage with session state via router state.
  */
 
-import { useState, useEffect, useRef } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { getQuestions }   from '../data/questions.js'
-import { useProgress }    from '../hooks/useProgress.js'
-import { getColors, Shell, Badge } from './HomePage.jsx'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { getQuestions, TIMER_CONFIG }  from '../data/questions.js'
+import { useProgress }                 from '../hooks/useProgress.js'
+import { useTimer }                    from '../hooks/useTimer.js'
+import { scheduleReview, sortByDue, getDueIds } from '../lib/srs.js'
+import { getColors, Shell, Badge }     from './HomePage.jsx'
 
 export default function QuizPage({ user, profile, refreshProfile }) {
   const { stream, subject } = useParams()
+  const [searchParams]      = useSearchParams()
+  const reviewMode          = searchParams.get('review') === '1'
+  const topicFilter         = searchParams.get('topic') ?? null
   const navigate            = useNavigate()
   const C                   = getColors(stream)
   const dark                = stream === 'alevel'
 
-  const questions = getQuestions(stream, subject)
+  const allQs     = getQuestions(stream, subject, topicFilter)
+  const questions = reviewMode
+    ? allQs.filter(q => getDueIds(allQs).includes(q.id))
+    : sortByDue(allQs)
   const { startQuizSession, submitAnswer, finishQuizSession } = useProgress(user, profile, refreshProfile)
 
   const [qIndex,    setQIndex]    = useState(0)
-  const [chosen,    setChosen]    = useState(null)   // index chosen by student
+  const [chosen,    setChosen]    = useState(null)   // null=unanswered | -1=timed out | ≥0=option index
   const [score,     setScore]     = useState(0)
   const [answers,   setAnswers]   = useState([])
   const [hintShown, setHintShown] = useState(false)
   const [started,   setStarted]   = useState(false)
 
+  // Stable refs so timer callback never captures stale values
+  const chosenRef   = useRef(null)
+  const hintRef     = useRef(false)
+  const currentQRef = useRef(questions[0])
+  useEffect(() => { chosenRef.current   = chosen },           [chosen])
+  useEffect(() => { hintRef.current     = hintShown },        [hintShown])
+  useEffect(() => { currentQRef.current = questions[qIndex] }, [qIndex]) // eslint-disable-line
+
   const currentQ = questions[qIndex]
   const total    = questions.length
+
+  // Timer: 0 = untimed (e.g. STEP)
+  const timerSeconds = stream === 'gcse'
+    ? TIMER_CONFIG.gcse
+    : (TIMER_CONFIG.alevel?.[subject] ?? 0)
+
+  const handleTimerExpire = useCallback(() => {
+    if (chosenRef.current !== null) return   // already answered
+    const q = currentQRef.current
+    setAnswers(prev => [...prev, { q, chosen: -1, correct: false, hintUsed: hintRef.current }])
+    scheduleReview(q.id, false)
+    setChosen(-1)
+    submitAnswer({ questionId: q.id, topic: q.topic, chosenIndex: -1, correctIndex: q.ans, hintUsed: hintRef.current, stream })
+  }, [submitAnswer, stream]) // eslint-disable-line
+
+  const { remaining, pct: timerPct, warning, danger } = useTimer(timerSeconds, handleTimerExpire, qIndex)
 
   // Start Supabase session once
   useEffect(() => {
@@ -34,12 +66,14 @@ export default function QuizPage({ user, profile, refreshProfile }) {
       startQuizSession(stream, subject, questions.length)
       setStarted(true)
     }
-  }, [])  // eslint-disable-line
+  }, []) // eslint-disable-line
 
   if (!questions.length) {
     return (
       <Shell C={C}>
-        <p style={{color:C.muted,textAlign:'center',marginTop:60}}>No questions found for this subject.</p>
+        <p style={{color:C.muted,textAlign:'center',marginTop:60}}>
+          {reviewMode ? 'No questions due for review right now — great work!' : 'No questions found for this subject.'}
+        </p>
         <button onClick={() => navigate(`/${stream}`)} style={{marginTop:20,color:C.primary,background:'none',border:'none',cursor:'pointer',fontWeight:700}}>← Go back</button>
       </Shell>
     )
@@ -48,21 +82,12 @@ export default function QuizPage({ user, profile, refreshProfile }) {
   async function handleAnswer(idx) {
     if (chosen !== null) return
     setChosen(idx)
-
     const correct = idx === currentQ.ans
+    scheduleReview(currentQ.id, correct)
     const entry   = { q: currentQ, chosen: idx, correct, hintUsed: hintShown }
     setAnswers(prev => [...prev, entry])
     if (correct) setScore(s => s + 1)
-
-    // Non-blocking write to Supabase
-    submitAnswer({
-      questionId:   currentQ.id,
-      topic:        currentQ.topic,
-      chosenIndex:  idx,
-      correctIndex: currentQ.ans,
-      hintUsed:     hintShown,
-      stream,
-    })
+    submitAnswer({ questionId: currentQ.id, topic: currentQ.topic, chosenIndex: idx, correctIndex: currentQ.ans, hintUsed: hintShown, stream })
   }
 
   async function handleNext() {
@@ -71,34 +96,66 @@ export default function QuizPage({ user, profile, refreshProfile }) {
       setChosen(null)
       setHintShown(false)
     } else {
-      // Quiz done — finish session then go to result
-      const xpEarned = await finishQuizSession(score + (chosen === currentQ.ans ? 0 : 0), stream)
+      const xpEarned = await finishQuizSession(score, stream)
       navigate(`/${stream}/result`, {
         state: { answers, score, total, subject, xpEarned: xpEarned ?? score * (dark ? 15 : 10) },
       })
     }
   }
 
-  const pct = (qIndex / total) * 100
+  const progressPct = (qIndex / total) * 100
+  const timerColor  = danger ? '#EF4444' : warning ? '#F59E0B' : C.primary
 
   return (
     <Shell C={C}>
       {/* Progress row */}
-      <div style={{marginBottom:18}}>
+      <div style={{marginBottom:14}}>
         <div style={{display:'flex',justifyContent:'space-between',fontSize:12,color:C.muted,marginBottom:6}}>
           <span style={{fontWeight:700}}>Q{qIndex + 1} / {total}</span>
           <span style={{color:C.primary,fontWeight:700}}>Score: {score}</span>
         </div>
         <div style={{background:C.border,borderRadius:8,height:5}}>
-          <div style={{width:`${pct}%`,background:`linear-gradient(90deg,${C.primary},${C.secondary ?? C.primary})`,height:'100%',borderRadius:8,transition:'width 0.4s ease'}} />
+          <div style={{width:`${progressPct}%`,background:`linear-gradient(90deg,${C.primary},${C.secondary ?? C.primary})`,height:'100%',borderRadius:8,transition:'width 0.4s ease'}} />
         </div>
       </div>
 
+      {/* Countdown timer bar (hidden for untimed exams like STEP) */}
+      {timerSeconds > 0 && (
+        <div style={{marginBottom:16}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+            <span style={{fontSize:11,color:C.muted,fontWeight:600,letterSpacing:'0.05em'}}>⏱ TIME</span>
+            <span style={{fontSize:13,fontWeight:800,color:timerColor,transition:'color 0.5s',fontVariantNumeric:'tabular-nums'}}>
+              {chosen === -1 ? "Time's up!" : `${remaining}s`}
+            </span>
+          </div>
+          <div style={{background:C.border,borderRadius:8,height:4}}>
+            <div style={{
+              width:`${timerPct}%`,
+              background:timerColor,
+              height:'100%',
+              borderRadius:8,
+              transition:'width 1s linear, background 0.5s',
+            }} />
+          </div>
+        </div>
+      )}
+
       {/* Badges */}
       <div style={{display:'flex',gap:6,marginBottom:14,flexWrap:'wrap'}}>
+        {(reviewMode || topicFilter) && (
+          <Badge label={reviewMode ? 'Review Mode' : `Drilling: ${topicFilter}`} color={reviewMode ? '#F59E0B' : '#EF4444'} />
+        )}
         <Badge label={currentQ.topic} color={C.primary} />
         <Badge label={`Difficulty ${'★'.repeat(currentQ.difficulty)}`} color={C.muted} />
       </div>
+
+      {/* LNAT passage (shown when present) */}
+      {currentQ.passage && (
+        <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:'14px 16px',marginBottom:12,maxHeight:190,overflowY:'auto',fontSize:13,color:C.muted,lineHeight:1.75}}>
+          <p style={{margin:'0 0 8px',fontWeight:700,color:C.primary,fontSize:10,letterSpacing:'0.12em'}}>PASSAGE — READ CAREFULLY</p>
+          <p style={{margin:0}}>{currentQ.passage}</p>
+        </div>
+      )}
 
       {/* Question */}
       <div style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:20,padding:'22px 20px',marginBottom:16,minHeight:90}}>
@@ -109,7 +166,8 @@ export default function QuizPage({ user, profile, refreshProfile }) {
       {!hintShown ? (
         <button
           onClick={() => setHintShown(true)}
-          style={{width:'100%',background:'transparent',border:`1px dashed ${C.border}`,borderRadius:10,padding:'8px 14px',fontSize:12,color:C.muted,cursor:'pointer',marginBottom:12}}
+          disabled={chosen !== null}
+          style={{width:'100%',background:'transparent',border:`1px dashed ${C.border}`,borderRadius:10,padding:'8px 14px',fontSize:12,color:C.muted,cursor:chosen!==null?'default':'pointer',marginBottom:12,opacity:chosen!==null?0.5:1}}
         >
           💡 Show hint (−2 XP)
         </button>
@@ -124,12 +182,13 @@ export default function QuizPage({ user, profile, refreshProfile }) {
         {currentQ.opts.map((opt, i) => {
           let bg = C.card, border = `1.5px solid ${C.border}`, col = C.navy
           if (chosen !== null) {
-            if (i === currentQ.ans)                    { bg = C.success+'20'; border = `2px solid ${C.success}`; col = dark?'#4ADE80':'#166534' }
-            else if (i === chosen && i !== currentQ.ans) { bg = '#EF4444'+'20'; border = '2px solid #EF4444'; col = dark?'#F87171':'#991B1B' }
+            if (i === currentQ.ans)                              { bg = C.success+'20'; border = `2px solid ${C.success}`; col = dark?'#4ADE80':'#166534' }
+            else if (chosen >= 0 && i === chosen && i !== currentQ.ans) { bg = '#EF4444'+'20'; border = '2px solid #EF4444'; col = dark?'#F87171':'#991B1B' }
           }
           return (
             <button
               key={i} onClick={() => handleAnswer(i)}
+              disabled={chosen !== null}
               style={{background:bg,border,borderRadius:14,padding:'14px 16px',textAlign:'left',cursor:chosen!==null?'default':'pointer',fontSize:14,fontWeight:600,color:col,transition:'all 0.2s'}}
               onMouseEnter={e=>{ if(chosen===null) e.currentTarget.style.borderColor=C.primary }}
               onMouseLeave={e=>{ if(chosen===null) e.currentTarget.style.borderColor=C.border }}
@@ -137,7 +196,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
               <span style={{fontWeight:900,marginRight:10,opacity:0.4,fontSize:12}}>{['A','B','C','D'][i]}</span>
               {opt}
               {chosen !== null && i === currentQ.ans && <span style={{float:'right'}}>✓</span>}
-              {chosen !== null && i === chosen && i !== currentQ.ans && <span style={{float:'right'}}>✗</span>}
+              {chosen !== null && chosen >= 0 && i === chosen && i !== currentQ.ans && <span style={{float:'right'}}>✗</span>}
             </button>
           )
         })}

@@ -3,13 +3,14 @@ import { useAuth } from './hooks/useAuth.js'
 import LandingPage   from './pages/LandingPage.jsx'
 import HomePage      from './pages/HomePage.jsx'
 import QuizPage      from './pages/QuizPage.jsx'
+import MockPage      from './pages/MockPage.jsx'
 import ResultPage    from './pages/ResultPage.jsx'
 import ProgressPage  from './pages/ProgressPage.jsx'
 import TeacherPage   from './pages/TeacherPage.jsx'
 import LoadingSpinner from './components/LoadingSpinner.jsx'
 
 export default function App() {
-  const { user, profile, loading, refreshProfile } = useAuth()
+  const { user, profile, loading, refreshProfile, signOut } = useAuth()
 
   if (loading) return <LoadingSpinner />
 
@@ -27,10 +28,13 @@ export default function App() {
 
       {/* App — stream-aware */}
       <Route path="/:stream" element={
-        <HomePage user={user} profile={profile} refreshProfile={refreshProfile} />
+        <HomePage user={user} profile={profile} refreshProfile={refreshProfile} signOut={signOut} />
       } />
       <Route path="/:stream/quiz/:subject" element={
         <QuizPage user={user} profile={profile} refreshProfile={refreshProfile} />
+      } />
+      <Route path="/:stream/mock/:subject" element={
+        <MockPage user={user} profile={profile} refreshProfile={refreshProfile} />
       } />
       <Route path="/:stream/result" element={
         <ResultPage user={user} profile={profile} />
