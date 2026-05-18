@@ -199,10 +199,24 @@ export default function AuthGate() {
         )}
       </div>
 
-      <div style={s.pills}>
-        {['Free Forever','AI Explanations','UK Curriculum','GDPR Safe','Spaced Repetition'].map(p => (
-          <span key={p} style={s.pill}>{p}</span>
-        ))}
+      <div style={s.tracks}>
+        <div style={s.trackGroup}>
+          <div style={s.trackLabel}>GCSE TRACK</div>
+          <div style={s.trackItems}>
+            {[['📐','Maths'],['📚','English'],['🔬','Science'],['🧩','Verbal']].map(([e,n]) => (
+              <span key={n} style={s.trackChip}>{e} {n}</span>
+            ))}
+          </div>
+        </div>
+        <div style={s.divider} />
+        <div style={s.trackGroup}>
+          <div style={s.trackLabel}>A-LEVEL TRACK</div>
+          <div style={s.trackItems}>
+            {[['🏥','UCAT'],['⚖️','LNAT'],['∑','TMUA'],['⚗️','ESAT'],['🧠','TSA'],['📏','STEP']].map(([e,n]) => (
+              <span key={n} style={s.trackChip}>{e} {n}</span>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -224,8 +238,12 @@ const s = {
   btn:    { width:'100%', background:'linear-gradient(135deg,#0D9488,#0F766E)', color:'white', border:'none', borderRadius:12, padding:'13px', fontWeight:800, cursor:'pointer', fontSize:15, fontFamily:'Georgia,serif', transition:'opacity 0.2s' },
   toggle: { textAlign:'center', marginTop:14, fontSize:12, color:'#64748B' },
   link:   { background:'none', border:'none', cursor:'pointer', color:'#0D9488', fontWeight:700, fontSize:12, fontFamily:'Georgia,serif' },
-  pills:  { display:'flex', gap:8, marginTop:28, flexWrap:'wrap', justifyContent:'center' },
-  pill:   { background:'#1E293B', border:'1px solid #334155', borderRadius:20, padding:'4px 12px', fontSize:11, color:'#94A3B8', fontWeight:600 },
+  tracks:     { marginTop:24, width:'100%', maxWidth:360, display:'flex', flexDirection:'column', gap:10 },
+  trackGroup: { background:'#0F172A', border:'1px solid #1E293B', borderRadius:14, padding:'12px 16px' },
+  trackLabel: { fontSize:9, fontWeight:800, color:'#334155', letterSpacing:'0.12em', marginBottom:8 },
+  trackItems: { display:'flex', flexWrap:'wrap', gap:6 },
+  trackChip:  { background:'#1E293B', border:'1px solid #334155', borderRadius:20, padding:'4px 11px', fontSize:12, color:'#94A3B8', fontWeight:600 },
+  divider:    { display:'none' },
 }
 
 const css = `
