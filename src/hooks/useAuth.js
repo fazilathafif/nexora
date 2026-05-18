@@ -21,14 +21,16 @@ export function useAuth() {
     }
 
     // Supabase configured — require explicit sign-in, no anonymous fallback
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        setUser(session.user)
-        await loadProfile(session.user.id)
-      }
-      // No session → user stays null, app shows auth gate
-      setLoading(false)
-    })
+    supabase.auth.getSession()
+      .then(async ({ data: { session } }) => {
+        if (session?.user) {
+          setUser(session.user)
+          await loadProfile(session.user.id)
+        }
+        // No session → user stays null, app shows auth gate
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
