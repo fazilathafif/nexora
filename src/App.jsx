@@ -9,6 +9,7 @@ import ResultPage     from './pages/ResultPage.jsx'
 import ProgressPage   from './pages/ProgressPage.jsx'
 import TeacherPage    from './pages/TeacherPage.jsx'
 import AuthGate       from './pages/AuthGate.jsx'
+import SysAdminPage   from './pages/SysAdminPage.jsx'
 import LoadingSpinner from './components/LoadingSpinner.jsx'
 
 export default function App() {
@@ -23,6 +24,7 @@ export default function App() {
     <Routes>
       {/* Public */}
       <Route path="/teacher/:token" element={<TeacherPage />} />
+      <Route path="/admin" element={<SysAdminPage user={user} />} />
 
       {/* Stream selection */}
       <Route path="/" element={

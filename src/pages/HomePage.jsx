@@ -10,6 +10,7 @@ import { upsertProfile } from '../lib/db.js'
 import { isSupabaseConfigured } from '../lib/supabase.js'
 import { getDueCount } from '../lib/srs.js'
 import AuthModal from '../components/AuthModal.jsx'
+import WelcomeModal from '../components/WelcomeModal.jsx'
 
 function daysUntil(dateStr) {
   if (!dateStr) return null
@@ -95,6 +96,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut }) {
       </div>
 
       {showAuth && <AuthModal C={C} dark={dark} onClose={() => setShowAuth(false)} />}
+      <WelcomeModal user={user} C={C} dark={dark} />
 
       {/* XP banner */}
       <div style={{
