@@ -59,10 +59,16 @@ export default function AuthGate() {
       return
     }
 
-    // sign in
+    // sign in — set the remember-me flag BEFORE the API call so it's present
+    // even if the onAuthStateChange fires and unmounts this component first
+    if (rememberMe) localStorage.setItem('nexora_remember_me', '1')
+    else            localStorage.removeItem('nexora_remember_me')
+
     const { error: err } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
     if (err) {
+      // Sign-in failed — remove the flag we just set
+      localStorage.removeItem('nexora_remember_me')
       const msg = err.message.toLowerCase()
       if (msg.includes('invalid login') || msg.includes('invalid credentials')) {
         setError('Incorrect email or password. Please try again.')
@@ -72,10 +78,7 @@ export default function AuthGate() {
         setError(err.message)
       }
     } else {
-      // Persist the "remember me" preference so useAuth can enforce it on next load
       sessionStorage.setItem('nexora_session_active', '1')
-      if (rememberMe) localStorage.setItem('nexora_remember_me', '1')
-      else            localStorage.removeItem('nexora_remember_me')
     }
     // on success onAuthStateChange in useAuth fires automatically
   }
@@ -153,7 +156,8 @@ export default function AuthGate() {
             <div style={s.field}>
               <label style={s.label}>EMAIL</label>
               <input
-                type="email" required value={email} onChange={e => setEmail(e.target.value)}
+                type="email" required name="email" autoComplete="email"
+                value={email} onChange={e => setEmail(e.target.value)}
                 placeholder="you@example.com" style={s.input}
                 onFocus={e => e.target.style.borderColor='#0D9488'}
                 onBlur={e  => e.target.style.borderColor='#1E293B'}
@@ -192,7 +196,8 @@ export default function AuthGate() {
             <div style={s.field}>
               <label style={s.label}>EMAIL</label>
               <input
-                type="email" required value={email} onChange={e => setEmail(e.target.value)}
+                type="email" required name="email" autoComplete="email"
+                value={email} onChange={e => setEmail(e.target.value)}
                 placeholder="you@example.com" style={s.input}
                 onFocus={e => e.target.style.borderColor='#0D9488'}
                 onBlur={e  => e.target.style.borderColor='#1E293B'}
@@ -208,7 +213,9 @@ export default function AuthGate() {
                 )}
               </div>
               <input
-                type="password" required minLength={6} value={password} onChange={e => setPassword(e.target.value)}
+                type="password" required minLength={6}
+                name="password" autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                value={password} onChange={e => setPassword(e.target.value)}
                 placeholder="6+ characters" style={s.input}
                 onFocus={e => e.target.style.borderColor='#0D9488'}
                 onBlur={e  => e.target.style.borderColor='#1E293B'}
