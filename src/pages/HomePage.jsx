@@ -96,7 +96,7 @@ export function getColors(stream, subject) {
   return stream === 'gcse' ? GCSE_COLORS : ALEVEL_COLORS
 }
 
-export default function HomePage({ user, profile, refreshProfile, signOut }) {
+export default function HomePage({ user, profile, refreshProfile, signOut, startPomodoro }) {
   const { stream } = useParams()
   const navigate   = useNavigate()
   const cfg        = STREAM_CONFIG[stream]
@@ -245,9 +245,27 @@ export default function HomePage({ user, profile, refreshProfile, signOut }) {
         </div>
       )}
 
+      {/* Focus session launcher */}
+      <button
+        onClick={startPomodoro}
+        style={{
+          width:'100%', display:'flex', alignItems:'center', gap:12,
+          background: dark ? '#1a1740' : `${C.primary}10`,
+          border: `1.5px solid ${C.primary}35`,
+          borderRadius:14, padding:'12px 16px', cursor:'pointer',
+          fontFamily:'Inter,sans-serif', marginBottom:18, textAlign:'left',
+        }}
+      >
+        <span style={{fontSize:22}}>🍅</span>
+        <div>
+          <div style={{fontSize:13, fontWeight:800, color:C.navy}}>Start 25-min Focus Session</div>
+          <div style={{fontSize:11, color:C.muted, marginTop:1}}>Pomodoro timer · 5-min break after</div>
+        </div>
+        <span style={{marginLeft:'auto', fontSize:12, fontWeight:700, color:C.primary}}>Start →</span>
+      </button>
+
       {/* Subject / exam grid */}
-      <SectionLabel C={C}>{stream === 'alevel' ? 'Choose Your Exam' : 'Choose Subject'}</SectionLabel>
-      {stream === 'alevel' ? (
+      <SectionLabel C={C}>{stream === 'alevel' ? 'Choose Your Exam' : 'Choose Subject'}</SectionLabel>      {stream === 'alevel' ? (
         <div style={{marginBottom:18}}>
           {cfg.subjects.map(s => (
             <ExamRowCard

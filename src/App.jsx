@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { useState } from 'react'
 import { useAuth } from './hooks/useAuth.js'
 import { isSupabaseConfigured } from './lib/supabase.js'
 import LandingPage         from './pages/LandingPage.jsx'
@@ -13,10 +14,13 @@ import SysAdminPage        from './pages/SysAdminPage.jsx'
 import UpdatePasswordPage  from './pages/UpdatePasswordPage.jsx'
 import StudyPlanPage       from './pages/StudyPlanPage.jsx'
 import FlashcardsPage      from './pages/FlashcardsPage.jsx'
+import MatchPage           from './pages/MatchPage.jsx'
 import LoadingSpinner      from './components/LoadingSpinner.jsx'
+import PomodoroTimer       from './components/PomodoroTimer.jsx'
 
 export default function App() {
   const { user, profile, loading, refreshProfile, signOut, isPasswordRecovery } = useAuth()
+  const [pomodoroActive, setPomodoroActive] = useState(false)
 
   if (loading) return <LoadingSpinner />
 
@@ -27,46 +31,54 @@ export default function App() {
   if (isSupabaseConfigured && !user) return <AuthGate />
 
   return (
-    <Routes>
-      {/* Public */}
-      <Route path="/teacher/:token" element={<TeacherPage />} />
-      <Route path="/admin" element={<SysAdminPage user={user} />} />
+    <>
+      <Routes>
+        {/* Public */}
+        <Route path="/teacher/:token" element={<TeacherPage />} />
+        <Route path="/admin" element={<SysAdminPage user={user} />} />
 
-      {/* Stream selection */}
-      <Route path="/" element={
-        profile?.stream
-          ? <Navigate to={`/${profile.stream}`} replace />
-          : <LandingPage user={user} profile={profile} refreshProfile={refreshProfile} />
-      } />
-      <Route path="/switch" element={
-        <LandingPage user={user} profile={profile} refreshProfile={refreshProfile} />
-      } />
+        {/* Stream selection */}
+        <Route path="/" element={
+          profile?.stream
+            ? <Navigate to={`/${profile.stream}`} replace />
+            : <LandingPage user={user} profile={profile} refreshProfile={refreshProfile} />
+        } />
+        <Route path="/switch" element={
+          <LandingPage user={user} profile={profile} refreshProfile={refreshProfile} />
+        } />
 
-      {/* App — stream-aware */}
-      <Route path="/:stream" element={
-        <HomePage user={user} profile={profile} refreshProfile={refreshProfile} signOut={signOut} />
-      } />
-      <Route path="/:stream/quiz/:subject" element={
-        <QuizPage user={user} profile={profile} refreshProfile={refreshProfile} />
-      } />
-      <Route path="/:stream/mock/:subject" element={
-        <MockPage user={user} profile={profile} refreshProfile={refreshProfile} />
-      } />
-      <Route path="/:stream/result" element={
-        <ResultPage user={user} profile={profile} />
-      } />
-      <Route path="/:stream/progress" element={
-        <ProgressPage user={user} profile={profile} />
-      } />
-      <Route path="/:stream/plan" element={
-        <StudyPlanPage user={user} profile={profile} refreshProfile={refreshProfile} />
-      } />
-      <Route path="/:stream/flashcards/:subject" element={
-        <FlashcardsPage />
-      } />
+        {/* App — stream-aware */}
+        <Route path="/:stream" element={
+          <HomePage user={user} profile={profile} refreshProfile={refreshProfile} signOut={signOut}
+            startPomodoro={() => setPomodoroActive(true)} />
+        } />
+        <Route path="/:stream/quiz/:subject" element={
+          <QuizPage user={user} profile={profile} refreshProfile={refreshProfile} />
+        } />
+        <Route path="/:stream/mock/:subject" element={
+          <MockPage user={user} profile={profile} refreshProfile={refreshProfile} />
+        } />
+        <Route path="/:stream/result" element={
+          <ResultPage user={user} profile={profile} />
+        } />
+        <Route path="/:stream/progress" element={
+          <ProgressPage user={user} profile={profile} />
+        } />
+        <Route path="/:stream/plan" element={
+          <StudyPlanPage user={user} profile={profile} refreshProfile={refreshProfile} />
+        } />
+        <Route path="/:stream/flashcards/:subject" element={
+          <FlashcardsPage />
+        } />
+        <Route path="/:stream/match/:subject" element={
+          <MatchPage />
+        } />
 
-      {/* Catch-all */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* Catch-all */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+
+      <PomodoroTimer active={pomodoroActive} setActive={setPomodoroActive} />
+    </>
   )
 }
