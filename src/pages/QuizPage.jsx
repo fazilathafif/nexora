@@ -124,9 +124,10 @@ export default function QuizPage({ user, profile, refreshProfile }) {
     const fallback = 'Work through the hint step by step — the method will click with practice. 💪'
     const FN_URL = 'https://nwouvraxquxdjgfxljui.supabase.co/functions/v1/explain'
     const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ?? 'sb_publishable_1ApxMrPiF0jv_SEnVUChNw_NhJhMg2j'
+    const JWT_BEARER = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53b3V2cmF4cXV4ZGpnZnhsanVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwOTQ1NzgsImV4cCI6MjA5NDY3MDU3OH0.v3f8GYT2_A7LfuKZZTeGMn2Lwy2A4AKucw6p7HyrYMg'
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token ?? ANON_KEY
+      const token = session?.access_token ?? JWT_BEARER
       const controller = new AbortController()
       const timer = setTimeout(() => controller.abort(), 20000)
       const res = await fetch(FN_URL, {
