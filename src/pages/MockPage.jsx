@@ -112,9 +112,19 @@ export default function MockPage({ user, profile, refreshProfile }) {
     <Shell C={C}>
       {/* Header */}
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
-        <div>
-          <div style={{fontWeight:900,color:C.navy,fontSize:15}}>{cfg.label}</div>
-          <div style={{fontSize:11,color:C.muted,marginTop:2}}>{answered}/{questions.length} answered</div>
+        <div style={{display:'flex',alignItems:'center',gap:10}}>
+          <button
+            onClick={() => {
+              if (window.confirm('Exit mock exam? All answers will be lost.')) navigate(`/${stream}`)
+            }}
+            style={{background:'transparent',border:`1px solid ${C.border}`,borderRadius:8,padding:'4px 10px',fontSize:11,fontWeight:700,color:C.muted,cursor:'pointer',fontFamily:'Inter,sans-serif'}}
+          >
+            ← Exit
+          </button>
+          <div>
+            <div style={{fontWeight:900,color:C.navy,fontSize:15}}>{cfg.label}</div>
+            <div style={{fontSize:11,color:C.muted,marginTop:2}}>{answered}/{questions.length} answered</div>
+          </div>
         </div>
         {cfg.duration > 0 && (
           <div style={{textAlign:'right'}}>

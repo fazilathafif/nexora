@@ -127,11 +127,24 @@ export default function QuizPage({ user, profile, refreshProfile }) {
   const progressPct = (qIndex / total) * 100
   const timerColor  = danger ? '#EF4444' : warning ? '#F59E0B' : C.primary
 
+  function handleExit() {
+    if (qIndex === 0 && chosen === null) { navigate(`/${stream}`); return }
+    if (window.confirm('Exit quiz? Your progress in this session will be lost.')) {
+      navigate(`/${stream}`)
+    }
+  }
+
   return (
     <Shell C={C}>
       {/* Progress row */}
       <div style={{marginBottom:14}}>
-        <div style={{display:'flex',justifyContent:'space-between',fontSize:12,color:C.muted,marginBottom:6}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:12,color:C.muted,marginBottom:6}}>
+          <button
+            onClick={handleExit}
+            style={{background:'transparent',border:`1px solid ${C.border}`,borderRadius:8,padding:'4px 10px',fontSize:11,fontWeight:700,color:C.muted,cursor:'pointer',fontFamily:'Inter,sans-serif'}}
+          >
+            ← Exit
+          </button>
           <span style={{fontWeight:700}}>Q{qIndex + 1} / {total}</span>
           <span style={{color:C.primary,fontWeight:700}}>Score: {score}</span>
         </div>
