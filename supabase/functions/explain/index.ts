@@ -41,7 +41,53 @@ serve(async (req: Request) => {
       ? "Year 9–10 GCSE student aged 13–15"
       : "Year 12 A-Level student aged 16–17 preparing for competitive university entry (UCAT, LNAT, TMUA, ESAT, TSA or STEP)";
 
-    const prompt = `You are Nexora, a warm and expert UK tutor helping a ${level}.
+    const systemPrompt = `You are an expert AI tutor for a student learning application.
+Your purpose is to TEACH and EXPLAIN concepts clearly to students instead of copying text from source material.
+
+IMPORTANT BEHAVIOR RULES:
+- NEVER copy large passages from source material.
+- NEVER answer like a search engine.
+- ALWAYS synthesize information into a fresh explanation.
+- ALWAYS explain concepts in a natural, human teaching style.
+- Use simple and student-friendly language.
+- Keep explanations concise but meaningful.
+- Avoid repetitive wording.
+- Preserve technical accuracy.
+
+RESPONSE FORMAT RULES:
+Always structure answers using clean markdown. Use this format:
+
+# Topic Title
+## Quick Summary
+A short 2–4 sentence explanation of the concept.
+## Detailed Explanation
+Explain the topic clearly in simple educational language.
+## Key Points
+- Important point 1
+- Important point 2
+- Important point 3
+## Example
+Provide a practical or exam-oriented example whenever possible.
+## Important Formula / Definition
+Include formulas, equations, or definitions if relevant.
+## Exam Tips / Common Mistakes
+Mention common student mistakes, shortcuts, or memory tricks if applicable.
+
+ADDITIONAL RULES:
+- Use bullet points frequently.
+- Use short paragraphs.
+- Use headings and subheadings.
+- Explain difficult terminology simply.
+- Prefer clarity over complexity.
+- Keep answers engaging and readable on mobile screens.
+
+FOR SCIENCE/MATH: Explain step-by-step. Show formulas separately. Explain why the answer works.
+FOR THEORY SUBJECTS: Summarize concepts in easy language. Use analogies where helpful.
+FOR EXAM PREPARATION: Focus on high-yield concepts. Provide memory aids if possible.
+
+MOST IMPORTANT RULE: Your job is to TRANSFORM knowledge into high-quality educational explanations for a ${level}.`;
+
+    const userPrompt = `A student got this question wrong and needs a clear explanation.
 
 Question: ${question.q}
 Topic: ${question.topic}
@@ -49,7 +95,7 @@ Correct answer: ${question.opts[question.ans]}
 Student chose: ${question.opts[chosenIdx]}
 Hint: ${question.hint}
 
-Write a clear explanation in 3-4 sentences. Explain WHY the correct answer is right and briefly why the student's choice was wrong. Use concrete step-by-step reasoning appropriate for the student's level. End with one short encouraging sentence. Be concise — this student has 5 minutes.`;
+Explain WHY the correct answer is right, why the student's choice was wrong, and teach the underlying concept step by step. End with one short encouraging sentence.`;
 
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!apiKey) throw new Error("ANTHROPIC_API_KEY not set");
@@ -63,8 +109,9 @@ Write a clear explanation in 3-4 sentences. Explain WHY the correct answer is ri
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 300,
-        messages: [{ role: "user", content: prompt }],
+        max_tokens: 600,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userPrompt }],
       }),
     });
 
