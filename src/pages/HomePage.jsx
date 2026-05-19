@@ -128,12 +128,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
   }
 
   function switchStream() {
-    navigate('/switch')              // navigate first — never block on Supabase
-    if (user) {
-      upsertProfile(user.id, { stream: null })
-        .then(() => refreshProfile?.())
-        .catch(() => {})
-    }
+    navigate('/switch')
   }
 
   return (
