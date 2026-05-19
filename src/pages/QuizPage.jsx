@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import ReactMarkdown from 'react-markdown'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { getQuestions, TIMER_CONFIG }  from '../data/questions.js'
 import { useProgress }                 from '../hooks/useProgress.js'
@@ -283,14 +284,30 @@ export default function QuizPage({ user, profile, refreshProfile }) {
               marginTop:8, background:dark?'#181432':'#F8FAFF',
               border:`1px solid ${dark?'#7C3AED':'#6366F1'}30`,
               borderRadius:12, padding:'14px 16px',
-              fontSize:13, color:C.navy, lineHeight:1.75,
+              fontSize:13, color:C.navy, lineHeight:1.85,
               opacity:1, animation:'fadeIn 0.3s ease both',
             }}>
               <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:8}}>
                 <span style={{fontSize:14}}>🤖</span>
                 <span style={{fontSize:10,fontWeight:800,color:dark?'#C4B5FD':'#6366F1',letterSpacing:'0.1em'}}>AI TUTOR</span>
               </div>
-              {aiText}
+              <div style={{
+                '--md-h1': dark?'#E2E8F0':'#1E293B',
+                '--md-h2': dark?'#C4B5FD':'#4F46E5',
+                '--md-li': '0.4em',
+              }}>
+                <style>{`
+                  .ai-md h1{font-size:15px;font-weight:900;margin:0 0 6px;color:${dark?'#E2E8F0':'#1E293B'}}
+                  .ai-md h2{font-size:13px;font-weight:800;margin:14px 0 4px;color:${dark?'#C4B5FD':'#4F46E5'}}
+                  .ai-md h3{font-size:12px;font-weight:700;margin:10px 0 3px;color:${dark?'#A78BFA':'#6366F1'}}
+                  .ai-md p{margin:0 0 10px}
+                  .ai-md ul,.ai-md ol{margin:4px 0 10px;padding-left:20px}
+                  .ai-md li{margin-bottom:4px}
+                  .ai-md strong{font-weight:800}
+                  .ai-md code{background:${dark?'#2D1B69':'#EEF2FF'};padding:1px 5px;border-radius:4px;font-size:12px}
+                `}</style>
+                <ReactMarkdown className="ai-md">{aiText}</ReactMarkdown>
+              </div>
             </div>
           )}
           {aiOpen && aiText === 'loading' && (
