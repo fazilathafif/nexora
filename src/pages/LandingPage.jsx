@@ -10,11 +10,12 @@ export default function LandingPage({ user, profile, refreshProfile }) {
   const navigate = useNavigate()
 
   async function chooseStream(stream) {
+    navigate(`/${stream}`)           // navigate first — never block on Supabase
     if (user) {
-      await upsertProfile(user.id, { stream })
-      await refreshProfile()
+      upsertProfile(user.id, { stream })
+        .then(() => refreshProfile?.())
+        .catch(() => {})
     }
-    navigate(`/${stream}`)
   }
 
   return (

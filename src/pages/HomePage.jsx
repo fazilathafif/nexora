@@ -127,12 +127,13 @@ export default function HomePage({ user, profile, refreshProfile, signOut }) {
     setEditingDate(false)
   }
 
-  async function switchStream() {
-    try {
-      if (user) await upsertProfile(user.id, { stream: null })
-      await refreshProfile?.()
-    } catch {}
-    navigate('/switch')
+  function switchStream() {
+    navigate('/switch')              // navigate first — never block on Supabase
+    if (user) {
+      upsertProfile(user.id, { stream: null })
+        .then(() => refreshProfile?.())
+        .catch(() => {})
+    }
   }
 
   return (
