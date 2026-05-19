@@ -12,7 +12,8 @@ export default function ResultPage({ user, profile }) {
   const { stream }  = useParams()
   const navigate    = useNavigate()
   const { state }   = useLocation()
-  const C           = getColors(stream)
+  const subject     = state?.subject
+  const C           = getColors(stream, subject)
   const dark        = stream === 'alevel'
 
   const { answers = [], score = 0, total = 1, xpEarned = 0 } = state ?? {}

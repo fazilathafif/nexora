@@ -23,7 +23,7 @@ function fmt(secs) {
 export default function MockPage({ user, profile, refreshProfile }) {
   const { stream, subject } = useParams()
   const navigate             = useNavigate()
-  const C                    = getColors(stream)
+  const C                    = getColors(stream, subject)
   const dark                 = stream === 'alevel'
 
   const cfg = stream === 'gcse'

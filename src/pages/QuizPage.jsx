@@ -41,7 +41,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
   const reviewMode          = searchParams.get('review') === '1'
   const topicFilter         = searchParams.get('topic') ?? null
   const navigate            = useNavigate()
-  const C                   = getColors(stream)
+  const C                   = getColors(stream, subject)
   const dark                = stream === 'alevel'
 
   const allQs     = getQuestions(stream, subject, topicFilter)

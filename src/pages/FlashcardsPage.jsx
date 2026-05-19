@@ -7,7 +7,7 @@ import { getColors, Shell } from './HomePage.jsx'
 export default function FlashcardsPage() {
   const { stream, subject } = useParams()
   const navigate  = useNavigate()
-  const C         = getColors(stream)
+  const C         = getColors(stream, subject)
   const dark      = stream === 'alevel'
   const allQs     = getQuestions(stream, subject)
 

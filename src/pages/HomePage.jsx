@@ -24,19 +24,75 @@ const GCSE_COLORS = {
   muted:'#6B7280', success:'#10B981', border:'#D1FAE5',
 }
 const ALEVEL_COLORS = {
-  primary:   '#7C3AED',   // electric violet
-  secondary: '#F43F5E',   // hot rose
-  accent:    '#06B6D4',   // electric cyan
-  bg:        '#0E0B1F',   // cosmic purple-black
-  card:      '#181432',   // deep indigo card
-  navy:      '#F0F4FF',   // near-white text
-  soft:      '#261E4E',   // medium purple (visible section bg)
-  muted:     '#A78BFA',   // lavender muted text
-  success:   '#4ADE80',   // bright green
-  border:    '#352B6D',   // visible purple border
+  primary:   '#7C3AED',
+  secondary: '#F43F5E',
+  accent:    '#06B6D4',
+  bg:        '#0E0B1F',
+  card:      '#181432',
+  navy:      '#F0F4FF',
+  soft:      '#261E4E',
+  muted:     '#A78BFA',
+  success:   '#4ADE80',
+  border:    '#352B6D',
 }
 
-export function getColors(stream) {
+const SUBJECT_COLORS = {
+  // ── GCSE (light) ──────────────────────────────────────────────────────────
+  maths: {
+    primary:'#3B82F6', secondary:'#6366F1', accent:'#BFDBFE',
+    bg:'#EFF6FF', card:'#FFFFFF', navy:'#1E3A5F', soft:'#DBEAFE',
+    muted:'#6B7280', success:'#10B981', border:'#BFDBFE',
+  },
+  english: {
+    primary:'#D97706', secondary:'#F59E0B', accent:'#FDE68A',
+    bg:'#FFFBEB', card:'#FFFFFF', navy:'#78350F', soft:'#FEF3C7',
+    muted:'#6B7280', success:'#10B981', border:'#FDE68A',
+  },
+  science: {
+    primary:'#0F766E', secondary:'#06B6D4', accent:'#A7F3D0',
+    bg:'#F0FDFA', card:'#FFFFFF', navy:'#134E4A', soft:'#CCFBF1',
+    muted:'#6B7280', success:'#10B981', border:'#D1FAE5',
+  },
+  verbal: {
+    primary:'#DB2777', secondary:'#EC4899', accent:'#FBCFE8',
+    bg:'#FDF2F8', card:'#FFFFFF', navy:'#500724', soft:'#FCE7F3',
+    muted:'#6B7280', success:'#10B981', border:'#FBCFE8',
+  },
+  // ── A-Level (dark) ────────────────────────────────────────────────────────
+  ucat: {
+    primary:'#06B6D4', secondary:'#0EA5E9', accent:'#67E8F9',
+    bg:'#030D1A', card:'#071B2C', navy:'#E0F9FF', soft:'#0B2840',
+    muted:'#67C8D6', success:'#4ADE80', border:'#0E3B52',
+  },
+  lnat: {
+    primary:'#F59E0B', secondary:'#FBBF24', accent:'#FDE68A',
+    bg:'#120900', card:'#1C0E00', navy:'#FEFCE8', soft:'#2A1800',
+    muted:'#C9943A', success:'#4ADE80', border:'#3D2400',
+  },
+  tmua: {
+    primary:'#818CF8', secondary:'#6366F1', accent:'#C7D2FE',
+    bg:'#0E0B1F', card:'#131029', navy:'#EEF2FF', soft:'#1C1840',
+    muted:'#A5B4FC', success:'#4ADE80', border:'#2E284A',
+  },
+  esat: {
+    primary:'#F97316', secondary:'#FB923C', accent:'#FDBA74',
+    bg:'#150A00', card:'#201000', navy:'#FFF4E8', soft:'#2E1700',
+    muted:'#C47B3E', success:'#4ADE80', border:'#3D2000',
+  },
+  tsa: {
+    primary:'#A855F7', secondary:'#C084FC', accent:'#E9D5FF',
+    bg:'#0F0521', card:'#180A32', navy:'#F5F3FF', soft:'#200D3F',
+    muted:'#C084FC', success:'#4ADE80', border:'#3B1B66',
+  },
+  step: {
+    primary:'#10B981', secondary:'#34D399', accent:'#6EE7B7',
+    bg:'#021412', card:'#041E1B', navy:'#ECFDF5', soft:'#062E28',
+    muted:'#6EE7B7', success:'#4ADE80', border:'#084E44',
+  },
+}
+
+export function getColors(stream, subject) {
+  if (subject && SUBJECT_COLORS[subject]) return SUBJECT_COLORS[subject]
   return stream === 'gcse' ? GCSE_COLORS : ALEVEL_COLORS
 }
 
@@ -234,34 +290,35 @@ export default function HomePage({ user, profile, refreshProfile, signOut }) {
 // ── Shared small components ───────────────────────────────────────────────────
 
 function SubjectCard({ subject, C, dark, compact, onClick, onMock, onFlashcards }) {
+  const SC = getColors(dark ? 'alevel' : 'gcse', subject.id)
   return (
     <div style={{position:'relative',display:'flex',flexDirection:'column'}}>
       <button
         onClick={onClick}
-        style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:14,padding:compact?'12px 8px':'16px 10px',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:6,transition:'all 0.2s',flex:1}}
-        onMouseEnter={e=>{e.currentTarget.style.borderColor=C.primary;e.currentTarget.style.background=C.primary+'12'}}
-        onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.background=C.card}}
+        style={{background:C.card,border:`1.5px solid ${SC.primary}40`,borderRadius:14,padding:compact?'12px 8px':'16px 10px',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:6,transition:'all 0.2s',flex:1}}
+        onMouseEnter={e=>{e.currentTarget.style.borderColor=SC.primary;e.currentTarget.style.background=SC.primary+'18'}}
+        onMouseLeave={e=>{e.currentTarget.style.borderColor=SC.primary+'40';e.currentTarget.style.background=C.card}}
       >
         <span style={{fontSize:compact?20:26}}>{subject.emoji}</span>
-        <span style={{fontSize:12,fontWeight:800,color:C.navy,textAlign:'center'}}>{subject.label}</span>
+        <span style={{fontSize:12,fontWeight:800,color:SC.primary,textAlign:'center'}}>{subject.label}</span>
         <span style={{fontSize:9,color:C.muted,textAlign:'center',lineHeight:1.3}}>{subject.desc}</span>
       </button>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4,marginTop:4}}>
         <button
           onClick={onFlashcards}
           title="Flashcards"
-          style={{background:'transparent',border:`1px solid ${C.border}`,borderRadius:8,padding:'4px 0',fontSize:9,fontWeight:700,color:C.muted,cursor:'pointer',fontFamily:'Inter,sans-serif',letterSpacing:'0.04em'}}
-          onMouseEnter={e=>{e.currentTarget.style.borderColor=C.primary;e.currentTarget.style.color=C.primary}}
-          onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.color=C.muted}}
+          style={{background:'transparent',border:`1px solid ${SC.primary}40`,borderRadius:8,padding:'4px 0',fontSize:9,fontWeight:700,color:SC.primary,cursor:'pointer',fontFamily:'Inter,sans-serif',letterSpacing:'0.04em'}}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor=SC.primary;e.currentTarget.style.background=SC.primary+'15'}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor=SC.primary+'40';e.currentTarget.style.background='transparent'}}
         >
           CARDS 🃏
         </button>
         <button
           onClick={onMock}
           title="Mock exam"
-          style={{background:'transparent',border:`1px solid ${C.border}`,borderRadius:8,padding:'4px 0',fontSize:9,fontWeight:700,color:C.muted,cursor:'pointer',fontFamily:'Inter,sans-serif',letterSpacing:'0.04em'}}
-          onMouseEnter={e=>{e.currentTarget.style.borderColor=C.secondary??C.primary;e.currentTarget.style.color=C.secondary??C.primary}}
-          onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.color=C.muted}}
+          style={{background:'transparent',border:`1px solid ${SC.primary}40`,borderRadius:8,padding:'4px 0',fontSize:9,fontWeight:700,color:SC.primary,cursor:'pointer',fontFamily:'Inter,sans-serif',letterSpacing:'0.04em'}}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor=SC.primary;e.currentTarget.style.background=SC.primary+'15'}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor=SC.primary+'40';e.currentTarget.style.background='transparent'}}
         >
           MOCK EXAM
         </button>
