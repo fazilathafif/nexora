@@ -245,22 +245,31 @@ export default function HomePage({ user, profile, refreshProfile, signOut }) {
       )}
 
       {/* Subject / exam grid */}
-      <SectionLabel C={C}>{stream === 'alevel' ? 'Choose Exam' : 'Choose Subject'}</SectionLabel>
-      <div style={{
-        display:'grid',
-        gridTemplateColumns: cfg.subjects.length > 4 ? '1fr 1fr 1fr' : '1fr 1fr',
-        gap:10, marginBottom:18,
-      }}>
-        {cfg.subjects.map(s => (
-          <SubjectCard
-            key={s.id} subject={s} C={C} dark={dark}
-            compact={cfg.subjects.length > 4}
-            onClick={() => navigate(`/${stream}/quiz/${s.id}`)}
-            onMock={() => navigate(`/${stream}/mock/${s.id}`)}
-            onFlashcards={() => navigate(`/${stream}/flashcards/${s.id}`)}
-          />
-        ))}
-      </div>
+      <SectionLabel C={C}>{stream === 'alevel' ? 'Choose Your Exam' : 'Choose Subject'}</SectionLabel>
+      {stream === 'alevel' ? (
+        <div style={{marginBottom:18}}>
+          {cfg.subjects.map(s => (
+            <ExamRowCard
+              key={s.id} subject={s} C={C} dark={dark}
+              onClick={() => navigate(`/${stream}/quiz/${s.id}`)}
+              onMock={() => navigate(`/${stream}/mock/${s.id}`)}
+              onFlashcards={() => navigate(`/${stream}/flashcards/${s.id}`)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:18}}>
+          {cfg.subjects.map(s => (
+            <SubjectCard
+              key={s.id} subject={s} C={C} dark={dark}
+              compact={false}
+              onClick={() => navigate(`/${stream}/quiz/${s.id}`)}
+              onMock={() => navigate(`/${stream}/mock/${s.id}`)}
+              onFlashcards={() => navigate(`/${stream}/flashcards/${s.id}`)}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Progress + Plan links */}
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:0}}>
@@ -288,6 +297,91 @@ export default function HomePage({ user, profile, refreshProfile, signOut }) {
 }
 
 // ── Shared small components ───────────────────────────────────────────────────
+
+const EXAM_META = {
+  ucat:  { type:'Medicine & Dentistry',     unis:'Oxford · Imperial · UCL · Sheffield · Leeds' },
+  lnat:  { type:'Law',                      unis:'Oxford · Cambridge · LSE · UCL · Bristol' },
+  tmua:  { type:'Maths & Computer Science', unis:'Cambridge · UCL · Durham · Warwick' },
+  esat:  { type:'Engineering & Sciences',   unis:'Cambridge · Imperial · Oxford (Physics)' },
+  tsa:   { type:'PPE, Economics, Philosophy',unis:'Oxford · UCL · Cambridge (select)' },
+  step:  { type:'Cambridge Mathematics',    unis:'Cambridge conditional offer requirement' },
+}
+
+function ExamRowCard({ subject, C, dark, onClick, onMock, onFlashcards }) {
+  const SC = SUBJECT_COLORS[subject.id] || C
+  const meta = EXAM_META[subject.id] || {}
+  return (
+    <div style={{
+      background:C.card,
+      border:`1.5px solid ${SC.primary}25`,
+      borderLeft:`4px solid ${SC.primary}`,
+      borderRadius:16,
+      padding:'18px 18px 14px',
+      marginBottom:12,
+    }}>
+      <div style={{display:'flex',alignItems:'flex-start',gap:14,marginBottom:16}}>
+        <div style={{
+          width:52,height:52,borderRadius:14,flexShrink:0,
+          background:`${SC.primary}18`,
+          display:'flex',alignItems:'center',justifyContent:'center',
+          fontSize:26,
+          border:`1px solid ${SC.primary}30`,
+        }}>
+          {subject.emoji}
+        </div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:17,fontWeight:900,color:C.navy,marginBottom:3,letterSpacing:'-0.3px'}}>
+            {subject.label}
+          </div>
+          <div style={{fontSize:13,fontWeight:700,color:SC.primary,marginBottom:5}}>
+            {meta.type}
+          </div>
+          <div style={{fontSize:11,color:C.muted,lineHeight:1.5,whiteSpace:'normal'}}>
+            {meta.unis}
+          </div>
+        </div>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
+        <button
+          onClick={onClick}
+          style={{
+            background:SC.primary,color:'white',border:'none',
+            borderRadius:10,padding:'10px 6px',
+            fontSize:12,fontWeight:800,cursor:'pointer',fontFamily:'Inter,sans-serif',
+          }}
+          onMouseEnter={e=>{e.currentTarget.style.filter='brightness(1.12)'}}
+          onMouseLeave={e=>{e.currentTarget.style.filter='none'}}
+        >
+          Practice →
+        </button>
+        <button
+          onClick={onMock}
+          style={{
+            background:'transparent',border:`1.5px solid ${SC.primary}50`,
+            borderRadius:10,padding:'10px 6px',
+            fontSize:12,fontWeight:800,color:SC.primary,cursor:'pointer',fontFamily:'Inter,sans-serif',
+          }}
+          onMouseEnter={e=>{e.currentTarget.style.background=`${SC.primary}15`}}
+          onMouseLeave={e=>{e.currentTarget.style.background='transparent'}}
+        >
+          Mock Exam
+        </button>
+        <button
+          onClick={onFlashcards}
+          style={{
+            background:'transparent',border:`1.5px solid ${SC.primary}50`,
+            borderRadius:10,padding:'10px 6px',
+            fontSize:12,fontWeight:800,color:SC.primary,cursor:'pointer',fontFamily:'Inter,sans-serif',
+          }}
+          onMouseEnter={e=>{e.currentTarget.style.background=`${SC.primary}15`}}
+          onMouseLeave={e=>{e.currentTarget.style.background='transparent'}}
+        >
+          Cards 🃏
+        </button>
+      </div>
+    </div>
+  )
+}
 
 function SubjectCard({ subject, C, dark, compact, onClick, onMock, onFlashcards }) {
   const SC = getColors(dark ? 'alevel' : 'gcse', subject.id)

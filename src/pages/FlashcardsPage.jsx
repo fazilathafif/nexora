@@ -1,8 +1,15 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getQuestions } from '../data/questions.js'
 import { scheduleReview } from '../lib/srs.js'
 import { getColors, Shell } from './HomePage.jsx'
+
+const RATINGS = [
+  { key:'again', label:'Again', emoji:'✗', quality:0, bg:'#EF444418', border:'#EF444450', color:'#EF4444' },
+  { key:'hard',  label:'Hard',  emoji:'~', quality:1, bg:'#F59E0B18', border:'#F59E0B50', color:'#F59E0B' },
+  { key:'good',  label:'Good',  emoji:'✓', quality:2, bg:'#10B98118', border:'#10B98150', color:'#10B981' },
+  { key:'easy',  label:'Easy',  emoji:'⚡', quality:3, bg:'#6366F118', border:'#6366F150', color:'#6366F1' },
+]
 
 export default function FlashcardsPage() {
   const { stream, subject } = useParams()
@@ -20,8 +27,24 @@ export default function FlashcardsPage() {
   const [cardIndex,   setCardIndex]   = useState(0)
   const [flipped,     setFlipped]     = useState(false)
   const [done,        setDone]        = useState(false)
-  const [got,         setGot]         = useState(0)
-  const [again,       setAgain]       = useState(0)
+  const [counts,      setCounts]      = useState({ again:0, hard:0, good:0, easy:0 })
+  const [showHint,    setShowHint]    = useState(true)
+
+  // Swipe state
+  const [dragX,      setDragX]      = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+  const [swipeFlash, setSwipeFlash] = useState(null)  // null | 'again' | 'good'
+  const dragStartX    = useRef(0)
+  const dragStartY    = useRef(0)
+  const isDragActive  = useRef(false)
+  const isHoriz       = useRef(false)
+  const didDrag       = useRef(false)
+
+  // Fade out swipe hint after 3s
+  useEffect(() => {
+    const t = setTimeout(() => setShowHint(false), 3000)
+    return () => clearTimeout(t)
+  }, [])
 
   const cards = useMemo(
     () => topicFilter === 'All' ? allQs : allQs.filter(q => q.topic === topicFilter),
@@ -33,13 +56,15 @@ export default function FlashcardsPage() {
     setCardIndex(0)
     setFlipped(false)
     setDone(false)
-    setGot(0)
-    setAgain(0)
+    setCounts({ again:0, hard:0, good:0, easy:0 })
+    setShowHint(false)
   }
 
-  function respond(knew) {
+  function respond(quality) {
+    const knew = quality >= 2
     scheduleReview(cards[cardIndex].id, knew)
-    if (knew) setGot(n => n + 1); else setAgain(n => n + 1)
+    const key = RATINGS[quality].key
+    setCounts(prev => ({ ...prev, [key]: prev[key] + 1 }))
     if (cardIndex + 1 >= cards.length) {
       setDone(true)
     } else {
@@ -52,8 +77,57 @@ export default function FlashcardsPage() {
     setCardIndex(0)
     setFlipped(false)
     setDone(false)
-    setGot(0)
-    setAgain(0)
+    setCounts({ again:0, hard:0, good:0, easy:0 })
+    setShowHint(false)
+  }
+
+  // ── Pointer / swipe handlers ──────────────────────────────────────────────
+  function onPointerDown(e) {
+    dragStartX.current = e.clientX
+    dragStartY.current = e.clientY
+    isDragActive.current = true
+    isHoriz.current = false
+    didDrag.current = false
+    setDragX(0)
+    setIsDragging(false)
+  }
+
+  function onPointerMove(e) {
+    if (!isDragActive.current) return
+    const dx = e.clientX - dragStartX.current
+    const dy = e.clientY - dragStartY.current
+    if (!isHoriz.current) {
+      if (Math.abs(dx) > Math.abs(dy) + 4) {
+        isHoriz.current = true
+        setIsDragging(true)
+        e.currentTarget.setPointerCapture(e.pointerId)
+      } else if (Math.abs(dy) > Math.abs(dx) + 4) {
+        isDragActive.current = false
+        return
+      }
+    }
+    if (isHoriz.current) {
+      didDrag.current = true
+      setDragX(dx)
+    }
+  }
+
+  function onPointerUp() {
+    if (!isDragActive.current) return
+    isDragActive.current = false
+    const finalDx = dragX
+    setIsDragging(false)
+    setDragX(0)
+    if (Math.abs(finalDx) > 80 && flipped) {
+      const goRight = finalDx > 0
+      setSwipeFlash(goRight ? 'good' : 'again')
+      setTimeout(() => {
+        setSwipeFlash(null)
+        respond(goRight ? 2 : 0)
+      }, 320)
+    } else if (!didDrag.current) {
+      setFlipped(f => !f)
+    }
   }
 
   if (!allQs.length) {
@@ -66,8 +140,8 @@ export default function FlashcardsPage() {
   }
 
   if (done) {
-    const total = got + again
-    const pct   = total > 0 ? Math.round((got / total) * 100) : 0
+    const total = counts.again + counts.hard + counts.good + counts.easy
+    const pct   = total > 0 ? Math.round(((counts.good + counts.easy) / total) * 100) : 0
     return (
       <Shell C={C}>
         <style>{css}</style>
@@ -77,17 +151,15 @@ export default function FlashcardsPage() {
           </div>
           <div style={{fontSize:22,fontWeight:900,color:C.navy,marginBottom:6}}>Deck complete!</div>
           <div style={{fontSize:13,color:C.muted,marginBottom:24}}>
-            {cards.length} card{cards.length !== 1 ? 's' : ''} reviewed
+            {cards.length} card{cards.length !== 1 ? 's' : ''} reviewed · {pct}% confident
           </div>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:24}}>
-            <div style={{background:'#10B98120',border:'1px solid #10B98140',borderRadius:14,padding:'14px 10px',textAlign:'center'}}>
-              <div style={{fontSize:28,fontWeight:900,color:'#10B981'}}>{got}</div>
-              <div style={{fontSize:11,color:C.muted,marginTop:2}}>Got it ✓</div>
-            </div>
-            <div style={{background:'#EF444420',border:'1px solid #EF444440',borderRadius:14,padding:'14px 10px',textAlign:'center'}}>
-              <div style={{fontSize:28,fontWeight:900,color:'#EF4444'}}>{again}</div>
-              <div style={{fontSize:11,color:C.muted,marginTop:2}}>Again ✗</div>
-            </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:8,marginBottom:24}}>
+            {RATINGS.map(r => (
+              <div key={r.key} style={{background:r.bg,border:`1px solid ${r.border}`,borderRadius:12,padding:'12px 6px',textAlign:'center'}}>
+                <div style={{fontSize:22,fontWeight:900,color:r.color}}>{counts[r.key]}</div>
+                <div style={{fontSize:10,color:C.muted,marginTop:2}}>{r.label}</div>
+              </div>
+            ))}
           </div>
           <button onClick={restart} style={{...primaryBtn(C, dark),width:'100%',marginBottom:10}}>
             Restart deck
@@ -102,6 +174,8 @@ export default function FlashcardsPage() {
 
   const current     = cards[cardIndex]
   const progressPct = (cardIndex / cards.length) * 100
+  const dragAngle   = isDragging ? Math.min(Math.max(dragX * 0.035, -12), 12) : 0
+  const dragOpacity = isDragging ? Math.min(Math.abs(dragX) / 100, 1) : 0
 
   return (
     <Shell C={C}>
@@ -140,100 +214,174 @@ export default function FlashcardsPage() {
         ))}
       </div>
 
-      {/* Score tally */}
-      <div style={{display:'flex',gap:8,marginBottom:16}}>
-        <div style={{flex:1,textAlign:'center',background:'#10B98115',border:'1px solid #10B98130',borderRadius:10,padding:'6px'}}>
-          <span style={{fontWeight:800,color:'#10B981',fontSize:14}}>{got}</span>
-          <span style={{fontSize:10,color:C.muted,marginLeft:4}}>Got it</span>
-        </div>
-        <div style={{flex:1,textAlign:'center',background:'#EF444415',border:'1px solid #EF444430',borderRadius:10,padding:'6px'}}>
-          <span style={{fontWeight:800,color:'#EF4444',fontSize:14}}>{again}</span>
-          <span style={{fontSize:10,color:C.muted,marginLeft:4}}>Again</span>
-        </div>
+      {/* 4-level score tally */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,marginBottom:16}}>
+        {RATINGS.map(r => (
+          <div key={r.key} style={{textAlign:'center',background:r.bg,border:`1px solid ${r.border}`,borderRadius:8,padding:'5px 4px'}}>
+            <span style={{fontWeight:800,color:r.color,fontSize:13}}>{counts[r.key]}</span>
+            <span style={{fontSize:9,color:C.muted,marginLeft:3,display:'block'}}>{r.label}</span>
+          </div>
+        ))}
       </div>
 
-      {/* Flip card */}
-      <div
-        style={{perspective:'1200px',marginBottom:16,cursor:'pointer'}}
-        onClick={() => setFlipped(f => !f)}
-      >
-        <div style={{
-          position:'relative', height:220,
-          transformStyle:'preserve-3d',
-          transition:'transform 0.45s ease',
-          transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-        }}>
-          {/* Front */}
-          <div style={{
-            position:'absolute',inset:0,
-            backfaceVisibility:'hidden',WebkitBackfaceVisibility:'hidden',
-            background:C.card, border:`1.5px solid ${C.border}`,
-            borderRadius:20, padding:'20px',
-            display:'flex', flexDirection:'column', justifyContent:'space-between',
-          }}>
-            <div>
-              <div style={{fontSize:9,fontWeight:800,color:C.muted,letterSpacing:'0.1em',marginBottom:10}}>
-                QUESTION · {current.topic}
-              </div>
-              <p style={{fontSize:15,fontWeight:700,color:C.navy,lineHeight:1.65,margin:0}}>
-                {current.q}
-              </p>
-            </div>
-            <div style={{textAlign:'center',fontSize:11,color:C.muted,marginTop:10,opacity:0.6}}>
-              Tap to reveal answer
-            </div>
-          </div>
+      {/* Card stack area */}
+      <div style={{position:'relative',height:240,marginBottom:flipped ? 20 : 36,userSelect:'none'}}>
+        {/* Ghost cards (deck stack) */}
+        {[2,1].map(n => (
+          <div
+            key={n}
+            style={{
+              position:'absolute', inset:0,
+              background: C.card,
+              border:`1.5px solid ${C.border}`,
+              borderRadius:20,
+              transform:`translateY(${n*8}px) scale(${1 - n*0.04})`,
+              opacity: 1 - n*0.38,
+              zIndex: 3 - n,
+            }}
+          />
+        ))}
 
-          {/* Back */}
-          <div style={{
-            position:'absolute',inset:0,
-            backfaceVisibility:'hidden',WebkitBackfaceVisibility:'hidden',
-            transform:'rotateY(180deg)',
-            background: dark ? '#261E4E' : C.primary+'12',
-            border:`1.5px solid ${C.primary}50`,
-            borderRadius:20, padding:'20px',
-            display:'flex', flexDirection:'column', justifyContent:'space-between',
-          }}>
-            <div>
-              <div style={{fontSize:9,fontWeight:800,color:C.primary,letterSpacing:'0.1em',marginBottom:10}}>
-                ANSWER
-              </div>
-              <p style={{fontSize:16,fontWeight:800,color:C.navy,lineHeight:1.6,margin:0}}>
-                {current.opts[current.ans]}
-              </p>
-              {current.hint && (
-                <div style={{
-                  marginTop:14, background:(dark?'#C4B5FD':'#FCD34D')+'25',
-                  border:`1px solid ${dark?'#C4B5FD':'#FCD34D'}60`,
-                  borderRadius:10, padding:'9px 12px',
-                  fontSize:12, color:dark?'#DDD6FE':'#92400E', fontWeight:600, lineHeight:1.5,
-                }}>
-                  💡 {current.hint}
+        {/* Swipe + flip card */}
+        <div
+          style={{
+            position:'absolute', inset:0, zIndex:5,
+            transform:`translateX(${isDragging ? dragX : 0}px) rotate(${dragAngle}deg)`,
+            transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)',
+            touchAction:'pan-y',
+          }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+        >
+          {/* Swipe colour overlay while dragging */}
+          {isDragging && Math.abs(dragX) > 15 && (
+            <div style={{
+              position:'absolute',inset:0,borderRadius:20,zIndex:10,pointerEvents:'none',
+              background: dragX > 0 ? `rgba(16,185,129,${dragOpacity*0.35})` : `rgba(239,68,68,${dragOpacity*0.35})`,
+              display:'flex',alignItems:'center',justifyContent:'center',
+              fontSize:40,opacity:dragOpacity,transition:'opacity 0.05s',
+            }}>
+              {dragX > 0 ? '✓' : '✗'}
+            </div>
+          )}
+
+          {/* Swipe result flash */}
+          {swipeFlash && (
+            <div style={{
+              position:'absolute',inset:0,borderRadius:20,zIndex:11,pointerEvents:'none',
+              background: swipeFlash === 'good' ? 'rgba(16,185,129,0.45)' : 'rgba(239,68,68,0.45)',
+              display:'flex',alignItems:'center',justifyContent:'center',
+              fontSize:48,color:'white',fontWeight:900,
+              animation:'swipeFlash 0.32s ease forwards',
+            }}>
+              {swipeFlash === 'good' ? '✓' : '✗'}
+            </div>
+          )}
+
+          {/* 3D flip inner */}
+          <div style={{perspective:'1200px',height:'100%'}}>
+            <div style={{
+              height:'100%',
+              transformStyle:'preserve-3d',
+              transition:'transform 0.45s ease',
+              transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+            }}>
+              {/* Front face */}
+              <div style={{
+                position:'absolute',inset:0,
+                backfaceVisibility:'hidden',WebkitBackfaceVisibility:'hidden',
+                background:C.card, border:`1.5px solid ${C.border}`,
+                borderRadius:20, padding:'20px',
+                display:'flex',flexDirection:'column',justifyContent:'space-between',
+              }}>
+                <div>
+                  <div style={{fontSize:9,fontWeight:800,color:C.muted,letterSpacing:'0.1em',marginBottom:10}}>
+                    QUESTION · {current.topic}
+                  </div>
+                  <p style={{fontSize:15,fontWeight:700,color:C.navy,lineHeight:1.65,margin:0}}>
+                    {current.q}
+                  </p>
                 </div>
-              )}
-            </div>
-            <div style={{textAlign:'center',fontSize:11,color:C.muted,opacity:0.5}}>
-              Tap to flip back
+                <div style={{textAlign:'center',fontSize:11,color:C.muted,marginTop:10,opacity:0.6}}>
+                  Tap to reveal answer
+                </div>
+              </div>
+
+              {/* Back face */}
+              <div style={{
+                position:'absolute',inset:0,
+                backfaceVisibility:'hidden',WebkitBackfaceVisibility:'hidden',
+                transform:'rotateY(180deg)',
+                background: dark ? '#261E4E' : C.primary+'12',
+                border:`1.5px solid ${C.primary}50`,
+                borderRadius:20, padding:'20px',
+                display:'flex',flexDirection:'column',justifyContent:'space-between',
+              }}>
+                <div>
+                  <div style={{fontSize:9,fontWeight:800,color:C.primary,letterSpacing:'0.1em',marginBottom:10}}>
+                    ANSWER
+                  </div>
+                  <p style={{fontSize:16,fontWeight:800,color:C.navy,lineHeight:1.6,margin:0}}>
+                    {current.opts[current.ans]}
+                  </p>
+                  {current.hint && (
+                    <div style={{
+                      marginTop:14,background:(dark?'#C4B5FD':'#FCD34D')+'25',
+                      border:`1px solid ${dark?'#C4B5FD':'#FCD34D'}60`,
+                      borderRadius:10,padding:'9px 12px',
+                      fontSize:12,color:dark?'#DDD6FE':'#92400E',fontWeight:600,lineHeight:1.5,
+                    }}>
+                      💡 {current.hint}
+                    </div>
+                  )}
+                </div>
+                <div style={{textAlign:'center',fontSize:11,color:C.muted,opacity:0.5}}>
+                  Tap to flip back · swipe to rate
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Swipe hint — shown on first card, fades after 3s */}
+        {showHint && cardIndex === 0 && (
+          <div style={{
+            position:'absolute',bottom:-28,left:0,right:0,
+            display:'flex',justifyContent:'space-between',
+            fontSize:10,fontWeight:700,letterSpacing:'0.05em',
+            animation:'hintFade 1s ease 2s forwards',
+            pointerEvents:'none',
+          }}>
+            <span style={{color:'#EF4444'}}>← Again</span>
+            <span style={{color:C.muted,opacity:0.6}}>swipe to rate</span>
+            <span style={{color:'#10B981'}}>Good →</span>
+          </div>
+        )}
       </div>
 
-      {/* Response buttons */}
+      {/* 4-level response buttons */}
       {flipped ? (
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-          <button
-            onClick={e => { e.stopPropagation(); respond(false) }}
-            style={{background:'#EF444418',border:'2px solid #EF444450',borderRadius:14,padding:'14px',fontSize:14,fontWeight:800,color:'#EF4444',cursor:'pointer',fontFamily:'Inter,sans-serif'}}
-          >
-            Again ✗
-          </button>
-          <button
-            onClick={e => { e.stopPropagation(); respond(true) }}
-            style={{background:'#10B98118',border:'2px solid #10B98150',borderRadius:14,padding:'14px',fontSize:14,fontWeight:800,color:'#10B981',cursor:'pointer',fontFamily:'Inter,sans-serif'}}
-          >
-            Got it ✓
-          </button>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:8}}>
+          {RATINGS.map(r => (
+            <button
+              key={r.key}
+              onClick={e => { e.stopPropagation(); respond(r.quality) }}
+              style={{
+                background:r.bg, border:`2px solid ${r.border}`,
+                borderRadius:12, padding:'12px 4px',
+                fontSize:11, fontWeight:800, color:r.color,
+                cursor:'pointer', fontFamily:'Inter,sans-serif',
+                display:'flex',flexDirection:'column',alignItems:'center',gap:3,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.filter='brightness(1.15)' }}
+              onMouseLeave={e => { e.currentTarget.style.filter='none' }}
+            >
+              <span style={{fontSize:16}}>{r.emoji}</span>
+              {r.label}
+            </button>
+          ))}
         </div>
       ) : (
         <div style={{textAlign:'center',fontSize:12,color:C.muted,padding:'6px 0'}}>
@@ -262,4 +410,6 @@ function primaryBtn(C, dark) {
 
 const css = `
   @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes swipeFlash { from{opacity:1} to{opacity:0;transform:scale(1.05)} }
+  @keyframes hintFade { from{opacity:1} to{opacity:0} }
 `

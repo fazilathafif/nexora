@@ -12,6 +12,7 @@ import { useTimer }                    from '../hooks/useTimer.js'
 import { scheduleReview, sortByDue, getDueIds } from '../lib/srs.js'
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
 import { getColors, Shell, Badge }     from './HomePage.jsx'
+import { getRandomBreak }              from '../data/breaks.js'
 
 function CopyButton({ text, dark }) {
   const [copied, setCopied] = useState(false)
@@ -60,6 +61,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
   const [aiOpen,        setAiOpen]        = useState(false)
   const [aiElaboration, setAiElaboration] = useState(null)   // null | 'loading' | string
   const aiPanelRef                        = useRef(null)
+  const [breakCard,     setBreakCard]     = useState(null)  // null | { type, emoji, text, nextIndex }
 
   // Stable refs so timer callback never captures stale values
   const chosenRef   = useRef(null)
@@ -78,6 +80,14 @@ export default function QuizPage({ user, profile, refreshProfile }) {
       aiPanelRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     }
   }, [aiOpen, aiText])
+
+  // Auto-dismiss brain break after 3.5s
+  useEffect(() => {
+    if (!breakCard) return
+    const saved = breakCard
+    const t = setTimeout(() => dismissBreak(saved), 3500)
+    return () => clearTimeout(t)
+  }, [breakCard]) // eslint-disable-line
 
   const currentQ = questions[qIndex]
   const total    = questions.length
@@ -130,15 +140,27 @@ export default function QuizPage({ user, profile, refreshProfile }) {
 
   async function handleNext() {
     if (qIndex + 1 < total) {
-      setQIndex(q => q + 1)
-      setChosen(null)
-      setHintShown(false)
+      const nextIndex = qIndex + 1
+      if (nextIndex % 5 === 0) {
+        setBreakCard({ ...getRandomBreak(), nextIndex })
+      } else {
+        setQIndex(nextIndex)
+        setChosen(null)
+        setHintShown(false)
+      }
     } else {
       const xpEarned = await finishQuizSession(score, stream)
       navigate(`/${stream}/result`, {
         state: { answers, score, total, subject, xpEarned: xpEarned ?? score * (dark ? 15 : 10) },
       })
     }
+  }
+
+  function dismissBreak(card) {
+    setBreakCard(null)
+    setQIndex(card.nextIndex)
+    setChosen(null)
+    setHintShown(false)
   }
 
   async function handleAiExplain() {
@@ -418,6 +440,46 @@ export default function QuizPage({ user, profile, refreshProfile }) {
         >
           {qIndex + 1 < total ? 'Next →' : 'See Results 🎉'}
         </button>
+      )}
+
+      {/* Brain Break overlay */}
+      {breakCard && (
+        <div style={{
+          position:'fixed', inset:0, zIndex:200,
+          background: dark ? 'rgba(10,8,20,0.97)' : 'rgba(248,250,252,0.97)',
+          display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+          padding:'32px 24px',
+        }}>
+          <style>{`
+            @keyframes countdownShrink { from{width:100%} to{width:0%} }
+            @keyframes breakFadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+          `}</style>
+          <div style={{maxWidth:320,width:'100%',textAlign:'center',animation:'breakFadeIn 0.4s ease'}}>
+            <div style={{fontSize:11,fontWeight:800,color:C.muted,letterSpacing:'0.12em',marginBottom:16,textTransform:'uppercase'}}>
+              {breakCard.type === 'health' ? '🌿 Health Tip' : breakCard.type === 'joke' ? '😄 Brain Break' : '⚡ Motivation'}
+            </div>
+            <div style={{fontSize:56,marginBottom:20}}>{breakCard.emoji}</div>
+            <p style={{fontSize:16,fontWeight:600,color:C.navy,lineHeight:1.75,margin:'0 0 28px'}}>
+              {breakCard.text}
+            </p>
+            <div style={{background:C.border,borderRadius:8,height:4,marginBottom:24,overflow:'hidden'}}>
+              <div style={{
+                height:'100%', background:C.primary, borderRadius:8,
+                animation:'countdownShrink 3.5s linear forwards',
+              }} />
+            </div>
+            <button
+              onClick={() => dismissBreak(breakCard)}
+              style={{
+                background:C.primary, color:'white', border:'none', borderRadius:14,
+                padding:'13px 32px', fontSize:14, fontWeight:800, cursor:'pointer',
+                fontFamily:'Inter,sans-serif',
+              }}
+            >
+              Continue →
+            </button>
+          </div>
+        </div>
       )}
     </Shell>
   )
