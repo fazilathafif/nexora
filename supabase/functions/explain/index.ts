@@ -1,20 +1,6 @@
-/**
- * Supabase Edge Function: explain
- * --------------------------------
- * Proxies AI explanation requests to Anthropic Claude.
- * The API key never touches the frontend.
- *
- * Deploy: supabase functions deploy explain
- * Secrets: supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
- *
- * Note: IDE type errors on deno.land imports and Deno global are expected —
- * this file runs on the Deno runtime (Supabase), not Node.js.
- */
-
-// @ts-ignore — Deno-only import, not resolvable by VS Code without Deno extension
+// @ts-ignore
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-// @ts-ignore — Deno global available at runtime
+// @ts-ignore
 declare const Deno: { env: { get(key: string): string | undefined } };
 
 const CORS = {
@@ -23,9 +9,7 @@ const CORS = {
 };
 
 serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: CORS });
-  }
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
   try {
     const { question, chosenIdx, stream } = await req.json();
@@ -37,70 +21,30 @@ serve(async (req: Request) => {
       );
     }
 
-    const level = stream === "gcse"
-      ? "Year 9–10 GCSE student aged 13–15"
-      : "Year 12 A-Level student aged 16–17 preparing for competitive university entry (UCAT, LNAT, TMUA, ESAT, TSA or STEP)";
+    const level = stream === "gcse" ? "GCSE student (age 13–15)" : "A-Level student (age 16–17, UK competitive entry)";
 
-    const systemPrompt = `You are an expert AI tutor for a student learning application.
-Your purpose is to TEACH and EXPLAIN concepts clearly to students instead of copying text from source material.
+    const systemPrompt = `You are a concise AI tutor for a ${level}. Use markdown. Structure every reply with exactly these sections — no more:
 
-IMPORTANT BEHAVIOR RULES:
-- NEVER copy large passages from source material.
-- NEVER answer like a search engine.
-- ALWAYS synthesize information into a fresh explanation.
-- ALWAYS explain concepts in a natural, human teaching style.
-- Use simple and student-friendly language.
-- Keep explanations concise but meaningful.
-- Avoid repetitive wording.
-- Preserve technical accuracy.
+## Why this answer?
+2–3 sentences: why the correct answer is right and why the student's choice was wrong.
 
-RESPONSE FORMAT RULES:
-Always structure answers using clean markdown. Use this format:
+## Key concept
+3 bullet points maximum covering the core idea.
 
-# Topic Title
-## Quick Summary
-A short 2–4 sentence explanation of the concept.
-## Detailed Explanation
-Explain the topic clearly in simple educational language.
-## Key Points
-- Important point 1
-- Important point 2
-- Important point 3
-## Example
-Provide a practical or exam-oriented example whenever possible.
-## Important Formula / Definition
-Include formulas, equations, or definitions if relevant.
-## Exam Tips / Common Mistakes
-Mention common student mistakes, shortcuts, or memory tricks if applicable.
+## Exam tip
+One sentence: a memory trick, common mistake to avoid, or shortcut.
 
-ADDITIONAL RULES:
-- Use bullet points frequently.
-- Use short paragraphs.
-- Use headings and subheadings.
-- Explain difficult terminology simply.
-- Prefer clarity over complexity.
-- Keep answers engaging and readable on mobile screens.
+Rules: stay under 180 words total. Be direct. No waffle. End with one short encouraging sentence.`;
 
-FOR SCIENCE/MATH: Explain step-by-step. Show formulas separately. Explain why the answer works.
-FOR THEORY SUBJECTS: Summarize concepts in easy language. Use analogies where helpful.
-FOR EXAM PREPARATION: Focus on high-yield concepts. Provide memory aids if possible.
-
-MOST IMPORTANT RULE: Your job is to TRANSFORM knowledge into high-quality educational explanations for a ${level}.`;
-
-    const userPrompt = `A student got this question wrong and needs a clear explanation.
-
-Question: ${question.q}
-Topic: ${question.topic}
+    const userPrompt = `Question: ${question.q}
 Correct answer: ${question.opts[question.ans]}
 Student chose: ${question.opts[chosenIdx]}
-Hint: ${question.hint}
-
-Explain WHY the correct answer is right, why the student's choice was wrong, and teach the underlying concept step by step. End with one short encouraging sentence.`;
+Hint: ${question.hint}`;
 
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!apiKey) throw new Error("ANTHROPIC_API_KEY not set");
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -109,27 +53,53 @@ Explain WHY the correct answer is right, why the student's choice was wrong, and
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 600,
+        max_tokens: 350,
+        stream: true,
         system: systemPrompt,
         messages: [{ role: "user", content: userPrompt }],
       }),
     });
 
-    if (!response.ok) throw new Error(`Anthropic API error: ${response.status}`);
+    if (!anthropicRes.ok) throw new Error(`Anthropic error: ${anthropicRes.status}`);
 
-    const data = await response.json();
-    const explanation = data.content?.[0]?.text ?? "Review the hint carefully and try again — you've got this!";
+    // Pipe Anthropic SSE stream → plain-text chunks for the client
+    const { readable, writable } = new TransformStream();
+    const writer = writable.getWriter();
+    const encoder = new TextEncoder();
 
-    return new Response(
-      JSON.stringify({ explanation }),
-      { headers: { ...CORS, "Content-Type": "application/json" } }
-    );
+    (async () => {
+      const reader = anthropicRes.body!.getReader();
+      const decoder = new TextDecoder();
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          for (const line of decoder.decode(value).split("\n")) {
+            if (!line.startsWith("data: ")) continue;
+            const data = line.slice(6).trim();
+            if (!data || data === "[DONE]") continue;
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.type === "content_block_delta" && parsed.delta?.text) {
+                await writer.write(encoder.encode(parsed.delta.text));
+              }
+            } catch { /* skip malformed SSE lines */ }
+          }
+        }
+      } finally {
+        await writer.close();
+      }
+    })();
+
+    return new Response(readable, {
+      headers: { ...CORS, "Content-Type": "text/plain; charset=utf-8" },
+    });
 
   } catch (err) {
     console.error("explain function error:", err);
     return new Response(
-      JSON.stringify({ explanation: "Great attempt! Work through the hint step by step — the method will click with practice. 💪" }),
-      { headers: { ...CORS, "Content-Type": "application/json" } }
+      JSON.stringify({ error: String(err) }),
+      { status: 500, headers: { ...CORS, "Content-Type": "application/json" } }
     );
   }
 });

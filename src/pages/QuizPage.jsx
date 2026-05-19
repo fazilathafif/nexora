@@ -149,7 +149,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
     const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53b3V2cmF4cXV4ZGpnZnhsanVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwOTQ1NzgsImV4cCI6MjA5NDY3MDU3OH0.v3f8GYT2_A7LfuKZZTeGMn2Lwy2A4AKucw6p7HyrYMg'
     try {
       const controller = new AbortController()
-      const timer = setTimeout(() => controller.abort(), 15000)
+      const timer = setTimeout(() => controller.abort(), 20000)
       const res = await fetch(FN_URL, {
         method: 'POST',
         signal: controller.signal,
@@ -162,8 +162,19 @@ export default function QuizPage({ user, profile, refreshProfile }) {
       })
       clearTimeout(timer)
       if (!res.ok) { setAiText(fallback); return }
-      const data = await res.json()
-      setAiText(data?.explanation ?? fallback)
+
+      // Stream text chunks — user sees text appear immediately
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let accumulated = ''
+      setAiText('')
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        accumulated += decoder.decode(value, { stream: true })
+        setAiText(accumulated)
+      }
+      if (!accumulated) setAiText(fallback)
     } catch {
       setAiText(fallback)
     }
@@ -298,7 +309,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
             {aiText === 'loading' ? 'Thinking…' : aiOpen ? 'Hide AI Explanation' : 'Explain with AI'}
           </button>
 
-          {aiOpen && aiText && aiText !== 'loading' && (
+          {aiOpen && aiText !== null && aiText !== 'loading' && aiText !== '' && (
             <div ref={aiPanelRef} style={{
               marginTop:8, background:dark?'#181432':'#F8FAFF',
               border:`1px solid ${dark?'#7C3AED':'#6366F1'}30`,
@@ -332,7 +343,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
               </div>
             </div>
           )}
-          {aiOpen && aiText === 'loading' && (
+          {aiOpen && (aiText === 'loading' || aiText === '') && (
             <div style={{marginTop:8,background:dark?'#181432':'#F8FAFF',border:`1px solid ${dark?'#7C3AED':'#6366F1'}30`,borderRadius:12,padding:'16px',textAlign:'center'}}>
               <div style={{display:'inline-block',width:20,height:20,border:`2px solid ${dark?'#C4B5FD':'#6366F1'}`,borderTopColor:'transparent',borderRadius:'50%',animation:'spin 0.8s linear infinite'}} />
             </div>
