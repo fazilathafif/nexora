@@ -125,6 +125,8 @@ export default function QuizPage({ user, profile, refreshProfile }) {
     const FN_URL = 'https://nwouvraxquxdjgfxljui.supabase.co/functions/v1/explain'
     const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ?? 'sb_publishable_1ApxMrPiF0jv_SEnVUChNw_NhJhMg2j'
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token ?? ANON_KEY
       const controller = new AbortController()
       const timer = setTimeout(() => controller.abort(), 20000)
       const res = await fetch(FN_URL, {
@@ -133,7 +135,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
         headers: {
           'Content-Type': 'application/json',
           'apikey': ANON_KEY,
-          'Authorization': `Bearer ${ANON_KEY}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ question: currentQ, chosenIdx: chosen === -1 ? currentQ.ans : chosen, stream }),
       })
