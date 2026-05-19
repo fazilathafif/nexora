@@ -6,6 +6,17 @@
  * difficulty: 1 (easy) | 2 (medium) | 3 (hard)
  */
 
+import { MATHS_BATCH }   from './batch_maths.js'
+import { SCIENCE_BATCH } from './batch_science.js'
+import { ENGLISH_BATCH } from './batch_english.js'
+import { VERBAL_BATCH }  from './batch_verbal.js'
+import { UCAT_BATCH }    from './batch_ucat.js'
+import { LNAT_BATCH }    from './batch_lnat.js'
+import { TMUA_BATCH }    from './batch_tmua.js'
+import { ESAT_BATCH }    from './batch_esat.js'
+import { TSA_BATCH }     from './batch_tsa.js'
+import { STEP_BATCH }    from './batch_step.js'
+
 // ── GCSE STREAM ───────────────────────────────────────────────────────────────
 
 export const GCSE = {
@@ -81,6 +92,7 @@ export const GCSE = {
     { id:'maths_066', q:'A histogram bar for 20≤x<30 has frequency density 2.5 and width 10. Frequency = ?', opts:['4','25','250','12.5'], ans:1, topic:'Statistics', hint:'Frequency = frequency density × class width', difficulty:2, tags:['statistics','histograms'] },
     { id:'maths_067', q:'Divide (x³ − 2x² − 5x + 6) by (x − 3).', opts:['x² + x − 2','x² − x − 2','x² + 5x − 2','x² + x + 2'], ans:0, topic:'Algebra', hint:'Use algebraic long division or the factor theorem with x=3 first', difficulty:3, tags:['algebra','polynomial'] },
     { id:'maths_068', q:'Two fair dice rolled. P(sum is prime) = ?', opts:['5/12','7/18','15/36','13/36'], ans:2, topic:'Probability', hint:'Primes: 2,3,5,7,11. Count pairs summing to each. Total 36 outcomes.', difficulty:3, tags:['probability'] },
+    ...MATHS_BATCH,
   ],
 
   english: [
@@ -150,6 +162,7 @@ export const GCSE = {
     { id:'eng_062', q:"In literary analysis, using 'crimson' rather than 'red' is more effective because:", opts:["It is longer","It carries stronger connotations — passion, blood, danger — controlling emotional register","It rhymes more easily","It is more common in formal writing"], ans:1, topic:'Language Analysis', hint:'Precise word choices control connotations; synonyms are not interchangeable in effect', difficulty:1, tags:['language-analysis','vocabulary'] },
     { id:'eng_063', q:"'The silence screamed at him.' This uses which combination of techniques?", opts:['Onomatopoeia only','Personification and oxymoron','Metaphor and personification','Alliteration and simile'], ans:2, topic:'Literary Devices', hint:'Silence performing an action (personification) and being described as screaming (metaphor)', difficulty:3, tags:['literary-devices'] },
     { id:'eng_064', q:"Commenting on a writer's language choice means:", opts:['Counting how many words are used','Identifying a specific word or phrase AND explaining its effect on the reader','Commenting on sentence length only','Noting whether the text is fiction'], ans:1, topic:'Writing Craft', hint:'Language analysis = identify the word, name the technique, explain the effect', difficulty:1, tags:['analysis','writing'] },
+    ...ENGLISH_BATCH,
   ],
 
   science: [
@@ -217,6 +230,7 @@ export const GCSE = {
     { id:'sci_062', q:'Which electromagnetic wave has the highest frequency?', opts:['Microwaves','Visible light','Ultraviolet','Gamma rays'], ans:3, topic:'Physics – EM Spectrum', hint:'Gamma rays have the highest frequency (and shortest wavelength) in the EM spectrum', difficulty:1, tags:['physics','EM-spectrum','gamma'] },
     { id:'sci_063', q:'A motor has an input power of 200 W and a useful output power of 160 W. Its efficiency is:', opts:['40%','60%','80%','120%'], ans:2, topic:'Physics – Energy', hint:'Efficiency = (useful output ÷ total input) × 100 = (160 ÷ 200) × 100 = 80%', difficulty:1, tags:['physics','energy','efficiency'] },
     { id:'sci_064', q:'Newton\'s Third Law states that when object A exerts a force on object B:', opts:['Object B does not move if it is heavier','Object B exerts an equal and opposite force on A','Object B exerts a smaller force on A','A always accelerates more than B'], ans:1, topic:'Physics – Forces', hint:'Action and reaction: equal in magnitude, opposite in direction, acting on DIFFERENT objects', difficulty:2, tags:['physics','forces','newtons-third-law'] },
+    ...SCIENCE_BATCH,
   ],
 
   verbal: [
@@ -282,6 +296,7 @@ export const GCSE = {
     { id:'vrb_060', q:'An investor puts £2000 in an account with 5% simple interest per year. After 3 years, total interest earned is:', opts:['£100','£200','£300','£315.25'], ans:2, topic:'Numerical Reasoning', hint:'Simple interest: I = P × r × t = 2000 × 0.05 × 3 = £300', difficulty:2, tags:['numerical','interest','finance'] },
     { id:'vrb_061', q:'Odd one out: Simile · Metaphor · Alliteration · Synonym', opts:['Simile','Metaphor','Alliteration','Synonym'], ans:3, topic:'Classification', hint:'Three are figures of speech / literary devices; a synonym is a vocabulary concept', difficulty:2, tags:['classification','vocabulary','literary-devices'] },
     { id:'vrb_062', q:'If the mean of five numbers is 14, and four of the numbers are 10, 12, 16, and 18, what is the fifth number?', opts:['12','14','18','14'], ans:1, topic:'Numerical Reasoning', hint:'Total = 14 × 5 = 70. Sum of four numbers = 10+12+16+18 = 56. Fifth = 70–56 = 14', difficulty:2, tags:['numerical','mean','statistics'] },
+    ...VERBAL_BATCH,
   ],
 }
 
@@ -338,6 +353,7 @@ export const ALEVEL = {
     { id:'ucat_042', q:'[Decision Making] You receive a patient\'s HIV test result (positive) by phone while the patient is not present. The correct next step is:', opts:['Leave a voicemail with the result','Tell the next of kin','Arrange for the patient to come in — results like this must be given in person','Post the result letter'], ans:2, topic:'Decision Making', hint:'Sensitive results should be delivered face-to-face with appropriate support available', difficulty:2, tags:['ucat-dm','communication','sensitive-results'] },
     { id:'ucat_043', q:'[Abstract Reasoning] A series of shapes: circle, triangle, square, pentagon, hexagon, ___. What comes next?', opts:['Heptagon','Octagon','Circle','Triangle'], ans:0, topic:'Abstract Reasoning', hint:'The sequence adds one side each time: 0→3→4→5→6→7 sides. Next = heptagon (7 sides)', difficulty:1, tags:['ucat-ar','sequences'] },
     { id:'ucat_044', q:'[Situational Judgement] A patient gives you a gift of cash (£100) after a successful procedure. The most appropriate action is:', opts:['Accept it gratefully','Decline politely, explaining GMC guidance on gifts','Accept and donate to charity','Ask a colleague to accept on your behalf'], ans:1, topic:'Situational Judgement', hint:'GMC guidelines: financial gifts of significant value from patients should be declined to avoid any perception of conflict of interest', difficulty:2, tags:['ucat-sjt','gifts','professional-standards'] },
+    ...UCAT_BATCH,
   ],
 
   lnat: [
@@ -385,6 +401,7 @@ export const ALEVEL = {
     { id:'lnat_040', q:"Which is the BEST description of a 'false dilemma' fallacy?", opts:["Assuming an event will cause a chain of bad outcomes","Presenting only two options when more exist","Attacking the person rather than the argument","Drawing a conclusion from a small sample"], ans:1, topic:'Logical Fallacies', hint:'False dilemma (either/or fallacy): incorrectly presents a situation as having only two mutually exclusive options', difficulty:1, tags:['lnat','fallacies','false-dilemma'] },
     { id:'lnat_041', q:"'If something is legal, it is morally permissible.' Which scenario BEST challenges this claim?", opts:["Speeding on an empty road","Legal tax avoidance schemes that deprive public services of funds","Parking on yellow lines","Using cannabis in the Netherlands"], ans:1, topic:'Law and Morality', hint:'Something can be legal yet widely considered morally questionable — large-scale tax avoidance is the clearest example among the options', difficulty:2, tags:['lnat','morality','law'] },
     { id:'lnat_042', q:"When interpreting a statute using the 'golden rule', a court will:", opts:["Always apply the literal meaning","Apply the literal meaning UNLESS it leads to an absurdity, in which case modify it slightly","Examine parliamentary debates to find intent","Apply the broadest purposive meaning"], ans:1, topic:'Legal Interpretation', hint:"Golden rule: literal first, but modify to avoid absurd or repugnant results — a narrow modification, not purposive re-interpretation", difficulty:2, tags:['lnat','golden-rule','statutory-interpretation'] },
+    ...LNAT_BATCH,
   ],
 
   tmua: [
@@ -432,6 +449,7 @@ export const ALEVEL = {
     { id:'tmua_042', q:'Integration by parts: ∫x·eˣ dx =', opts:['eˣ(x − 1) + C','xeˣ + eˣ + C','xeˣ − eˣ + C','eˣ(x + 1) + C'], ans:2, topic:'Calculus – Integration by Parts', hint:'∫u dv = uv − ∫v du. Let u = x, dv = eˣ dx → du = dx, v = eˣ → xeˣ − ∫eˣ dx = xeˣ − eˣ', difficulty:2, tags:['tmua','calculus','integration-by-parts'] },
     { id:'tmua_043', q:'How many ways can 4 people be chosen from 9 to form a committee?', opts:['126','504','3024','36'], ans:0, topic:'Combinatorics', hint:'⁹C₄ = 9!/(4!5!) = (9×8×7×6)/(4×3×2×1) = 126', difficulty:2, tags:['tmua','combinatorics','combinations'] },
     { id:'tmua_044', q:'The parametric equations x = t², y = 2t define a curve. The gradient dy/dx at t = 3 is:', opts:['1/3','1/2','3','1/6'], ans:0, topic:'Calculus – Parametric', hint:'dy/dx = (dy/dt)÷(dx/dt) = 2/(2t) = 1/t. At t=3: dy/dx = 1/3', difficulty:2, tags:['tmua','calculus','parametric'] },
+    ...TMUA_BATCH,
   ],
 
   esat: [
@@ -477,6 +495,7 @@ export const ALEVEL = {
     { id:'esat_040', q:'In osmosis, water moves from a solution with lower solute concentration to higher. The driving force is:', opts:['Active transport ATPases','The water potential gradient (from higher to lower water potential)','Temperature difference','Hydrostatic pressure only'], ans:1, topic:'Biology – Osmosis', hint:'Water potential = solute potential + pressure potential. Water moves from higher (less negative) to lower (more negative) water potential', difficulty:2, tags:['esat','biology','osmosis','water-potential'] },
     { id:'esat_041', q:'A standing wave on a string of length L fixed at both ends can have wavelengths:', opts:['L only','2L, L, 2L/3, L/2, ...','4L, 4L/3, 4L/5, ...','Any wavelength'], ans:1, topic:'Physics – Waves', hint:'Fixed at both ends → nodes at both ends. λₙ = 2L/n for n = 1,2,3... Fundamental (n=1) = 2L', difficulty:3, tags:['esat','physics','standing-waves'] },
     { id:'esat_042', q:'In a titration, 25 mL of NaOH of unknown concentration is neutralised by 20 mL of 0.1 mol/L HCl. Concentration of NaOH:', opts:['0.08 mol/L','0.125 mol/L','0.2 mol/L','0.5 mol/L'], ans:0, topic:'Chemistry – Titration', hint:'moles HCl = 0.020 × 0.1 = 0.002 mol = moles NaOH. [NaOH] = 0.002/0.025 = 0.08 mol/L', difficulty:2, tags:['esat','chemistry','titration','moles'] },
+    ...ESAT_BATCH,
   ],
 
   tsa: [
@@ -522,6 +541,7 @@ export const ALEVEL = {
     { id:'tsa_040', q:'A cyclist travels 12 km at 15 km/h, then 8 km at 10 km/h. Total journey time:', opts:['1 hr 20 min','1 hr 36 min','1 hr 48 min','2 hrs'], ans:1, topic:'Numerical – Speed/Time', hint:'Time 1 = 12/15 = 0.8 hr. Time 2 = 8/10 = 0.8 hr. Total = 1.6 hr = 1 hr 36 min', difficulty:2, tags:['tsa','numerical','speed-time'] },
     { id:'tsa_041', q:'Which BEST identifies the unstated assumption: "University degrees increase lifetime earnings, so everyone should go to university."?', opts:["University is affordable for everyone","The earnings increase justifies the cost, debt, and opportunity cost for every individual regardless of their career aspirations","University education benefits everyone equally","All employers prefer degree holders"], ans:1, topic:'Critical Thinking – Policy', hint:'The leap from "degrees increase earnings" to "everyone should go" assumes the benefit always outweighs the costs and alternatives — which is not stated', difficulty:3, tags:['tsa','critical-thinking','assumption','policy'] },
     { id:'tsa_042', q:'A box contains 3 red, 5 blue and 2 green balls. Two balls are drawn without replacement. P(both blue)?', opts:['25/100','20/90','2/9','5/9'], ans:1, topic:'Numerical – Combined Probability', hint:'P(first blue) = 5/10. P(second blue|first blue) = 4/9. P(both) = 5/10 × 4/9 = 20/90 = 2/9', difficulty:2, tags:['tsa','numerical','probability','without-replacement'] },
+    ...TSA_BATCH,
   ],
 
   step: [
@@ -567,6 +587,7 @@ export const ALEVEL = {
     { id:'step_040', q:'Which of the following is a sufficient condition for a function f to have a local minimum at x = a?', opts:["f'(a) = 0 and f''(a) > 0","f'(a) = 0 only","f''(a) > 0 only","f'(a) > 0"], ans:0, topic:'Calculus – Second Derivative Test', hint:"Second derivative test: if f'(a) = 0 and f''(a) > 0, then x = a is a local minimum", difficulty:2, tags:['step','calculus','stationary-points','second-derivative'] },
     { id:'step_041', q:'A hyperbola has equation x²/9 − y²/4 = 1. Its asymptotes are:', opts:['y = ±(2/3)x','y = ±(3/2)x','y = ±2x','y = ±3x'], ans:0, topic:'Conics – Hyperbola', hint:'For x²/a² − y²/b² = 1, asymptotes are y = ±(b/a)x = ±(2/3)x', difficulty:2, tags:['step','conics','hyperbola','asymptotes'] },
     { id:'step_042', q:'The divisibility test: prove 6 | n(n+1)(n+2) for all positive integers n. This follows because:', opts:["n(n+1)(n+2) is always odd","Among any 3 consecutive integers, at least one is divisible by 2 and at least one by 3","n is always divisible by 6","All three numbers share a common factor"], ans:1, topic:'Proof – Number Theory', hint:'3 consecutive integers contain one multiple of 2 and one multiple of 3, hence their product is divisible by 6', difficulty:2, tags:['step','proof','number-theory','divisibility'] },
+    ...STEP_BATCH,
   ],
 }
 
