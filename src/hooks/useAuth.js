@@ -28,16 +28,17 @@ export function useAuth() {
     supabase.auth.getSession()
       .then(async ({ data: { session } }) => {
         if (session?.user) {
-          // Enforce "remember me = off": if no active session marker in sessionStorage
-          // and no persistent remember-me flag, the user closed the browser without
-          // wanting to stay signed in — sign them out now.
           const sessionActive = sessionStorage.getItem('nexora_session_active')
           const rememberMe    = localStorage.getItem('nexora_remember_me')
-          if (!sessionActive && !rememberMe) {
+          const isOAuth       = session.user.app_metadata?.provider !== 'email'
+
+          if (!sessionActive && !rememberMe && !isOAuth) {
+            // Email user signed in without "remember me" and has since closed the browser
             await supabase.auth.signOut()
             return
           }
-          // Mark this browser session as active (covers the remember-me=on case on reload)
+          // OAuth users always get treated as remembered (no checkbox shown in their flow)
+          if (isOAuth) localStorage.setItem('nexora_remember_me', '1')
           sessionStorage.setItem('nexora_session_active', '1')
           setUser(session.user)
           await loadProfile(session.user.id)
@@ -51,6 +52,14 @@ export function useAuth() {
       async (_event, session) => {
         if (_event === 'PASSWORD_RECOVERY') { setIsPasswordRecovery(true); return }
         if (_event === 'USER_UPDATED')       { setIsPasswordRecovery(false) }
+        if (_event === 'SIGNED_IN' && session?.user) {
+          // Always mark the session active so subsequent page loads within the same
+          // browser session work (critical for OAuth redirects which clear sessionStorage)
+          sessionStorage.setItem('nexora_session_active', '1')
+          if (session.user.app_metadata?.provider !== 'email') {
+            localStorage.setItem('nexora_remember_me', '1')
+          }
+        }
         setUser(session?.user ?? null)
         if (session?.user) await loadProfile(session.user.id)
         else setProfile(null)
