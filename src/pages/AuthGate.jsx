@@ -2,13 +2,14 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 
 export default function AuthGate() {
-  const [mode,      setMode]      = useState('signin') // 'signin' | 'signup' | 'forgot'
-  const [email,     setEmail]     = useState('')
-  const [password,  setPassword]  = useState('')
-  const [error,     setError]     = useState(null)
-  const [loading,   setLoading]   = useState(false)
-  const [done,      setDone]      = useState(false)
-  const [resetSent, setResetSent] = useState(false)
+  const [mode,       setMode]       = useState('signin') // 'signin' | 'signup' | 'forgot'
+  const [email,      setEmail]      = useState('')
+  const [password,   setPassword]   = useState('')
+  const [rememberMe, setRememberMe] = useState(true)
+  const [error,      setError]      = useState(null)
+  const [loading,    setLoading]    = useState(false)
+  const [done,       setDone]       = useState(false)
+  const [resetSent,  setResetSent]  = useState(false)
 
   async function signInWithGoogle() {
     await supabase.auth.signInWithOAuth({
@@ -70,6 +71,11 @@ export default function AuthGate() {
       } else {
         setError(err.message)
       }
+    } else {
+      // Persist the "remember me" preference so useAuth can enforce it on next load
+      sessionStorage.setItem('nexora_session_active', '1')
+      if (rememberMe) localStorage.setItem('nexora_remember_me', '1')
+      else            localStorage.removeItem('nexora_remember_me')
     }
     // on success onAuthStateChange in useAuth fires automatically
   }
@@ -208,6 +214,17 @@ export default function AuthGate() {
                 onBlur={e  => e.target.style.borderColor='#1E293B'}
               />
             </div>
+            {mode === 'signin' && (
+              <label style={s.rememberRow}>
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={e => setRememberMe(e.target.checked)}
+                  style={s.rememberCheck}
+                />
+                <span style={s.rememberLabel}>Remember me</span>
+              </label>
+            )}
             {error && <div style={s.errBox}>{error}</div>}
             <button type="submit" disabled={loading} style={{...s.btn, opacity: loading ? 0.6 : 1}}>
               {loading ? 'Please wait…' : mode === 'signup' ? 'Create Account' : 'Sign In →'}
@@ -272,6 +289,9 @@ const s = {
   btn:    { width:'100%', background:'linear-gradient(135deg,#0D9488,#0F766E)', color:'white', border:'none', borderRadius:12, padding:'13px', fontWeight:800, cursor:'pointer', fontSize:15, fontFamily:'Inter,sans-serif', transition:'opacity 0.2s' },
   toggle: { textAlign:'center', marginTop:14, fontSize:12, color:'#64748B' },
   link:   { background:'none', border:'none', cursor:'pointer', color:'#0D9488', fontWeight:700, fontSize:12, fontFamily:'Inter,sans-serif' },
+  rememberRow:   { display:'flex', alignItems:'center', gap:8, marginBottom:14, cursor:'pointer' },
+  rememberCheck: { width:15, height:15, accentColor:'#0D9488', cursor:'pointer' },
+  rememberLabel: { fontSize:13, color:'#94A3B8', userSelect:'none' },
   tracks:     { marginTop:24, width:'100%', maxWidth:360, display:'flex', flexDirection:'column', gap:10 },
   trackGroup: { background:'#0F172A', border:'1px solid #1E293B', borderRadius:14, padding:'12px 16px' },
   trackLabel: { fontSize:9, fontWeight:800, color:'#334155', letterSpacing:'0.12em', marginBottom:8 },

@@ -28,6 +28,17 @@ export function useAuth() {
     supabase.auth.getSession()
       .then(async ({ data: { session } }) => {
         if (session?.user) {
+          // Enforce "remember me = off": if no active session marker in sessionStorage
+          // and no persistent remember-me flag, the user closed the browser without
+          // wanting to stay signed in — sign them out now.
+          const sessionActive = sessionStorage.getItem('nexora_session_active')
+          const rememberMe    = localStorage.getItem('nexora_remember_me')
+          if (!sessionActive && !rememberMe) {
+            await supabase.auth.signOut()
+            return
+          }
+          // Mark this browser session as active (covers the remember-me=on case on reload)
+          sessionStorage.setItem('nexora_session_active', '1')
           setUser(session.user)
           await loadProfile(session.user.id)
         }
@@ -75,6 +86,8 @@ export function useAuth() {
     if (!isSupabaseConfigured) return
     setUser(null)
     setProfile(null)
+    sessionStorage.removeItem('nexora_session_active')
+    localStorage.removeItem('nexora_remember_me')
     try { await supabase.auth.signOut() } catch {}
   }
 
