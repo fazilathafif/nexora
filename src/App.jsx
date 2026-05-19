@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth.js'
 import { isSupabaseConfigured } from './lib/supabase.js'
 import LandingPage         from './pages/LandingPage.jsx'
@@ -14,6 +14,14 @@ import UpdatePasswordPage  from './pages/UpdatePasswordPage.jsx'
 import StudyPlanPage       from './pages/StudyPlanPage.jsx'
 import FlashcardsPage      from './pages/FlashcardsPage.jsx'
 import LoadingSpinner      from './components/LoadingSpinner.jsx'
+
+function RootRoute({ profile, user, refreshProfile }) {
+  const location = useLocation()
+  if (profile?.stream && !location.state?.reset) {
+    return <Navigate to={`/${profile.stream}`} replace />
+  }
+  return <LandingPage user={user} profile={profile} refreshProfile={refreshProfile} />
+}
 
 export default function App() {
   const { user, profile, loading, refreshProfile, signOut, isPasswordRecovery } = useAuth()
@@ -33,11 +41,7 @@ export default function App() {
       <Route path="/admin" element={<SysAdminPage user={user} />} />
 
       {/* Stream selection */}
-      <Route path="/" element={
-        profile?.stream
-          ? <Navigate to={`/${profile.stream}`} replace />
-          : <LandingPage user={user} profile={profile} refreshProfile={refreshProfile} />
-      } />
+      <Route path="/" element={<RootRoute profile={profile} user={user} refreshProfile={refreshProfile} />} />
 
       {/* App — stream-aware */}
       <Route path="/:stream" element={
