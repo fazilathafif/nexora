@@ -132,7 +132,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut }) {
       if (user) await upsertProfile(user.id, { stream: null })
       await refreshProfile?.()
     } catch {}
-    navigate('/', { state: { reset: true } })
+    navigate('/switch')
   }
 
   return (
