@@ -112,7 +112,7 @@ export default function AuthGate() {
       <div style={s.logo} className="animate-fade-up">
         <div style={s.star}>✦</div>
         <h1 style={s.title}>Nexora</h1>
-        <p style={s.sub}>UK EXAM PREP · {subLabel}</p>
+        <p style={s.sub}>Your Personal AI Coach · UK Entrance Exams</p>
       </div>
 
       {/* Card */}
@@ -247,20 +247,20 @@ export default function AuthGate() {
       </div>
 
       <div style={s.tracks}>
-        <div style={s.trackGroup}>
-          <div style={s.trackLabel}>GCSE TRACK</div>
+        <div style={{...s.trackGroup, border:'1px solid #0D948840'}}>
+          <div style={{...s.trackLabel, color:'#0D9488'}}>GCSE TRACK</div>
           <div style={s.trackItems}>
             {[['📐','Maths'],['📚','English'],['🔬','Science'],['🧩','Verbal']].map(([e,n]) => (
-              <span key={n} style={s.trackChip}>{e} {n}</span>
+              <span key={n} style={{...s.trackChip, background:'#0D948818', border:'1px solid #0D948840', color:'#2DD4BF'}}>{e} {n}</span>
             ))}
           </div>
         </div>
         <div style={s.divider} />
-        <div style={s.trackGroup}>
-          <div style={s.trackLabel}>A-LEVEL TRACK</div>
+        <div style={{...s.trackGroup, border:'1px solid #7C3AED40'}}>
+          <div style={{...s.trackLabel, color:'#A78BFA'}}>A-LEVEL TRACK</div>
           <div style={s.trackItems}>
             {[['🏥','UCAT'],['⚖️','LNAT'],['∑','TMUA'],['⚗️','ESAT'],['🧠','TSA'],['📏','STEP']].map(([e,n]) => (
-              <span key={n} style={s.trackChip}>{e} {n}</span>
+              <span key={n} style={{...s.trackChip, background:'#7C3AED18', border:'1px solid #7C3AED40', color:'#C4B5FD'}}>{e} {n}</span>
             ))}
           </div>
         </div>
@@ -287,7 +287,7 @@ const s = {
   logo:   { textAlign:'center', marginBottom:28 },
   star:   { fontSize:40, color:'#F8FAFC', marginBottom:6, animation:'float 3s ease-in-out infinite', display:'block' },
   title:  { fontSize:36, fontWeight:900, color:'#F8FAFC', letterSpacing:'-1px', margin:0, fontFamily:"'Playfair Display', Georgia, serif" },
-  sub:    { fontSize:11, color:'#64748B', marginTop:6, letterSpacing:'0.1em' },
+  sub:    { fontSize:12, color:'#94A3B8', marginTop:6, letterSpacing:'0.03em' },
   card:   { background:'#0F172A', border:'1.5px solid #1E293B', borderRadius:24, padding:'28px 24px', width:'100%', maxWidth:360, boxShadow:'0 24px 64px rgba(0,0,0,0.5)' },
   field:  { marginBottom:16 },
   label:  { display:'block', fontSize:10, fontWeight:700, color:'#64748B', letterSpacing:'0.08em' },
