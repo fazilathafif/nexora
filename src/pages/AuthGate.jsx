@@ -259,7 +259,7 @@ function GoogleIcon() {
 const s = {
   root:   { minHeight:'100vh', background:'#0A0A14', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'24px 20px', fontFamily:'Inter,sans-serif', position:'relative', overflow:'hidden' },
   mapWrap:{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', pointerEvents:'none' },
-  mapSvg: { width:'100%', height:'100%', opacity:0.12, transform:'scaleY(2)', transformOrigin:'center' },
+  mapSvg: { width:'100%', height:'100%', opacity:0.12, transform:'scaleY(2)', transformOrigin:'center', filter:'grayscale(1)' },
   logo:   { textAlign:'center', marginBottom:28 },
   star:   { fontSize:40, color:'#F8FAFC', marginBottom:6, animation:'float 3s ease-in-out infinite', display:'block' },
   title:  { fontSize:36, fontWeight:900, color:'#F8FAFC', letterSpacing:'-1px', margin:0, fontFamily:"'Playfair Display', Georgia, serif" },
