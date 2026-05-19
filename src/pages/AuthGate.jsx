@@ -177,22 +177,6 @@ export default function AuthGate() {
         /* Sign in / Sign up form */
         ) : (
           <form onSubmit={handleSubmit}>
-            {/* Google OAuth */}
-            <button
-              type="button"
-              onClick={signInWithGoogle}
-              style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'center',gap:10,background:'#fff',border:'1.5px solid #E2E8F0',borderRadius:12,padding:'11px',fontWeight:700,fontSize:14,color:'#1E293B',cursor:'pointer',fontFamily:'Inter,sans-serif',marginBottom:16,transition:'box-shadow 0.2s'}}
-              onMouseEnter={e => e.currentTarget.style.boxShadow='0 0 0 3px rgba(66,133,244,0.2)'}
-              onMouseLeave={e => e.currentTarget.style.boxShadow='none'}
-            >
-              <GoogleIcon />
-              Continue with Google
-            </button>
-            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16}}>
-              <div style={{flex:1,height:1,background:'#1E293B'}} />
-              <span style={{fontSize:11,color:'#475569',fontWeight:600}}>or</span>
-              <div style={{flex:1,height:1,background:'#1E293B'}} />
-            </div>
             <div style={s.field}>
               <label style={s.label}>EMAIL</label>
               <input
@@ -233,9 +217,21 @@ export default function AuthGate() {
               </label>
             )}
             {error && <div style={s.errBox}>{error}</div>}
-            <button type="submit" disabled={loading} style={{...s.btn, opacity: loading ? 0.6 : 1}}>
-              {loading ? 'Please wait…' : mode === 'signup' ? 'Create Account' : 'Sign In →'}
-            </button>
+            <div style={{display:'flex', gap:8, marginBottom:4}}>
+              <button
+                type="button"
+                onClick={signInWithGoogle}
+                style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:7,background:'#fff',border:'1.5px solid #E2E8F0',borderRadius:12,padding:'12px 8px',fontWeight:700,fontSize:13,color:'#1E293B',cursor:'pointer',fontFamily:'Inter,sans-serif',transition:'box-shadow 0.2s'}}
+                onMouseEnter={e => e.currentTarget.style.boxShadow='0 0 0 3px rgba(66,133,244,0.2)'}
+                onMouseLeave={e => e.currentTarget.style.boxShadow='none'}
+              >
+                <GoogleIcon />
+                Google
+              </button>
+              <button type="submit" disabled={loading} style={{...s.btn, flex:1, width:'auto', opacity: loading ? 0.6 : 1}}>
+                {loading ? 'Wait…' : mode === 'signup' ? 'Create Account' : 'Sign In →'}
+              </button>
+            </div>
             <div style={s.toggle}>
               {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
               <button type="button" onClick={() => switchMode(mode === 'signin' ? 'signup' : 'signin')} style={s.link}>
