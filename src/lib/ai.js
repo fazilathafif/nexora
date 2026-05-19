@@ -1,4 +1,7 @@
-import { supabase, isSupabaseConfigured } from './supabase.js'
+import { isSupabaseConfigured } from './supabase.js'
+
+const FN_URL  = 'https://nwouvraxquxdjgfxljui.supabase.co/functions/v1/explain'
+const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ?? 'sb_publishable_1ApxMrPiF0jv_SEnVUChNw_NhJhMg2j'
 
 /**
  * Fetch an AI explanation via the Supabase Edge Function `explain`.
@@ -10,10 +13,21 @@ export async function fetchExplanation(question, chosenIdx, stream) {
   }
 
   try {
-    const { data, error } = await supabase.functions.invoke('explain', {
-      body: { question, chosenIdx, stream },
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 20000)
+    const res = await fetch(FN_URL, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': ANON_KEY,
+        'Authorization': `Bearer ${ANON_KEY}`,
+      },
+      body: JSON.stringify({ question, chosenIdx, stream }),
     })
-    if (error) throw error
+    clearTimeout(timer)
+    if (!res.ok) return fallback(question)
+    const data = await res.json()
     return data?.explanation ?? fallback(question)
   } catch {
     return fallback(question)

@@ -133,6 +133,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
         headers: {
           'Content-Type': 'application/json',
           'apikey': ANON_KEY,
+          'Authorization': `Bearer ${ANON_KEY}`,
         },
         body: JSON.stringify({ question: currentQ, chosenIdx: chosen === -1 ? currentQ.ans : chosen, stream }),
       })
