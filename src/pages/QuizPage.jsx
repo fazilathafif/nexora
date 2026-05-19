@@ -13,6 +13,28 @@ import { scheduleReview, sortByDue, getDueIds } from '../lib/srs.js'
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
 import { getColors, Shell, Badge }     from './HomePage.jsx'
 
+function CopyButton({ text, dark }) {
+  const [copied, setCopied] = useState(false)
+  function handleCopy() {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+  return (
+    <button onClick={handleCopy} style={{
+      background: copied ? (dark?'#4ADE8020':'#DCFCE720') : 'transparent',
+      border: `1px solid ${dark?'#4ADE8040':'#6366F140'}`,
+      borderRadius: 8, padding: '3px 10px',
+      fontSize: 11, fontWeight: 700,
+      color: copied ? (dark?'#4ADE80':'#16A34A') : (dark?'#C4B5FD':'#6366F1'),
+      cursor: 'pointer', transition: 'all 0.2s',
+    }}>
+      {copied ? '✓ Copied' : 'Copy'}
+    </button>
+  )
+}
+
 export default function QuizPage({ user, profile, refreshProfile }) {
   const { stream, subject } = useParams()
   const [searchParams]      = useSearchParams()
@@ -287,9 +309,12 @@ export default function QuizPage({ user, profile, refreshProfile }) {
               fontSize:13, color:C.navy, lineHeight:1.85,
               opacity:1, animation:'fadeIn 0.3s ease both',
             }}>
-              <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:8}}>
-                <span style={{fontSize:14}}>🤖</span>
-                <span style={{fontSize:10,fontWeight:800,color:dark?'#C4B5FD':'#6366F1',letterSpacing:'0.1em'}}>AI TUTOR</span>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+                <div style={{display:'flex',alignItems:'center',gap:6}}>
+                  <span style={{fontSize:14}}>🤖</span>
+                  <span style={{fontSize:10,fontWeight:800,color:dark?'#C4B5FD':'#6366F1',letterSpacing:'0.1em'}}>AI TUTOR</span>
+                </div>
+                <CopyButton text={aiText} dark={dark} />
               </div>
               <div style={{
                 '--md-h1': dark?'#E2E8F0':'#1E293B',
