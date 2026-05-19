@@ -21,6 +21,16 @@ export default function LandingPage({ user, profile, refreshProfile }) {
     <div style={styles.root}>
       <style>{css}</style>
 
+      {/* Back button — only shown when user already has a stream (came via Switch) */}
+      {profile?.stream && (
+        <button
+          onClick={() => navigate(`/${profile.stream}`)}
+          style={styles.back}
+        >
+          ← Back
+        </button>
+      )}
+
       {/* UK flag watermark */}
       <div style={styles.mapWrap} aria-hidden="true">
         <svg
@@ -91,6 +101,7 @@ export default function LandingPage({ user, profile, refreshProfile }) {
 
 const styles = {
   root:      { minHeight:'100vh', background:'#0A0A14', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'24px 20px', fontFamily:'Inter,sans-serif', position:'relative', overflow:'hidden' },
+  back:      { position:'absolute', top:16, left:16, background:'transparent', border:'1px solid #334155', borderRadius:10, padding:'6px 14px', fontSize:12, fontWeight:700, color:'#94A3B8', cursor:'pointer', zIndex:10, fontFamily:'Inter,sans-serif' },
   mapWrap:   { position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', pointerEvents:'none' },
   mapSvg:    { width:'100%', height:'100%', opacity:0.12, transform:'scaleY(2)', transformOrigin:'center' },
   logo:      { textAlign:'center', marginBottom:40 },
