@@ -73,7 +73,9 @@ export function useAuth() {
 
   async function signOut() {
     if (!isSupabaseConfigured) return
-    await supabase.auth.signOut()
+    setUser(null)
+    setProfile(null)
+    try { await supabase.auth.signOut() } catch {}
   }
 
   return { user, profile, loading, refreshProfile, signOut, isPasswordRecovery }

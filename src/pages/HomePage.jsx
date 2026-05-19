@@ -65,8 +65,10 @@ export default function HomePage({ user, profile, refreshProfile, signOut }) {
   }
 
   async function switchStream() {
-    if (user) await upsertProfile(user.id, { stream: null })
-    await refreshProfile?.()
+    try {
+      if (user) await upsertProfile(user.id, { stream: null })
+      await refreshProfile?.()
+    } catch {}
     navigate('/')
   }
 
