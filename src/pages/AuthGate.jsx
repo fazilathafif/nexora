@@ -111,8 +111,12 @@ export default function AuthGate() {
       {/* Logo */}
       <div style={s.logo} className="animate-fade-up">
         <div style={s.star}>✦</div>
-        <h1 style={s.title}>Nexora</h1>
+        <div style={{position:'relative', display:'inline-block'}}>
+          <h1 style={s.title}>Nexora</h1>
+          <span style={{position:'absolute',top:2,right:-36,background:'#0D9488',color:'white',fontSize:9,fontWeight:800,letterSpacing:'0.08em',padding:'2px 6px',borderRadius:6}}>BETA</span>
+        </div>
         <p style={s.sub}>Your Personal AI Coach · UK Entrance Exams</p>
+        <p style={{fontSize:10,color:'#334155',marginTop:4}}>© 2026 afif@nexora</p>
       </div>
 
       {/* Card */}
