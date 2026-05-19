@@ -175,7 +175,22 @@ export async function getTopicStats(userId, stream) {
   return supabase.from('answers').select('topic, is_correct').eq('user_id', userId).eq('stream', stream)
 }
 
-// ── Teacher dashboard ─────────────────────────────────────────────────────────
+// ── Sysadmin ──────────────────────────────────────────────────────────────────
+
+export async function adminGetAllUsers() {
+  if (!isSupabaseConfigured) return { data: [], error: null }
+  return supabase.rpc('admin_get_users')
+}
+
+export async function adminUpdateProfile(userId, updates) {
+  if (!isSupabaseConfigured) return { data: null, error: null }
+  return supabase.from('profiles').update(updates).eq('id', userId).select().single()
+}
+
+export async function adminDeleteProfile(userId) {
+  if (!isSupabaseConfigured) return { data: null, error: null }
+  return supabase.from('profiles').delete().eq('id', userId)
+}
 
 export async function getClassSummary(teacherToken) {
   if (!isSupabaseConfigured) return { data: null, error: null }
