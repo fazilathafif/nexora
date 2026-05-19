@@ -12,6 +12,7 @@ import AuthGate            from './pages/AuthGate.jsx'
 import SysAdminPage        from './pages/SysAdminPage.jsx'
 import UpdatePasswordPage  from './pages/UpdatePasswordPage.jsx'
 import StudyPlanPage       from './pages/StudyPlanPage.jsx'
+import FlashcardsPage      from './pages/FlashcardsPage.jsx'
 import LoadingSpinner      from './components/LoadingSpinner.jsx'
 
 export default function App() {
@@ -56,6 +57,9 @@ export default function App() {
       } />
       <Route path="/:stream/plan" element={
         <StudyPlanPage user={user} profile={profile} refreshProfile={refreshProfile} />
+      } />
+      <Route path="/:stream/flashcards/:subject" element={
+        <FlashcardsPage />
       } />
 
       {/* Catch-all */}

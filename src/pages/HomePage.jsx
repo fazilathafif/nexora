@@ -194,6 +194,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut }) {
             compact={cfg.subjects.length > 4}
             onClick={() => navigate(`/${stream}/quiz/${s.id}`)}
             onMock={() => navigate(`/${stream}/mock/${s.id}`)}
+            onFlashcards={() => navigate(`/${stream}/flashcards/${s.id}`)}
           />
         ))}
       </div>
@@ -225,7 +226,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut }) {
 
 // ── Shared small components ───────────────────────────────────────────────────
 
-function SubjectCard({ subject, C, dark, compact, onClick, onMock }) {
+function SubjectCard({ subject, C, dark, compact, onClick, onMock, onFlashcards }) {
   return (
     <div style={{position:'relative',display:'flex',flexDirection:'column'}}>
       <button
@@ -238,15 +239,26 @@ function SubjectCard({ subject, C, dark, compact, onClick, onMock }) {
         <span style={{fontSize:12,fontWeight:800,color:C.navy,textAlign:'center'}}>{subject.label}</span>
         <span style={{fontSize:9,color:C.muted,textAlign:'center',lineHeight:1.3}}>{subject.desc}</span>
       </button>
-      <button
-        onClick={onMock}
-        title="Mock exam"
-        style={{marginTop:4,background:'transparent',border:`1px solid ${C.border}`,borderRadius:8,padding:'4px 0',fontSize:9,fontWeight:700,color:C.muted,cursor:'pointer',width:'100%',fontFamily:'Inter,sans-serif',letterSpacing:'0.04em'}}
-        onMouseEnter={e=>{e.currentTarget.style.borderColor=C.secondary??C.primary;e.currentTarget.style.color=C.secondary??C.primary}}
-        onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.color=C.muted}}
-      >
-        MOCK EXAM
-      </button>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4,marginTop:4}}>
+        <button
+          onClick={onFlashcards}
+          title="Flashcards"
+          style={{background:'transparent',border:`1px solid ${C.border}`,borderRadius:8,padding:'4px 0',fontSize:9,fontWeight:700,color:C.muted,cursor:'pointer',fontFamily:'Inter,sans-serif',letterSpacing:'0.04em'}}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor=C.primary;e.currentTarget.style.color=C.primary}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.color=C.muted}}
+        >
+          CARDS 🃏
+        </button>
+        <button
+          onClick={onMock}
+          title="Mock exam"
+          style={{background:'transparent',border:`1px solid ${C.border}`,borderRadius:8,padding:'4px 0',fontSize:9,fontWeight:700,color:C.muted,cursor:'pointer',fontFamily:'Inter,sans-serif',letterSpacing:'0.04em'}}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor=C.secondary??C.primary;e.currentTarget.style.color=C.secondary??C.primary}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.color=C.muted}}
+        >
+          MOCK EXAM
+        </button>
+      </div>
     </div>
   )
 }
