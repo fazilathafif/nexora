@@ -21,6 +21,10 @@ export function useAuth() {
     }
 
     // Supabase configured — require explicit sign-in, no anonymous fallback
+    // Timeout fallback: if getSession() hangs (Safari ITP / content blockers block
+    // the token-refresh request), unblock the app after 5 s so the auth gate shows.
+    const fallback = setTimeout(() => setLoading(false), 5000)
+
     supabase.auth.getSession()
       .then(async ({ data: { session } }) => {
         if (session?.user) {
@@ -30,7 +34,7 @@ export function useAuth() {
         // No session → user stays null, app shows auth gate
       })
       .catch(() => {})
-      .finally(() => setLoading(false))
+      .finally(() => { clearTimeout(fallback); setLoading(false) })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
