@@ -209,7 +209,7 @@ export default function MockPage({ user, profile, refreshProfile }) {
           </button>
         )}
         {qIndex < questions.length - 1 ? (
-          <button onClick={() => setQIndex(q => q+1)} style={{flex:2,background:`linear-gradient(135deg,${C.primary},${dark?'#312E81':'#0F766E'})`,color:'white',border:'none',borderRadius:14,padding:'13px',fontSize:14,fontWeight:800,cursor:'pointer'}}>
+          <button onClick={() => setQIndex(q => q+1)} style={{flex:2,background:`linear-gradient(135deg,${C.primary},${dark?'#1E1B4B':'#0F766E'})`,color:'white',border:'none',borderRadius:14,padding:'13px',fontSize:14,fontWeight:800,cursor:'pointer'}}>
             Next →
           </button>
         ) : (

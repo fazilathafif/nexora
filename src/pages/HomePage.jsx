@@ -24,9 +24,16 @@ const GCSE_COLORS = {
   muted:'#6B7280', success:'#10B981', border:'#D1FAE5',
 }
 const ALEVEL_COLORS = {
-  primary:'#4F46E5', secondary:'#A3E635', accent:'#F0ABFC',
-  bg:'#0F0F1A', card:'#1A1A2E', navy:'#E2E8F0', soft:'#1E1E3A',
-  muted:'#94A3B8', success:'#4ADE80', border:'#2D2D50',
+  primary:   '#7C3AED',   // electric violet
+  secondary: '#F43F5E',   // hot rose
+  accent:    '#06B6D4',   // electric cyan
+  bg:        '#0E0B1F',   // cosmic purple-black
+  card:      '#181432',   // deep indigo card
+  navy:      '#F0F4FF',   // near-white text
+  soft:      '#261E4E',   // medium purple (visible section bg)
+  muted:     '#A78BFA',   // lavender muted text
+  success:   '#4ADE80',   // bright green
+  border:    '#352B6D',   // visible purple border
 }
 
 export function getColors(stream) {
@@ -103,7 +110,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut }) {
       {/* XP banner */}
       <div style={{
         background: dark
-          ? `linear-gradient(135deg,${C.primary},#312E81)`
+          ? `linear-gradient(135deg,${C.primary},#1E1B4B)`
           : `linear-gradient(135deg,${C.primary},#0F766E)`,
         borderRadius:20, padding:'18px 20px', marginBottom:18,
         position:'relative', overflow:'hidden',
@@ -123,7 +130,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut }) {
           <span style={{fontSize:12,color:C.muted,fontWeight:700}}>📅 Exam date:</span>
           <input
             type="date" value={dateInput} onChange={e => setDateInput(e.target.value)}
-            style={{flex:1,minWidth:130,padding:'6px 10px',borderRadius:8,border:`1.5px solid ${C.border}`,background:dark?'#1A1A2E':'#F8FAFC',color:C.navy,fontSize:13,fontFamily:'Inter,sans-serif'}}
+            style={{flex:1,minWidth:130,padding:'6px 10px',borderRadius:8,border:`1.5px solid ${C.border}`,background:dark?'#261E4E':'#F8FAFC',color:C.navy,fontSize:13,fontFamily:'Inter,sans-serif'}}
           />
           <button onClick={() => saveExamDate(dateInput)} style={{background:C.primary,color:'white',border:'none',borderRadius:8,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>Save</button>
           <button onClick={() => setEditingDate(false)} style={{background:'none',border:'none',color:C.muted,fontSize:12,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>Cancel</button>
@@ -174,7 +181,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut }) {
           </div>
           <button
             onClick={() => navigate(`/${stream}/quiz/${cfg.subjects[0].id}?review=1`)}
-            style={{background:dark?'#A3E635':C.primary,color:dark?'#0F0F1A':'white',border:'none',borderRadius:10,padding:'7px 14px',fontWeight:800,cursor:'pointer',fontSize:12,fontFamily:'Inter,sans-serif',flexShrink:0}}
+            style={{background:dark?C.secondary:C.primary,color:'white',border:'none',borderRadius:10,padding:'7px 14px',fontWeight:800,cursor:'pointer',fontSize:12,fontFamily:'Inter,sans-serif',flexShrink:0}}
           >
             Review →
           </button>

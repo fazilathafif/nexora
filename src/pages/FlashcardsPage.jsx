@@ -189,7 +189,7 @@ export default function FlashcardsPage() {
             position:'absolute',inset:0,
             backfaceVisibility:'hidden',WebkitBackfaceVisibility:'hidden',
             transform:'rotateY(180deg)',
-            background: dark ? '#1A1A2E' : C.primary+'12',
+            background: dark ? '#261E4E' : C.primary+'12',
             border:`1.5px solid ${C.primary}50`,
             borderRadius:20, padding:'20px',
             display:'flex', flexDirection:'column', justifyContent:'space-between',
@@ -203,10 +203,10 @@ export default function FlashcardsPage() {
               </p>
               {current.hint && (
                 <div style={{
-                  marginTop:14, background:(dark?'#F0ABFC':'#FCD34D')+'25',
-                  border:`1px solid ${dark?'#F0ABFC':'#FCD34D'}60`,
+                  marginTop:14, background:(dark?'#C4B5FD':'#FCD34D')+'25',
+                  border:`1px solid ${dark?'#C4B5FD':'#FCD34D'}60`,
                   borderRadius:10, padding:'9px 12px',
-                  fontSize:12, color:dark?'#F0ABFC':'#92400E', fontWeight:600, lineHeight:1.5,
+                  fontSize:12, color:dark?'#DDD6FE':'#92400E', fontWeight:600, lineHeight:1.5,
                 }}>
                   💡 {current.hint}
                 </div>
@@ -254,7 +254,7 @@ function backBtn(C) {
 
 function primaryBtn(C, dark) {
   return {
-    background:`linear-gradient(135deg,${C.primary},${dark?'#312E81':'#0F766E'})`,
+    background:`linear-gradient(135deg,${C.primary},${dark?'#1E1B4B':'#0F766E'})`,
     color:'white', border:'none', borderRadius:14, padding:'14px',
     fontSize:15, fontWeight:800, cursor:'pointer', fontFamily:'Inter,sans-serif',
   }

@@ -206,7 +206,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
           💡 Show hint (−2 XP)
         </button>
       ) : (
-        <div style={{background:(dark?'#F0ABFC':'#FCD34D')+'25',border:`1px solid ${dark?'#F0ABFC':'#FCD34D'}60`,borderRadius:10,padding:'10px 14px',fontSize:13,color:dark?'#F0ABFC':'#92400E',marginBottom:12,fontWeight:600}}>
+        <div style={{background:(dark?'#C4B5FD':'#FCD34D')+'25',border:`1px solid ${dark?'#C4B5FD':'#FCD34D'}60`,borderRadius:10,padding:'10px 14px',fontSize:13,color:dark?'#DDD6FE':'#92400E',marginBottom:12,fontWeight:600}}>
           💡 {currentQ.hint}
         </div>
       )}
@@ -243,10 +243,10 @@ export default function QuizPage({ user, profile, refreshProfile }) {
             onClick={handleAiExplain}
             style={{
               width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-              background: aiOpen ? (dark?'#1E1B4B':'#EFF6FF') : 'transparent',
-              border:`1.5px solid ${dark?'#4F46E5':'#6366F1'}40`,
+              background: aiOpen ? (dark?'#261E4E':'#EFF6FF') : 'transparent',
+              border:`1.5px solid ${dark?'#7C3AED':'#6366F1'}40`,
               borderRadius:12, padding:'10px 14px', fontSize:13, fontWeight:700,
-              color: dark?'#A5B4FC':'#4F46E5', cursor:'pointer', transition:'all 0.2s',
+              color: dark?'#C4B5FD':'#4F46E5', cursor:'pointer', transition:'all 0.2s',
             }}
           >
             <span style={{fontSize:16}}>✨</span>
@@ -255,22 +255,22 @@ export default function QuizPage({ user, profile, refreshProfile }) {
 
           {aiOpen && aiText && aiText !== 'loading' && (
             <div style={{
-              marginTop:8, background:dark?'#1A1A2E':'#F8FAFF',
-              border:`1px solid ${dark?'#4F46E5':'#6366F1'}30`,
+              marginTop:8, background:dark?'#181432':'#F8FAFF',
+              border:`1px solid ${dark?'#7C3AED':'#6366F1'}30`,
               borderRadius:12, padding:'14px 16px',
               fontSize:13, color:C.navy, lineHeight:1.75,
               animation:'fadeIn 0.3s ease',
             }}>
               <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:8}}>
                 <span style={{fontSize:14}}>🤖</span>
-                <span style={{fontSize:10,fontWeight:800,color:dark?'#818CF8':'#6366F1',letterSpacing:'0.1em'}}>AI TUTOR</span>
+                <span style={{fontSize:10,fontWeight:800,color:dark?'#C4B5FD':'#6366F1',letterSpacing:'0.1em'}}>AI TUTOR</span>
               </div>
               {aiText}
             </div>
           )}
           {aiOpen && aiText === 'loading' && (
-            <div style={{marginTop:8,background:dark?'#1A1A2E':'#F8FAFF',border:`1px solid ${dark?'#4F46E5':'#6366F1'}30`,borderRadius:12,padding:'16px',textAlign:'center'}}>
-              <div style={{display:'inline-block',width:20,height:20,border:`2px solid ${dark?'#818CF8':'#6366F1'}`,borderTopColor:'transparent',borderRadius:'50%',animation:'spin 0.8s linear infinite'}} />
+            <div style={{marginTop:8,background:dark?'#181432':'#F8FAFF',border:`1px solid ${dark?'#7C3AED':'#6366F1'}30`,borderRadius:12,padding:'16px',textAlign:'center'}}>
+              <div style={{display:'inline-block',width:20,height:20,border:`2px solid ${dark?'#C4B5FD':'#6366F1'}`,borderTopColor:'transparent',borderRadius:'50%',animation:'spin 0.8s linear infinite'}} />
             </div>
           )}
         </div>
@@ -279,7 +279,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
       {chosen !== null && (
         <button
           onClick={handleNext}
-          style={{width:'100%',background:`linear-gradient(135deg,${C.primary},${dark?'#312E81':'#0F766E'})`,color:'white',border:'none',borderRadius:16,padding:'15px',fontSize:15,fontWeight:800,cursor:'pointer',boxShadow:`0 4px 16px ${C.primary}40`}}
+          style={{width:'100%',background:`linear-gradient(135deg,${C.primary},${dark?'#1E1B4B':'#0F766E'})`,color:'white',border:'none',borderRadius:16,padding:'15px',fontSize:15,fontWeight:800,cursor:'pointer',boxShadow:`0 4px 16px ${C.primary}40`}}
         >
           {qIndex + 1 < total ? 'Next →' : 'See Results 🎉'}
         </button>
