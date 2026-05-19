@@ -56,9 +56,10 @@ export default function QuizPage({ user, profile, refreshProfile }) {
   const [answers,     setAnswers]     = useState([])
   const [hintShown,   setHintShown]   = useState(false)
   const [started,     setStarted]     = useState(false)
-  const [aiText,      setAiText]      = useState(null)   // null | 'loading' | string
-  const [aiOpen,      setAiOpen]      = useState(false)
-  const aiPanelRef                    = useRef(null)
+  const [aiText,        setAiText]        = useState(null)   // null | 'loading' | string
+  const [aiOpen,        setAiOpen]        = useState(false)
+  const [aiElaboration, setAiElaboration] = useState(null)   // null | 'loading' | string
+  const aiPanelRef                        = useRef(null)
 
   // Stable refs so timer callback never captures stale values
   const chosenRef   = useRef(null)
@@ -69,7 +70,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
   useEffect(() => { currentQRef.current = questions[qIndex] }, [qIndex]) // eslint-disable-line
 
   // Reset AI panel when question changes
-  useEffect(() => { setAiText(null); setAiOpen(false) }, [qIndex])
+  useEffect(() => { setAiText(null); setAiOpen(false); setAiElaboration(null) }, [qIndex])
 
   // Scroll AI panel into view once explanation is ready
   useEffect(() => {
@@ -177,6 +178,38 @@ export default function QuizPage({ user, profile, refreshProfile }) {
       if (!accumulated) setAiText(fallback)
     } catch {
       setAiText(fallback)
+    }
+  }
+
+  async function handleElaborate() {
+    if (aiElaboration && aiElaboration !== 'loading') return
+    setAiElaboration('loading')
+    const FN_URL   = 'https://nwouvraxquxdjgfxljui.supabase.co/functions/v1/explain'
+    const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53b3V2cmF4cXV4ZGpnZnhsanVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwOTQ1NzgsImV4cCI6MjA5NDY3MDU3OH0.v3f8GYT2_A7LfuKZZTeGMn2Lwy2A4AKucw6p7HyrYMg'
+    try {
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 20000)
+      const res = await fetch(FN_URL, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` },
+        body: JSON.stringify({ question: currentQ, chosenIdx: chosen === -1 ? currentQ.ans : chosen, stream, elaborate: true }),
+      })
+      clearTimeout(timer)
+      if (!res.ok) { setAiElaboration(''); return }
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let accumulated = ''
+      setAiElaboration('')
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        accumulated += decoder.decode(value, { stream: true })
+        setAiElaboration(accumulated)
+      }
+      if (!accumulated) setAiElaboration('')
+    } catch {
+      setAiElaboration('')
     }
   }
 
@@ -341,6 +374,33 @@ export default function QuizPage({ user, profile, refreshProfile }) {
                 `}</style>
                 <ReactMarkdown className="ai-md">{aiText}</ReactMarkdown>
               </div>
+
+              {/* Go deeper button — only shown once initial response is fully streamed */}
+              {aiElaboration === null && (
+                <button onClick={handleElaborate} style={{
+                  marginTop:12, width:'100%', background:'transparent',
+                  border:`1px dashed ${dark?'#7C3AED':'#6366F1'}50`,
+                  borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:700,
+                  color: dark?'#A78BFA':'#6366F1', cursor:'pointer',
+                }}>
+                  🔍 Go deeper
+                </button>
+              )}
+
+              {/* Elaboration loading spinner */}
+              {aiElaboration === 'loading' || aiElaboration === '' ? (
+                <div style={{marginTop:10,textAlign:'center',padding:'10px 0'}}>
+                  <div style={{display:'inline-block',width:16,height:16,border:`2px solid ${dark?'#A78BFA':'#6366F1'}`,borderTopColor:'transparent',borderRadius:'50%',animation:'spin 0.8s linear infinite'}} />
+                </div>
+              ) : aiElaboration ? (
+                <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${dark?'#7C3AED':'#6366F1'}25`}}>
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+                    <span style={{fontSize:10,fontWeight:800,color:dark?'#A78BFA':'#6366F1',letterSpacing:'0.1em'}}>🔍 DEEPER DIVE</span>
+                    <CopyButton text={aiElaboration} dark={dark} />
+                  </div>
+                  <ReactMarkdown className="ai-md">{aiElaboration}</ReactMarkdown>
+                </div>
+              ) : null}
             </div>
           )}
           {aiOpen && (aiText === 'loading' || aiText === '') && (

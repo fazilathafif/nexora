@@ -12,7 +12,7 @@ serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
   try {
-    const { question, chosenIdx, stream } = await req.json();
+    const { question, chosenIdx, stream, elaborate } = await req.json();
 
     if (!question || chosenIdx === undefined || !stream) {
       return new Response(
@@ -23,7 +23,21 @@ serve(async (req: Request) => {
 
     const level = stream === "gcse" ? "GCSE student (age 13–15)" : "A-Level student (age 16–17, UK competitive entry)";
 
-    const systemPrompt = `You are a concise AI tutor for a ${level}. Use markdown. Structure every reply with exactly these sections — no more:
+    const systemPrompt = elaborate
+      ? `You are an expert tutor giving a deeper dive to a ${level}. Use markdown. Cover:
+
+## Worked example
+Step-by-step solution to a similar problem.
+
+## Deeper concept
+The underlying theory in plain language — why it works, not just what it is.
+
+## Connections
+1–2 bullets linking this topic to related ideas the student will encounter.
+
+Rules: stay under 280 words. Be thorough but clear. No waffle.`
+
+      : `You are a concise AI tutor for a ${level}. Use markdown. Structure every reply with exactly these sections — no more:
 
 ## Why this answer?
 2–3 sentences: why the correct answer is right and why the student's choice was wrong.
@@ -53,7 +67,7 @@ Hint: ${question.hint}`;
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 350,
+        max_tokens: elaborate ? 450 : 350,
         stream: true,
         system: systemPrompt,
         messages: [{ role: "user", content: userPrompt }],
@@ -62,7 +76,6 @@ Hint: ${question.hint}`;
 
     if (!anthropicRes.ok) throw new Error(`Anthropic error: ${anthropicRes.status}`);
 
-    // Pipe Anthropic SSE stream → plain-text chunks for the client
     const { readable, writable } = new TransformStream();
     const writer = writable.getWriter();
     const encoder = new TextEncoder();
