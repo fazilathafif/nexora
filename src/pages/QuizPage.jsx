@@ -116,14 +116,24 @@ export default function QuizPage({ user, profile, refreshProfile }) {
     const fallback = 'Work through the hint step by step — the method will click with practice. 💪'
     try {
       const chosenIdx = chosen === -1 ? currentQ.ans : chosen
-      const timeout = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('timeout')), 10000)
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 10000)
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/explain`,
+        {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ question: currentQ, chosenIdx, stream }),
+        }
       )
-      const request = supabase.functions.invoke('explain', {
-        body: { question: currentQ, chosenIdx, stream },
-      })
-      const { data, error } = await Promise.race([request, timeout])
-      setAiText(error ? fallback : (data?.explanation ?? fallback))
+      clearTimeout(timer)
+      if (!res.ok) { setAiText(fallback); return }
+      const data = await res.json()
+      setAiText(data?.explanation ?? fallback)
     } catch {
       setAiText(fallback)
     }
