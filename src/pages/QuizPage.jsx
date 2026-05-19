@@ -35,6 +35,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
   const [started,     setStarted]     = useState(false)
   const [aiText,      setAiText]      = useState(null)   // null | 'loading' | string
   const [aiOpen,      setAiOpen]      = useState(false)
+  const aiPanelRef                    = useRef(null)
 
   // Stable refs so timer callback never captures stale values
   const chosenRef   = useRef(null)
@@ -46,6 +47,13 @@ export default function QuizPage({ user, profile, refreshProfile }) {
 
   // Reset AI panel when question changes
   useEffect(() => { setAiText(null); setAiOpen(false) }, [qIndex])
+
+  // Scroll AI panel into view once explanation is ready
+  useEffect(() => {
+    if (aiOpen && aiText && aiText !== 'loading' && aiPanelRef.current) {
+      aiPanelRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }
+  }, [aiOpen, aiText])
 
   const currentQ = questions[qIndex]
   const total    = questions.length
@@ -267,12 +275,12 @@ export default function QuizPage({ user, profile, refreshProfile }) {
           </button>
 
           {aiOpen && aiText && aiText !== 'loading' && (
-            <div style={{
+            <div ref={aiPanelRef} style={{
               marginTop:8, background:dark?'#181432':'#F8FAFF',
               border:`1px solid ${dark?'#7C3AED':'#6366F1'}30`,
               borderRadius:12, padding:'14px 16px',
               fontSize:13, color:C.navy, lineHeight:1.75,
-              animation:'fadeIn 0.3s ease',
+              opacity:1, animation:'fadeIn 0.3s ease both',
             }}>
               <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:8}}>
                 <span style={{fontSize:14}}>🤖</span>
