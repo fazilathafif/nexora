@@ -114,22 +114,20 @@ export default function QuizPage({ user, profile, refreshProfile }) {
     setAiOpen(true)
     setAiText('loading')
     const fallback = 'Work through the hint step by step — the method will click with practice. 💪'
+    const FN_URL = 'https://nwouvraxquxdjgfxljui.supabase.co/functions/v1/explain'
+    const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ?? 'sb_publishable_1ApxMrPiF0jv_SEnVUChNw_NhJhMg2j'
     try {
-      const chosenIdx = chosen === -1 ? currentQ.ans : chosen
       const controller = new AbortController()
-      const timer = setTimeout(() => controller.abort(), 10000)
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/explain`,
-        {
-          method: 'POST',
-          signal: controller.signal,
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-          },
-          body: JSON.stringify({ question: currentQ, chosenIdx, stream }),
-        }
-      )
+      const timer = setTimeout(() => controller.abort(), 20000)
+      const res = await fetch(FN_URL, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': ANON_KEY,
+        },
+        body: JSON.stringify({ question: currentQ, chosenIdx: chosen === -1 ? currentQ.ans : chosen, stream }),
+      })
       clearTimeout(timer)
       if (!res.ok) { setAiText(fallback); return }
       const data = await res.json()
