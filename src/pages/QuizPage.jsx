@@ -113,14 +113,19 @@ export default function QuizPage({ user, profile, refreshProfile }) {
     if (aiText && aiText !== 'loading') { setAiOpen(o => !o); return }
     setAiOpen(true)
     setAiText('loading')
+    const fallback = 'Work through the hint step by step — the method will click with practice. 💪'
     try {
-      const chosenIdx = chosen === -1 ? currentQ.ans : chosen  // timed-out: explain correct
-      const { data, error } = await supabase.functions.invoke('explain', {
+      const chosenIdx = chosen === -1 ? currentQ.ans : chosen
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), 10000)
+      )
+      const request = supabase.functions.invoke('explain', {
         body: { question: currentQ, chosenIdx, stream },
       })
-      setAiText(error ? 'Work through the hint step by step — the method will click with practice. 💪' : (data?.explanation ?? ''))
+      const { data, error } = await Promise.race([request, timeout])
+      setAiText(error ? fallback : (data?.explanation ?? fallback))
     } catch {
-      setAiText('Work through the hint step by step — the method will click with practice. 💪')
+      setAiText(fallback)
     }
   }
 
