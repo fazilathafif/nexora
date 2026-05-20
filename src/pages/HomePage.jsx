@@ -130,14 +130,23 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
     return cfg.subjects[0].id
   }, [stream, cfg.subjects])
 
-  const [dateError, setDateError] = useState(null)
+  const [dateError,  setDateError]  = useState(null)
+  const [dateSaving, setDateSaving] = useState(false)
 
   async function saveExamDate(date) {
+    if (!date) { setDateError('Please select a date first.'); return }
     setDateError(null)
-    const { error } = await upsertProfile(user.id, { exam_date: date || null })
-    if (error) { setDateError('Could not save — please try again.'); return }
-    await refreshProfile?.()
-    setEditingDate(false)
+    setDateSaving(true)
+    try {
+      const { error } = await upsertProfile(user.id, { exam_date: date })
+      if (error) throw error
+      await refreshProfile?.()
+      setEditingDate(false)
+    } catch {
+      setDateError('Could not save — please try again.')
+    } finally {
+      setDateSaving(false)
+    }
   }
 
   function switchStream() {
@@ -197,7 +206,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
             type="date" value={dateInput} onChange={e => setDateInput(e.target.value)}
             style={{flex:1,minWidth:130,padding:'6px 10px',borderRadius:8,border:`1.5px solid ${C.border}`,background:dark?'#261E4E':'#F8FAFC',color:C.navy,fontSize:13,fontFamily:'Inter,sans-serif'}}
           />
-          <button onClick={() => saveExamDate(dateInput)} style={{background:C.primary,color:'white',border:'none',borderRadius:8,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>Save</button>
+          <button onClick={() => saveExamDate(dateInput)} disabled={dateSaving} style={{background:C.primary,color:'white',border:'none',borderRadius:8,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:dateSaving?'default':'pointer',opacity:dateSaving?0.7:1,fontFamily:'Inter,sans-serif'}}>{dateSaving ? 'Saving…' : 'Save'}</button>
           <button onClick={() => { setEditingDate(false); setDateError(null) }} style={{background:'none',border:'none',color:C.muted,fontSize:12,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>Cancel</button>
           {dateError && <span style={{width:'100%',fontSize:11,color:'#EF4444',fontWeight:600}}>{dateError}</span>}
         </div>
