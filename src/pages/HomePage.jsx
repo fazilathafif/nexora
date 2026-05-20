@@ -159,8 +159,8 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
     <Shell C={C}>
       {/* Header */}
       <div style={row('space-between','flex-start',{marginBottom:20})}>
-        <div>
-          <div style={{fontSize:28,fontWeight:900,color:C.navy,letterSpacing:'-0.8px',fontFamily:"'Playfair Display', Georgia, serif"}}>
+        <div style={{flex:1,minWidth:0,marginRight:10}}>
+          <div style={{fontSize:22,fontWeight:900,color:C.navy,letterSpacing:'-0.5px',fontFamily:"'Playfair Display', Georgia, serif",whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
             Nexora <span style={{color:C.primary}}>✦</span>
           </div>
           <div style={row('flex-start','center',{gap:6,marginTop:4})}>
@@ -168,7 +168,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
             <span style={{fontSize:11,color:C.muted}}>{cfg.years}</span>
           </div>
         </div>
-        <div style={row('flex-end','center',{gap:6})}>
+        <div style={row('flex-end','center',{gap:6,flexShrink:0})}>
           <Streak streak={streak} />
           {isSupabaseConfigured && isAnon
             ? <IconBtn onClick={() => setShowAuth(true)} color={C.primary} title="Sign In">
@@ -519,23 +519,26 @@ export function Btn({ onClick, C, children, small, primary }) {
 }
 
 export function IconBtn({ onClick, color, title, children }) {
+  const [pressed, setPressed] = useState(false)
   return (
     <button
       onClick={onClick}
       title={title}
+      onPointerDown={() => setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onPointerLeave={() => setPressed(false)}
       style={{
-        width:40, height:40,
+        width:40, height:40, flexShrink:0,
         display:'flex', alignItems:'center', justifyContent:'center',
-        background: color + '15',
-        border: `1.5px solid ${color}30`,
+        background: pressed ? color + '35' : color + '15',
+        border: `1.5px solid ${color}40`,
         borderRadius:12,
         cursor:'pointer',
         padding:0,
-        transition:'background 0.2s',
+        transform: pressed ? 'scale(0.88)' : 'scale(1)',
+        transition:'transform 0.1s ease, background 0.1s',
         WebkitTapHighlightColor:'transparent',
       }}
-      onMouseEnter={e => e.currentTarget.style.background = color + '28'}
-      onMouseLeave={e => e.currentTarget.style.background = color + '15'}
     >
       {children}
     </button>
