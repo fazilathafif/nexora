@@ -8,7 +8,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { STREAM_CONFIG, getQuestions } from '../data/questions.js'
 import { upsertProfile } from '../lib/db.js'
 import { isSupabaseConfigured } from '../lib/supabase.js'
-import { getDueCount } from '../lib/srs.js'
+import { getDueCount, getDueIds } from '../lib/srs.js'
 import AuthModal from '../components/AuthModal.jsx'
 import WelcomeModal from '../components/WelcomeModal.jsx'
 
@@ -121,8 +121,21 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
     return getDueCount(allQs)
   }, [stream, cfg.subjects])
 
+  // First subject that actually has due questions (so Review → lands in the right place)
+  const reviewSubjectId = useMemo(() => {
+    for (const s of cfg.subjects) {
+      const qs = getQuestions(stream, s.id)
+      if (getDueIds(qs).length > 0) return s.id
+    }
+    return cfg.subjects[0].id
+  }, [stream, cfg.subjects])
+
+  const [dateError, setDateError] = useState(null)
+
   async function saveExamDate(date) {
-    await upsertProfile(user.id, { exam_date: date || null })
+    setDateError(null)
+    const { error } = await upsertProfile(user.id, { exam_date: date || null })
+    if (error) { setDateError('Could not save — please try again.'); return }
     await refreshProfile?.()
     setEditingDate(false)
   }
@@ -185,7 +198,8 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
             style={{flex:1,minWidth:130,padding:'6px 10px',borderRadius:8,border:`1.5px solid ${C.border}`,background:dark?'#261E4E':'#F8FAFC',color:C.navy,fontSize:13,fontFamily:'Inter,sans-serif'}}
           />
           <button onClick={() => saveExamDate(dateInput)} style={{background:C.primary,color:'white',border:'none',borderRadius:8,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>Save</button>
-          <button onClick={() => setEditingDate(false)} style={{background:'none',border:'none',color:C.muted,fontSize:12,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>Cancel</button>
+          <button onClick={() => { setEditingDate(false); setDateError(null) }} style={{background:'none',border:'none',color:C.muted,fontSize:12,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>Cancel</button>
+          {dateError && <span style={{width:'100%',fontSize:11,color:'#EF4444',fontWeight:600}}>{dateError}</span>}
         </div>
       ) : days !== null ? (
         <div style={{
@@ -232,7 +246,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
             <div style={{fontSize:11,color:C.muted,marginTop:1}}>Spaced repetition — answer these first</div>
           </div>
           <button
-            onClick={() => navigate(`/${stream}/quiz/${cfg.subjects[0].id}?review=1`)}
+            onClick={() => navigate(`/${stream}/quiz/${reviewSubjectId}?review=1`)}
             style={{background:dark?C.secondary:C.primary,color:'white',border:'none',borderRadius:10,padding:'7px 14px',fontWeight:800,cursor:'pointer',fontSize:12,fontFamily:'Inter,sans-serif',flexShrink:0}}
           >
             Review →

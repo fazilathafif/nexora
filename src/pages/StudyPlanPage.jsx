@@ -121,26 +121,29 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
   const [loading,     setLoading]     = useState(true)
   const [editingDate, setEditingDate] = useState(false)
   const [dateInput,   setDateInput]   = useState(profile?.exam_date ?? '')
+  const [dateError,   setDateError]   = useState(null)
 
   const days = daysUntil(profile?.exam_date)
 
   useEffect(() => {
-    if (!user) return
-    getTopicStats(user.id, stream).then(({ data }) => {
-      const map = {}
-      ;(data ?? []).forEach(a => {
-        if (!map[a.topic]) map[a.topic] = { correct:0, total:0 }
-        map[a.topic].total++
-        if (a.is_correct) map[a.topic].correct++
+    if (!user) { setLoading(false); return }
+    getTopicStats(user.id, stream)
+      .then(({ data }) => {
+        const map = {}
+        ;(data ?? []).forEach(a => {
+          if (!map[a.topic]) map[a.topic] = { correct:0, total:0 }
+          map[a.topic].total++
+          if (a.is_correct) map[a.topic].correct++
+        })
+        const list = Object.entries(map).map(([topic, v]) => ({
+          topic,
+          pct:   Math.round((v.correct / v.total) * 100),
+          total: v.total,
+        })).sort((a, b) => a.pct - b.pct)
+        setTopics(list)
       })
-      const list = Object.entries(map).map(([topic, v]) => ({
-        topic,
-        pct:   Math.round((v.correct / v.total) * 100),
-        total: v.total,
-      })).sort((a, b) => a.pct - b.pct)
-      setTopics(list)
-      setLoading(false)
-    })
+      .catch(() => {})
+      .finally(() => setLoading(false))
   }, [user, stream])
 
   // Determine which subject a topic belongs to
@@ -171,7 +174,9 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
     : 'At Risk'
 
   async function saveExamDate(date) {
-    await upsertProfile(user.id, { exam_date: date || null })
+    setDateError(null)
+    const { error } = await upsertProfile(user.id, { exam_date: date || null })
+    if (error) { setDateError('Could not save — please try again.'); return }
     await refreshProfile?.()
     setEditingDate(false)
   }
@@ -215,7 +220,8 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
                   style={{padding:'7px 10px',borderRadius:8,border:`1.5px solid ${C.border}`,background:dark?'#1A1A2E':'#F8FAFC',color:C.navy,fontSize:13}}
                 />
                 <button onClick={() => saveExamDate(dateInput)} style={{background:C.primary,color:'white',border:'none',borderRadius:8,padding:'7px 16px',fontWeight:700,cursor:'pointer',fontSize:13}}>Save</button>
-                <button onClick={() => setEditingDate(false)} style={{background:'none',border:'none',color:C.muted,cursor:'pointer',fontSize:12}}>Cancel</button>
+                <button onClick={() => { setEditingDate(false); setDateError(null) }} style={{background:'none',border:'none',color:C.muted,cursor:'pointer',fontSize:12}}>Cancel</button>
+                {dateError && <span style={{width:'100%',fontSize:11,color:'#EF4444',fontWeight:600}}>{dateError}</span>}
               </div>
             )}
           </div>
@@ -251,7 +257,7 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
         )}
       </div>
 
-      {/* Edit exam date inline */}
+      {/* Edit exam date inline (when countdown is showing) */}
       {days != null && editingDate && (
         <div style={{background:C.card,border:`1.5px solid ${C.primary}40`,borderRadius:14,padding:'12px 16px',marginBottom:16,display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
           <input
@@ -259,7 +265,15 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
             style={{flex:1,minWidth:130,padding:'6px 10px',borderRadius:8,border:`1.5px solid ${C.border}`,background:dark?'#1A1A2E':'#F8FAFC',color:C.navy,fontSize:13}}
           />
           <button onClick={() => saveExamDate(dateInput)} style={{background:C.primary,color:'white',border:'none',borderRadius:8,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:'pointer'}}>Save</button>
-          <button onClick={() => setEditingDate(false)} style={{background:'none',border:'none',color:C.muted,fontSize:12,cursor:'pointer'}}>Cancel</button>
+          <button onClick={() => { setEditingDate(false); setDateError(null) }} style={{background:'none',border:'none',color:C.muted,fontSize:12,cursor:'pointer'}}>Cancel</button>
+          {dateError && <span style={{width:'100%',fontSize:11,color:'#EF4444',fontWeight:600}}>{dateError}</span>}
+        </div>
+      )}
+
+      {/* Loading indicator */}
+      {loading && (
+        <div style={{display:'flex',justifyContent:'center',padding:'32px 0'}}>
+          <div style={{width:24,height:24,border:`3px solid ${C.border}`,borderTopColor:C.primary,borderRadius:'50%',animation:'spin 0.8s linear infinite'}} />
         </div>
       )}
 
