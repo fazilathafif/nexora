@@ -12,6 +12,7 @@ import { getDueCount, getDueIds } from '../lib/srs.js'
 import { NAV_HEIGHT } from '../styles/tokens.js'
 import AuthModal from '../components/AuthModal.jsx'
 import WelcomeModal from '../components/WelcomeModal.jsx'
+import FanDeck from '../components/FanDeck.jsx'
 
 function daysUntil(dateStr) {
   if (!dateStr) return null
@@ -299,14 +300,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
       {/* Subject / exam grid */}
       <SectionLabel C={C}>{stream === 'alevel' ? 'Choose Your Exam' : 'Choose Subject'}</SectionLabel>      {stream === 'alevel' ? (
         <div style={{marginBottom:18}}>
-          {cfg.subjects.map(s => (
-            <ExamRowCard
-              key={s.id} subject={s} C={C} dark={dark}
-              onClick={() => navigate(`/${stream}/quiz/${s.id}`)}
-              onMock={() => navigate(`/${stream}/mock/${s.id}`)}
-              onFlashcards={() => navigate(`/${stream}/flashcards/${s.id}`)}
-            />
-          ))}
+          <FanDeck subjects={cfg.subjects} stream={stream} navigate={navigate} />
         </div>
       ) : (
         <div className="scroll-x" style={{marginBottom:18, paddingBottom:8}}>
