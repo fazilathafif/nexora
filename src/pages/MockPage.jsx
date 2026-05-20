@@ -303,7 +303,7 @@ export default function MockPage({ user, profile, refreshProfile }) {
                       ? C.primary
                       : answers[i] !== null
                         ? C.success+'30'
-                        : dark ? '#1a1530' : '#F1F5F9',
+                        : '#F1F5F9',
                     color: i === qIndex
                       ? 'white'
                       : answers[i] !== null

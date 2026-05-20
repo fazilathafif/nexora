@@ -14,7 +14,7 @@ import { getColors, Shell, Badge }     from './HomePage.jsx'
 import { getRandomBreak }              from '../data/breaks.js'
 import { NAV_HEIGHT }                  from '../styles/tokens.js'
 
-function CopyButton({ text, dark }) {
+function CopyButton({ text }) {
   const [copied, setCopied] = useState(false)
   function handleCopy() {
     navigator.clipboard.writeText(text).then(() => {
@@ -24,11 +24,11 @@ function CopyButton({ text, dark }) {
   }
   return (
     <button onClick={handleCopy} style={{
-      background: copied ? (dark?'#4ADE8020':'#DCFCE720') : 'transparent',
-      border: `1px solid ${dark?'#4ADE8040':'#6366F140'}`,
+      background: copied ? '#DCFCE720' : 'transparent',
+      border: `1px solid ${copied ? '#16A34A40' : '#6366F140'}`,
       borderRadius: 8, padding: '3px 10px',
       fontSize: 11, fontWeight: 700,
-      color: copied ? (dark?'#4ADE80':'#16A34A') : (dark?'#C4B5FD':'#6366F1'),
+      color: copied ? '#16A34A' : '#6366F1',
       cursor: 'pointer', transition: 'all 0.2s',
     }}>
       {copied ? '✓ Copied' : 'Copy'}
@@ -405,10 +405,10 @@ export default function QuizPage({ user, profile, refreshProfile }) {
             onClick={handleAiExplain}
             style={{
               width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-              background: aiOpen ? (dark?'#261E4E':'#EFF6FF') : 'transparent',
-              border:`1.5px solid ${dark?'#7C3AED':'#6366F1'}40`,
+              background: aiOpen ? '#F5F3FF' : 'transparent',
+              border:`1.5px solid #7C3AED40`,
               borderRadius:12, padding:'10px 14px', fontSize:13, fontWeight:700,
-              color: dark?'#C4B5FD':'#4F46E5', cursor:'pointer', transition:'all 0.2s',
+              color: '#7C3AED', cursor:'pointer', transition:'all 0.2s',
             }}
           >
             <span style={{fontSize:16}}>✨</span>
@@ -426,7 +426,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
             className="animate-slide-up"
             style={{
               position:'fixed', bottom:NAV_HEIGHT, left:0, right:0, zIndex:160,
-              background: dark ? '#181432' : '#F8FAFF',
+              background: '#FFFFFF',
               borderRadius:'20px 20px 0 0',
               maxHeight:'62dvh',
               overflowY:'auto',
@@ -446,32 +446,32 @@ export default function QuizPage({ user, profile, refreshProfile }) {
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
                   <div style={{display:'flex',alignItems:'center',gap:6}}>
                     <span style={{fontSize:14}}>🤖</span>
-                    <span style={{fontSize:10,fontWeight:800,color:dark?'#C4B5FD':'#6366F1',letterSpacing:'0.1em'}}>AI TUTOR</span>
+                    <span style={{fontSize:10,fontWeight:800,color:'#7C3AED',letterSpacing:'0.1em'}}>AI TUTOR</span>
                   </div>
                   <div style={{display:'flex',gap:8,alignItems:'center'}}>
-                    <CopyButton text={aiText} dark={dark} />
+                    <CopyButton text={aiText} />
                     <button onClick={() => setAiOpen(false)} style={{background:'none',border:'none',fontSize:18,color:C.muted,cursor:'pointer',padding:'0 2px'}}>✕</button>
                   </div>
                 </div>
                 <div>
                   <style>{`
-                    .ai-md h1{font-size:15px;font-weight:900;margin:0 0 6px;color:${dark?'#E2E8F0':'#1E293B'}}
-                    .ai-md h2{font-size:13px;font-weight:800;margin:14px 0 4px;color:${dark?'#C4B5FD':'#4F46E5'}}
-                    .ai-md h3{font-size:12px;font-weight:700;margin:10px 0 3px;color:${dark?'#A78BFA':'#6366F1'}}
+                    .ai-md h1{font-size:15px;font-weight:900;margin:0 0 6px;color:#1E293B}
+                    .ai-md h2{font-size:13px;font-weight:800;margin:14px 0 4px;color:#7C3AED}
+                    .ai-md h3{font-size:12px;font-weight:700;margin:10px 0 3px;color:#A855F7}
                     .ai-md p{margin:0 0 10px}
                     .ai-md ul,.ai-md ol{margin:4px 0 10px;padding-left:20px}
                     .ai-md li{margin-bottom:4px}
                     .ai-md strong{font-weight:800}
-                    .ai-md code{background:${dark?'#2D1B69':'#EEF2FF'};padding:1px 5px;border-radius:4px;font-size:12px}
+                    .ai-md code{background:#F3E8FF;padding:1px 5px;border-radius:4px;font-size:12px}
                   `}</style>
                   <div className="ai-md" style={{fontSize:13,color:C.navy,lineHeight:1.85}}><ReactMarkdown>{aiText}</ReactMarkdown></div>
                 </div>
                 {aiElaboration === null && (
                   <button onClick={handleElaborate} style={{
                     marginTop:12, width:'100%', background:'transparent',
-                    border:`1px dashed ${dark?'#7C3AED':'#6366F1'}50`,
+                    border:`1px dashed #7C3AED50`,
                     borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:700,
-                    color: dark?'#A78BFA':'#6366F1', cursor:'pointer',
+                    color: '#7C3AED', cursor:'pointer',
                   }}>
                     🔍 Go deeper
                   </button>
@@ -482,10 +482,10 @@ export default function QuizPage({ user, profile, refreshProfile }) {
                   </div>
                 )}
                 {aiElaboration && aiElaboration !== 'loading' && aiElaboration !== '' && (
-                  <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${dark?'#7C3AED':'#6366F1'}25`}}>
+                  <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid #7C3AED25`}}>
                     <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
-                      <span style={{fontSize:10,fontWeight:800,color:dark?'#A78BFA':'#6366F1',letterSpacing:'0.1em'}}>🔍 DEEPER DIVE</span>
-                      <CopyButton text={aiElaboration} dark={dark} />
+                      <span style={{fontSize:10,fontWeight:800,color:'#7C3AED',letterSpacing:'0.1em'}}>🔍 DEEPER DIVE</span>
+                      <CopyButton text={aiElaboration} />
                     </div>
                     <div className="ai-md"><ReactMarkdown>{aiElaboration}</ReactMarkdown></div>
                   </div>
@@ -520,7 +520,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
       {/* Brain Break overlay */}      {breakCard && (
         <div style={{
           position:'fixed', inset:0, zIndex:200,
-          background: dark ? 'rgba(10,8,20,0.97)' : 'rgba(248,250,252,0.97)',
+          background: 'rgba(255,255,255,0.97)',
           display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
           padding:'32px 24px',
         }}>

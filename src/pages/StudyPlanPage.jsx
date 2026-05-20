@@ -220,7 +220,7 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
               <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
                 <input
                   type="date" value={dateInput} onChange={e => setDateInput(e.target.value)}
-                  style={{padding:'7px 10px',borderRadius:8,border:`1.5px solid ${C.border}`,background:dark?'#1A1A2E':'#F8FAFC',color:C.navy,fontSize:13}}
+                  style={{padding:'7px 10px',borderRadius:8,border:`1.5px solid ${C.border}`,background:'#F8FAFC',color:C.navy,fontSize:13}}
                 />
                 <button onClick={() => saveExamDate(dateInput)} disabled={dateSaving} style={{background:C.primary,color:'white',border:'none',borderRadius:8,padding:'7px 16px',fontWeight:700,cursor:dateSaving?'default':'pointer',opacity:dateSaving?0.7:1,fontSize:13}}>{dateSaving ? 'Saving…' : 'Save'}</button>
                 <button onClick={() => { setEditingDate(false); setDateError(null) }} style={{background:'none',border:'none',color:C.muted,cursor:'pointer',fontSize:12}}>Cancel</button>
@@ -265,7 +265,7 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
         <div style={{background:C.card,border:`1.5px solid ${C.primary}40`,borderRadius:14,padding:'12px 16px',marginBottom:16,display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
           <input
             type="date" value={dateInput} onChange={e => setDateInput(e.target.value)}
-            style={{flex:1,minWidth:130,padding:'6px 10px',borderRadius:8,border:`1.5px solid ${C.border}`,background:dark?'#1A1A2E':'#F8FAFC',color:C.navy,fontSize:13}}
+            style={{flex:1,minWidth:130,padding:'6px 10px',borderRadius:8,border:`1.5px solid ${C.border}`,background:'#F8FAFC',color:C.navy,fontSize:13}}
           />
           <button onClick={() => saveExamDate(dateInput)} disabled={dateSaving} style={{background:C.primary,color:'white',border:'none',borderRadius:8,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:dateSaving?'default':'pointer',opacity:dateSaving?0.7:1}}>{dateSaving ? 'Saving…' : 'Save'}</button>
           <button onClick={() => { setEditingDate(false); setDateError(null) }} style={{background:'none',border:'none',color:C.muted,fontSize:12,cursor:'pointer'}}>Cancel</button>
@@ -320,7 +320,7 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
             {weakTopics.slice(0,3).map((t, i) => {
               const subj = subjectForTopic(t.topic)
               return (
-                <div key={t.topic} style={{display:'flex',alignItems:'center',gap:12,background:dark?'#0F172A':C.bg,borderRadius:12,padding:'11px 14px'}}>
+                <div key={t.topic} style={{display:'flex',alignItems:'center',gap:12,background:'#F8FAFC',borderRadius:12,padding:'11px 14px'}}>
                   <div style={{
                     width:28,height:28,borderRadius:'50%',flexShrink:0,
                     background: i===0 ? '#EF4444' : i===1 ? '#F59E0B' : '#6366F1',

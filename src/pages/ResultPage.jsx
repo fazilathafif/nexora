@@ -94,7 +94,7 @@ export default function ResultPage({ user, profile }) {
       {/* AI Modal */}
       {modalOpen && explaining && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:100}} onClick={() => setModalOpen(false)}>
-          <div style={{background:dark?'#181432':'white',borderRadius:'24px 24px 0 0',padding:'28px 22px 40px',width:'100%',maxWidth:430,maxHeight:'75vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
+          <div style={{background:'white',borderRadius:'24px 24px 0 0',padding:'28px 22px 40px',width:'100%',maxWidth:430,maxHeight:'75vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
             <div style={{width:40,height:4,background:C.border,borderRadius:2,margin:'0 auto 20px'}} />
 
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
@@ -120,7 +120,7 @@ export default function ResultPage({ user, profile }) {
             </div>
 
             {/* AI response */}
-            <div style={{background:dark?'linear-gradient(135deg,#261E4E,#1E1B4B)':'linear-gradient(135deg,#134E4A,#0F766E)',borderRadius:16,padding:'18px',color:'white'}}>
+            <div style={{background:'linear-gradient(135deg,#7C3AED,#EC4899)',borderRadius:16,padding:'18px',color:'white'}}>
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
                 <div style={{width:30,height:30,borderRadius:'50%',background:'rgba(255,255,255,0.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>🤖</div>
                 <span style={{fontWeight:800,fontSize:14}}>Nexora AI Tutor</span>

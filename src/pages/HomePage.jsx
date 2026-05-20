@@ -22,74 +22,74 @@ function daysUntil(dateStr) {
 
 const GCSE_COLORS = {
   primary:'#0F766E', secondary:'#F97316', accent:'#FCD34D',
-  bg:'#F0FDFA', card:'#FFFFFF', navy:'#134E4A', soft:'#CCFBF1',
-  muted:'#6B7280', success:'#10B981', border:'#D1FAE5',
+  bg:'#F0FDFA', card:'#FFFFFF', navy:'#1E293B', soft:'#CCFBF1',
+  muted:'#64748B', success:'#10B981', border:'#E2E8F0',
 }
 const ALEVEL_COLORS = {
   primary:   '#7C3AED',
   secondary: '#F43F5E',
   accent:    '#06B6D4',
-  bg:        '#0E0B1F',
-  card:      '#181432',
-  navy:      '#F0F4FF',
-  soft:      '#261E4E',
-  muted:     '#A78BFA',
-  success:   '#4ADE80',
-  border:    '#352B6D',
+  bg:        '#EDE9FE',
+  card:      '#FFFFFF',
+  navy:      '#1E293B',
+  soft:      '#EDE9FE',
+  muted:     '#64748B',
+  success:   '#10B981',
+  border:    '#E2E8F0',
 }
 
 const SUBJECT_COLORS = {
   // ── GCSE (light) ──────────────────────────────────────────────────────────
   maths: {
     primary:'#3B82F6', secondary:'#6366F1', accent:'#BFDBFE',
-    bg:'#EFF6FF', card:'#FFFFFF', navy:'#1E3A5F', soft:'#DBEAFE',
-    muted:'#6B7280', success:'#10B981', border:'#BFDBFE',
+    bg:'#EFF6FF', card:'#FFFFFF', navy:'#1E293B', soft:'#DBEAFE',
+    muted:'#64748B', success:'#10B981', border:'#E2E8F0',
   },
   english: {
     primary:'#D97706', secondary:'#F59E0B', accent:'#FDE68A',
-    bg:'#FFFBEB', card:'#FFFFFF', navy:'#78350F', soft:'#FEF3C7',
-    muted:'#6B7280', success:'#10B981', border:'#FDE68A',
+    bg:'#FFFBEB', card:'#FFFFFF', navy:'#1E293B', soft:'#FEF3C7',
+    muted:'#64748B', success:'#10B981', border:'#E2E8F0',
   },
   science: {
     primary:'#0F766E', secondary:'#06B6D4', accent:'#A7F3D0',
-    bg:'#F0FDFA', card:'#FFFFFF', navy:'#134E4A', soft:'#CCFBF1',
-    muted:'#6B7280', success:'#10B981', border:'#D1FAE5',
+    bg:'#F0FDFA', card:'#FFFFFF', navy:'#1E293B', soft:'#CCFBF1',
+    muted:'#64748B', success:'#10B981', border:'#E2E8F0',
   },
   verbal: {
     primary:'#DB2777', secondary:'#EC4899', accent:'#FBCFE8',
-    bg:'#FDF2F8', card:'#FFFFFF', navy:'#500724', soft:'#FCE7F3',
-    muted:'#6B7280', success:'#10B981', border:'#FBCFE8',
+    bg:'#FDF2F8', card:'#FFFFFF', navy:'#1E293B', soft:'#FCE7F3',
+    muted:'#64748B', success:'#10B981', border:'#E2E8F0',
   },
-  // ── A-Level (dark) ────────────────────────────────────────────────────────
+  // ── A-Level (light — consistent with warm login theme) ────────────────────
   ucat: {
     primary:'#06B6D4', secondary:'#0EA5E9', accent:'#67E8F9',
-    bg:'#030D1A', card:'#071B2C', navy:'#E0F9FF', soft:'#0B2840',
-    muted:'#67C8D6', success:'#4ADE80', border:'#0E3B52',
+    bg:'#F0FDFF', card:'#FFFFFF', navy:'#1E293B', soft:'#E0F9FF',
+    muted:'#64748B', success:'#10B981', border:'#E2E8F0',
   },
   lnat: {
     primary:'#F59E0B', secondary:'#FBBF24', accent:'#FDE68A',
-    bg:'#120900', card:'#1C0E00', navy:'#FEFCE8', soft:'#2A1800',
-    muted:'#C9943A', success:'#4ADE80', border:'#3D2400',
+    bg:'#FFFBEB', card:'#FFFFFF', navy:'#1E293B', soft:'#FEF3C7',
+    muted:'#64748B', success:'#10B981', border:'#E2E8F0',
   },
   tmua: {
     primary:'#818CF8', secondary:'#6366F1', accent:'#C7D2FE',
-    bg:'#0E0B1F', card:'#131029', navy:'#EEF2FF', soft:'#1C1840',
-    muted:'#A5B4FC', success:'#4ADE80', border:'#2E284A',
+    bg:'#EEF2FF', card:'#FFFFFF', navy:'#1E293B', soft:'#E0E7FF',
+    muted:'#64748B', success:'#10B981', border:'#E2E8F0',
   },
   esat: {
     primary:'#F97316', secondary:'#FB923C', accent:'#FDBA74',
-    bg:'#150A00', card:'#201000', navy:'#FFF4E8', soft:'#2E1700',
-    muted:'#C47B3E', success:'#4ADE80', border:'#3D2000',
+    bg:'#FFF7ED', card:'#FFFFFF', navy:'#1E293B', soft:'#FFEDD5',
+    muted:'#64748B', success:'#10B981', border:'#E2E8F0',
   },
   tsa: {
     primary:'#A855F7', secondary:'#C084FC', accent:'#E9D5FF',
-    bg:'#0F0521', card:'#180A32', navy:'#F5F3FF', soft:'#200D3F',
-    muted:'#C084FC', success:'#4ADE80', border:'#3B1B66',
+    bg:'#FAF5FF', card:'#FFFFFF', navy:'#1E293B', soft:'#F3E8FF',
+    muted:'#64748B', success:'#10B981', border:'#E2E8F0',
   },
   step: {
     primary:'#10B981', secondary:'#34D399', accent:'#6EE7B7',
-    bg:'#021412', card:'#041E1B', navy:'#ECFDF5', soft:'#062E28',
-    muted:'#6EE7B7', success:'#4ADE80', border:'#084E44',
+    bg:'#ECFDF5', card:'#FFFFFF', navy:'#1E293B', soft:'#D1FAE5',
+    muted:'#64748B', success:'#10B981', border:'#E2E8F0',
   },
 }
 
@@ -301,8 +301,8 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
         onClick={startPomodoro}
         style={{
           width:'100%', display:'flex', alignItems:'center', gap:12,
-          background: dark ? '#1a1740' : 'white',
-          boxShadow: dark ? '0 4px 20px rgba(0,0,0,0.35)' : '0 4px 20px rgba(0,0,0,0.07)',
+          background: 'white',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.07)',
           border: 'none',
           borderRadius:18, padding:'14px 16px', cursor:'pointer',
           fontFamily:'Inter,sans-serif', marginBottom:8, textAlign:'left',
@@ -445,26 +445,47 @@ function SubjectCard({ subject, C, dark, compact, onClick, onMock, onFlashcards 
 }
 
 export function Shell({ C, children, noNav }) {
-  const bgR    = parseInt((C.bg || '#f').replace('#', '').slice(0, 2), 16)
-  const isDark = bgR < 50
-  const bgGrad = isDark
-    ? `linear-gradient(165deg, #090318 0%, ${C.bg} 100%)`
-    : `linear-gradient(165deg, #FFFCF9 0%, ${C.bg} 65%)`
   return (
-    <div style={{ minHeight:'100dvh', background:bgGrad, fontFamily:'Inter,sans-serif' }}>
+    <div style={{ minHeight:'100dvh', background:'linear-gradient(160deg,#FF6B35 0%,#FF3CAC 52%,#7B2FBE 100%)', fontFamily:'Inter,sans-serif', position:'relative' }}>
       <style>{`*{box-sizing:border-box}button{font-family:inherit}
         @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes bounceY{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(5px)}}
+        .animate-slide-up{animation:slideUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94) both}
+        @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
       `}</style>
+
+      {/* Bokeh */}
+      {[
+        { w:280, h:280, top:'-6%',  left:'-14%', r:'255,200,80',  o:0.45, blur:85 },
+        { w:200, h:200, top:'2%',   right:'-7%', r:'255,80,200',  o:0.38, blur:60 },
+        { w:140, h:140, top:'20%',  left:'8%',   r:'255,255,160', o:0.20, blur:40 },
+        { w:220, h:220, top:'10%',  right:'-4%', r:'200,60,255',  o:0.26, blur:70 },
+      ].map((b, i) => (
+        <div key={i} style={{
+          position:'absolute', borderRadius:'50%',
+          width:b.w, height:b.h,
+          background:`rgba(${b.r},${b.o})`, filter:`blur(${b.blur}px)`,
+          top:b.top, left:b.left, right:b.right, pointerEvents:'none',
+        }} />
+      ))}
+
       <ScrollBar C={C} />
-      <div style={{
-        width:'100%', maxWidth:520, margin:'0 auto',
-        padding:`20px 16px calc(${noNav ? 24 : NAV_HEIGHT + 24}px + env(safe-area-inset-bottom, 0px))`,
-        animation:'fadeUp 0.35s ease',
-      }}>
-        {children}
+
+      {/* Gradient hero band */}
+      <div style={{ height:64, position:'relative', zIndex:1 }} />
+
+      {/* White content panel */}
+      <div style={{ position:'relative', zIndex:1, background:'white', borderRadius:'28px 28px 0 0', minHeight:'calc(100dvh - 64px)', boxShadow:'0 -8px 40px rgba(0,0,0,0.16)' }}>
+        <div style={{ width:36, height:4, background:'#E2E8F0', borderRadius:2, margin:'12px auto 0' }} />
+        <div style={{
+          width:'100%', maxWidth:520, margin:'0 auto',
+          padding:`16px 16px calc(${noNav ? 24 : NAV_HEIGHT + 24}px + env(safe-area-inset-bottom, 0px))`,
+          animation:'fadeUp 0.35s ease',
+        }}>
+          {children}
+        </div>
       </div>
     </div>
   )
