@@ -64,9 +64,12 @@ export default function QuizPage({ user, profile, refreshProfile }) {
   const [breakCard,     setBreakCard]     = useState(null)  // null | { type, emoji, text, nextIndex }
 
   // Stable refs so timer callback never captures stale values
-  const chosenRef   = useRef(null)
-  const hintRef     = useRef(false)
-  const currentQRef = useRef(questions[0])
+  const chosenRef    = useRef(null)
+  const hintRef      = useRef(false)
+  const currentQRef  = useRef(questions[0])
+  // Ghost-tap guard: record when we advance so handleAnswer ignores
+  // any synthetic click that the OS fires on the new question's buttons
+  const advancedAtRef = useRef(0)
   useEffect(() => { chosenRef.current   = chosen },           [chosen])
   useEffect(() => { hintRef.current     = hintShown },        [hintShown])
   useEffect(() => { currentQRef.current = questions[qIndex] }, [qIndex]) // eslint-disable-line
@@ -136,6 +139,8 @@ export default function QuizPage({ user, profile, refreshProfile }) {
 
   async function handleAnswer(idx) {
     if (chosen !== null) return
+    // Drop any ghost tap that arrives within 400 ms of advancing to this question
+    if (Date.now() - advancedAtRef.current < 400) return
     setChosen(idx)
     const correct = idx === currentQ.ans
     scheduleReview(currentQ.id, correct)
@@ -146,6 +151,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
   }
 
   async function handleNext() {
+    advancedAtRef.current = Date.now()
     if (qIndex + 1 < total) {
       const nextIndex = qIndex + 1
       if (nextIndex % 5 === 0) {
@@ -166,6 +172,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
   }
 
   function dismissBreak(card) {
+    advancedAtRef.current = Date.now()
     setBreakCard(null)
     setQIndex(card.nextIndex)
     setChosen(null)
