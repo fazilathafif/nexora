@@ -8,6 +8,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { getWeeklyActivity, getTopicStats } from '../lib/db.js'
 import { STREAM_CONFIG } from '../data/questions.js'
 import { getColors, Shell, SectionLabel } from './HomePage.jsx'
+import { shadow } from '../styles/tokens.js'
 
 // Map topic name → subject id for drill routing
 function guessSubjectForTopic(topic, cfg) {
@@ -75,10 +76,7 @@ export default function ProgressPage({ user, profile }) {
     <Shell C={C}>
       {/* Header */}
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,marginBottom:22}}>
-        <div style={{display:'flex',alignItems:'center',gap:12}}>
-          <button onClick={() => navigate(`/${stream}`)} style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:10,padding:'7px 14px',cursor:'pointer',fontWeight:700,color:C.muted,fontSize:13}}>← Back</button>
-          <div style={{fontSize:20,fontWeight:900,color:C.navy}}>My Progress</div>
-        </div>
+        <div style={{fontSize:22,fontWeight:900,color:C.navy}}>My Progress</div>
         <button
           onClick={() => navigate(`/${stream}/plan`)}
           style={{background:`linear-gradient(135deg,${C.primary},${stream==='alevel'?'#312E81':'#0F766E'})`,color:'white',border:'none',borderRadius:10,padding:'7px 14px',cursor:'pointer',fontWeight:700,fontSize:12,display:'flex',alignItems:'center',gap:6}}
@@ -90,10 +88,10 @@ export default function ProgressPage({ user, profile }) {
       {/* Stat cards */}
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20}}>
         {stats.map(s => (
-          <div key={s.label} style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:16,padding:'16px 14px',textAlign:'center'}}>
+          <div key={s.label} style={{background:C.card,borderRadius:16,padding:'16px 14px',textAlign:'center',boxShadow:shadow.md}}>
             <div style={{fontSize:20,marginBottom:4}}>{s.icon}</div>
-            <div style={{fontSize:26,fontWeight:900,color:s.color}}>{s.val}</div>
-            <div style={{fontSize:11,color:C.muted,marginTop:2}}>{s.label}</div>
+            <div style={{fontSize:36,fontWeight:900,color:s.color,lineHeight:1}}>{s.val}</div>
+            <div style={{fontSize:11,color:C.muted,marginTop:4}}>{s.label}</div>
           </div>
         ))}
       </div>
@@ -101,12 +99,12 @@ export default function ProgressPage({ user, profile }) {
       {/* Weekly heatmap */}
       <div style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:16,padding:'18px',marginBottom:14}}>
         <SectionLabel C={C}>This Week</SectionLabel>
-        {loading ? <Skeleton C={C} height={60} /> : (
-          <div style={{display:'flex',gap:6,alignItems:'flex-end',height:64}}>
+        {loading ? <Skeleton C={C} height={80} /> : (
+          <div style={{display:'flex',gap:6,alignItems:'flex-end',height:120}}>
             {heatmap.map((d, i) => (
               <div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
-                <div style={{width:'100%',height: d.sessions > 0 ? Math.max(8, (d.sessions/maxSessions)*52) : 8,borderRadius:4,background: d.sessions>0?C.primary:C.border,transition:'height 0.5s ease'}} />
-                <div style={{fontSize:9,color:C.muted}}>{d.label.slice(0,1)}</div>
+                <div style={{width:'100%',height: d.sessions > 0 ? Math.max(10, (d.sessions/maxSessions)*100) : 10,borderRadius:4,background: d.sessions>0?C.primary:C.border,transition:'height 0.5s ease'}} />
+                <div style={{fontSize:11,color:C.muted}}>{d.label.slice(0,1)}</div>
               </div>
             ))}
           </div>

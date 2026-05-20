@@ -193,15 +193,9 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
   return (
     <Shell C={C}>
       {/* Header */}
-      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:22}}>
-        <button
-          onClick={() => navigate(`/${stream}/progress`)}
-          style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:10,padding:'7px 14px',cursor:'pointer',fontWeight:700,color:C.muted,fontSize:13}}
-        >← Back</button>
-        <div>
-          <div style={{fontSize:20,fontWeight:900,color:C.navy}}>Study Plan</div>
-          <div style={{fontSize:11,color:C.muted,marginTop:1}}>Personalised to your performance</div>
-        </div>
+      <div style={{marginBottom:22}}>
+        <div style={{fontSize:22,fontWeight:900,color:C.navy}}>Study Plan</div>
+        <div style={{fontSize:11,color:C.muted,marginTop:1}}>Personalised to your performance</div>
       </div>
 
       {/* Exam date hero */}

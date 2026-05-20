@@ -192,7 +192,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
       }}>
         <div style={{position:'absolute',top:-30,right:-30,width:120,height:120,borderRadius:'50%',background:'rgba(255,255,255,0.05)'}} />
         <div style={{fontSize:12,color:'rgba(255,255,255,0.7)',marginBottom:2}}>Level {level} Scholar</div>
-        <div style={{fontSize:30,fontWeight:900,color:'white',marginBottom:8}}>{xp} XP</div>
+        <div style={{fontSize:52,fontWeight:900,color:'white',marginBottom:8,lineHeight:1}}>{xp} XP</div>
         <ProgressBar pct={pct} color={dark ? C.secondary : C.accent} />
         <div style={{fontSize:11,color:'rgba(255,255,255,0.6)',marginTop:4}}>
           {Math.round(150 - (xp % 150))} XP to Level {level + 1}
@@ -215,13 +215,26 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
         <div style={{
           background: days <= 7 ? '#EF444418' : days <= 30 ? '#F59E0B18' : C.primary+'18',
           border: `1px solid ${days <= 7 ? '#EF4444' : days <= 30 ? '#F59E0B' : C.primary}30`,
-          borderRadius:14,padding:'10px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',
+          borderRadius:16,padding:'14px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',
         }}>
           <div>
-            <span style={{fontSize:13,fontWeight:700,color: days <= 7 ? '#EF4444' : days <= 30 ? '#F59E0B' : C.primary}}>
-              {days > 0 ? `${days} day${days===1?'':'s'} until your exam` : days === 0 ? 'Your exam is today! 🎯' : 'Exam date passed'}
-            </span>
-            {days > 0 && <div style={{fontSize:11,color:C.muted,marginTop:1}}>Keep your streak going!</div>}
+            {days > 0 ? (
+              <>
+                <div style={{display:'flex',alignItems:'baseline',gap:6}}>
+                  <span style={{fontSize:48,fontWeight:900,lineHeight:1,color:days <= 7 ? '#EF4444' : days <= 30 ? '#F59E0B' : C.primary}}>
+                    {days}
+                  </span>
+                  <span style={{fontSize:15,fontWeight:700,color:days <= 7 ? '#EF4444' : days <= 30 ? '#F59E0B' : C.primary}}>
+                    day{days===1?'':'s'} to go
+                  </span>
+                </div>
+                <div style={{fontSize:11,color:C.muted,marginTop:2}}>Keep your streak going!</div>
+              </>
+            ) : (
+              <span style={{fontSize:15,fontWeight:700,color:days === 0 ? C.primary : C.muted}}>
+                {days === 0 ? 'Your exam is today! 🎯' : 'Exam date passed'}
+              </span>
+            )}
           </div>
           <button onClick={() => { setDateInput(profile?.exam_date ?? ''); setEditingDate(true) }} style={{background:'none',border:'none',cursor:'pointer',fontSize:15,lineHeight:1}}>✏️</button>
         </div>
@@ -296,34 +309,20 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
           ))}
         </div>
       ) : (
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:18}}>
+        <div className="scroll-x" style={{marginBottom:18, paddingBottom:8}}>
           {cfg.subjects.map(s => (
-            <SubjectCard
-              key={s.id} subject={s} C={C} dark={dark}
-              compact={false}
-              onClick={() => navigate(`/${stream}/quiz/${s.id}`)}
-              onMock={() => navigate(`/${stream}/mock/${s.id}`)}
-              onFlashcards={() => navigate(`/${stream}/flashcards/${s.id}`)}
-            />
+            <div key={s.id} style={{width:170, flexShrink:0}}>
+              <SubjectCard
+                subject={s} C={C} dark={dark}
+                compact={false}
+                onClick={() => navigate(`/${stream}/quiz/${s.id}`)}
+                onMock={() => navigate(`/${stream}/mock/${s.id}`)}
+                onFlashcards={() => navigate(`/${stream}/flashcards/${s.id}`)}
+              />
+            </div>
           ))}
         </div>
       )}
-
-      {/* Progress + Plan links */}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:0}}>
-        <button
-          onClick={() => navigate(`/${stream}/progress`)}
-          style={{background:'transparent',border:`1.5px solid ${C.border}`,borderRadius:14,padding:'13px',fontSize:13,fontWeight:700,color:C.muted,cursor:'pointer'}}
-        >
-          Progress 📊
-        </button>
-        <button
-          onClick={() => navigate(`/${stream}/plan`)}
-          style={{background:`${C.primary}18`,border:`1.5px solid ${C.primary}40`,borderRadius:14,padding:'13px',fontSize:13,fontWeight:700,color:C.primary,cursor:'pointer'}}
-        >
-          Study Plan 📅
-        </button>
-      </div>
 
       {stream === 'alevel' && (
         <div style={{marginTop:14,padding:'12px 14px',background:C.primary+'18',border:`1px solid ${C.primary}30`,borderRadius:12,fontSize:12,color:dark?'#A5B4FC':C.primary,lineHeight:1.5}}>
