@@ -1,15 +1,29 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 
+// Bokeh circles — warm depth-of-field feel
+const BOKEH = [
+  { w:360, h:360, top:'-12%', left:'-18%', r:'255,200,80',  o:0.55, blur:100 },
+  { w:240, h:240, top:'6%',   right:'-8%', r:'255,80,200',  o:0.45, blur:70  },
+  { w:160, h:160, top:'32%',  left:'12%',  r:'255,255,160', o:0.28, blur:45  },
+  { w:280, h:280, top:'16%',  right:'-5%', r:'200,60,255',  o:0.32, blur:80  },
+  { w:130, h:130, top:'52%',  left:'2%',   r:'255,180,80',  o:0.38, blur:38  },
+  { w:200, h:200, top:'38%',  left:'46%',  r:'255,100,180', o:0.28, blur:65  },
+  { w:110, h:110, top:'12%',  left:'38%',  r:'255,255,255', o:0.18, blur:28  },
+  { w:180, h:180, top:'68%',  right:'8%',  r:'255,140,60',  o:0.25, blur:55  },
+]
+
+const CHIPS = ['📐 GCSE Maths', '🏥 UCAT', '⚖️ LNAT', '∑ TMUA', '⚗️ ESAT', '📚 English']
+
 export default function AuthGate() {
-  const [mode,       setMode]       = useState('signin')
-  const [email,      setEmail]      = useState('')
-  const [password,   setPassword]   = useState('')
-  const [rememberMe, setRememberMe] = useState(true)
-  const [error,      setError]      = useState(null)
-  const [loading,    setLoading]    = useState(false)
-  const [done,       setDone]       = useState(false)
-  const [resetSent,  setResetSent]  = useState(false)
+  const [mode,          setMode]          = useState('signin')
+  const [email,         setEmail]         = useState('')
+  const [password,      setPassword]      = useState('')
+  const [error,         setError]         = useState(null)
+  const [loading,       setLoading]       = useState(false)
+  const [done,          setDone]          = useState(false)
+  const [resetSent,     setResetSent]     = useState(false)
+  const [emailExpanded, setEmailExpanded] = useState(false)
 
   async function signInWithGoogle() {
     await supabase.auth.signInWithOAuth({
@@ -24,8 +38,7 @@ export default function AuthGate() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    setLoading(true)
-    setError(null)
+    setLoading(true); setError(null)
 
     if (mode === 'forgot') {
       const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
@@ -42,14 +55,14 @@ export default function AuthGate() {
       setLoading(false)
       if (!err && data?.user?.identities?.length === 0) {
         switchMode('signin')
-        setError('An account with this email already exists. Please sign in below.')
+        setError('An account with this email already exists. Please sign in.')
         return
       }
       if (err) {
         const msg = err.message.toLowerCase()
         if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('email address is already')) {
           switchMode('signin')
-          setError('An account with this email already exists. Please sign in below.')
+          setError('An account with this email already exists. Please sign in.')
         } else {
           setError(err.message)
         }
@@ -59,18 +72,16 @@ export default function AuthGate() {
       return
     }
 
-    if (rememberMe) localStorage.setItem('nexora_remember_me', '1')
-    else            localStorage.removeItem('nexora_remember_me')
-
+    localStorage.setItem('nexora_remember_me', '1')
     const { error: err } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
     if (err) {
       localStorage.removeItem('nexora_remember_me')
       const msg = err.message.toLowerCase()
       if (msg.includes('invalid login') || msg.includes('invalid credentials')) {
-        setError('Incorrect email or password. Please try again.')
+        setError('Incorrect email or password.')
       } else if (msg.includes('email not confirmed')) {
-        setError('Please confirm your email first — check your inbox for the confirmation link.')
+        setError('Please confirm your email first — check your inbox.')
       } else {
         setError(err.message)
       }
@@ -79,117 +90,87 @@ export default function AuthGate() {
     }
   }
 
-  return (
-    <div style={s.root}>
-      <style>{css}</style>
+  // Whether the logo area should compress to make room for the expanded form
+  const compact = emailExpanded || mode === 'forgot'
 
-      {/* ── Ambient background blobs ──────────────────────────────────────── */}
-      <div style={{
-        position:'absolute', top:'-8%', right:'-8%',
-        width:420, height:420, borderRadius:'50%',
-        background:'radial-gradient(circle, rgba(13,148,136,0.18) 0%, transparent 70%)',
-        pointerEvents:'none',
-      }} />
-      <div style={{
-        position:'absolute', bottom:'2%', left:'-12%',
-        width:380, height:380, borderRadius:'50%',
-        background:'radial-gradient(circle, rgba(124,58,237,0.14) 0%, transparent 70%)',
-        pointerEvents:'none',
-      }} />
-      <div style={{
-        position:'absolute', top:'40%', left:'50%', transform:'translate(-50%,-50%)',
-        width:600, height:300, borderRadius:'50%',
-        background:'radial-gradient(ellipse, rgba(13,148,136,0.05) 0%, transparent 65%)',
-        pointerEvents:'none',
-      }} />
-
-      {/* ── Logo ─────────────────────────────────────────────────────────── */}
-      <div style={s.logo} className="animate-fade-up">
-        <div style={s.star}>✦</div>
-        <div style={{position:'relative', display:'inline-block', marginBottom:6}}>
-          <h1 style={s.title}>Nexora</h1>
-          <span style={{
-            position:'absolute', top:4, right:-40,
-            background:'linear-gradient(135deg,#0D9488,#06B6D4)',
-            color:'white', fontSize:9, fontWeight:800,
-            letterSpacing:'0.08em', padding:'2px 7px', borderRadius:6,
-          }}>BETA</span>
+  function sheetBody() {
+    if (done) return (
+      <div style={{ textAlign:'center', padding:'8px 0' }}>
+        <div style={{ fontSize:44, marginBottom:10 }}>📬</div>
+        <div style={{ fontWeight:800, fontSize:18, color:'#1E293B', marginBottom:8 }}>Check your inbox</div>
+        <div style={{ fontSize:13, color:'#64748B', lineHeight:1.65 }}>
+          Confirmation link sent to <strong style={{ color:'#FF6B35' }}>{email}</strong>.<br/>
+          Click it then come back to sign in.
         </div>
-        <p style={s.sub}>Your Personal AI Coach · UK Entrance Exams</p>
+        <button onClick={() => { switchMode('signin'); setEmailExpanded(false) }} style={btn(GRAD)}>
+          Back to Sign In
+        </button>
       </div>
+    )
 
-      {/* ── Card ─────────────────────────────────────────────────────────── */}
-      <div style={s.card} className="animate-fade-up">
+    if (resetSent) return (
+      <div style={{ textAlign:'center', padding:'8px 0' }}>
+        <div style={{ fontSize:44, marginBottom:10 }}>🔑</div>
+        <div style={{ fontWeight:800, fontSize:18, color:'#1E293B', marginBottom:8 }}>Reset link sent</div>
+        <div style={{ fontSize:13, color:'#64748B', lineHeight:1.65 }}>
+          Check <strong style={{ color:'#FF6B35' }}>{email}</strong> for the link.
+        </div>
+        <button onClick={() => { switchMode('signin'); setEmailExpanded(false) }} style={btn(GRAD)}>
+          Back to Sign In
+        </button>
+      </div>
+    )
 
-        {done ? (
-          <div style={{textAlign:'center',padding:'12px 0'}}>
-            <div style={{fontSize:44,marginBottom:14}}>📬</div>
-            <div style={{fontWeight:800,color:'#F8FAFC',fontSize:17,marginBottom:8}}>Check your inbox</div>
-            <div style={{fontSize:13,color:'#94A3B8',lineHeight:1.65}}>
-              Confirmation link sent to <strong style={{color:'#0D9488'}}>{email}</strong>.<br/>
-              Click it then come back to sign in.
-            </div>
-            <button onClick={() => switchMode('signin')} style={{marginTop:20,...s.btn}}>
-              Back to Sign In
+    if (mode === 'forgot') return (
+      <form onSubmit={handleSubmit}>
+        <div style={heading}>Reset password</div>
+        <div style={{ fontSize:13, color:'#64748B', marginBottom:18 }}>
+          Enter your email and we'll send a reset link.
+        </div>
+        <Field label="EMAIL" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
+        {error && <ErrBox>{error}</ErrBox>}
+        <button type="submit" disabled={loading} style={{ ...btn(GRAD), opacity: loading ? 0.65 : 1 }}>
+          {loading ? 'Sending…' : 'Send Reset Link'}
+        </button>
+        <div style={toggleRow}>
+          <button type="button" onClick={() => { switchMode('signin'); setEmailExpanded(true) }} style={link}>
+            ← Back to Sign In
+          </button>
+        </div>
+      </form>
+    )
+
+    return (
+      <>
+        <div style={heading}>
+          {emailExpanded ? (mode === 'signup' ? 'Create account' : 'Welcome back') : 'Get started'}
+        </div>
+
+        {/* Google */}
+        <GoogleBtn onClick={signInWithGoogle} />
+
+        {!emailExpanded ? (
+          <>
+            <Divider label="OR" />
+            <button
+              onClick={() => setEmailExpanded(true)}
+              style={{ width:'100%', background:'transparent', border:'1.5px solid #CBD5E1', borderRadius:16, padding:'15px', fontWeight:700, fontSize:14, color:'#475569', cursor:'pointer', fontFamily:'Inter,sans-serif', transition:'border-color 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.borderColor='#FF6B35'}
+              onMouseLeave={e => e.currentTarget.style.borderColor='#CBD5E1'}
+            >
+              Sign in with email
             </button>
-          </div>
-
-        ) : resetSent ? (
-          <div style={{textAlign:'center',padding:'12px 0'}}>
-            <div style={{fontSize:44,marginBottom:14}}>🔑</div>
-            <div style={{fontWeight:800,color:'#F8FAFC',fontSize:17,marginBottom:8}}>Reset link sent</div>
-            <div style={{fontSize:13,color:'#94A3B8',lineHeight:1.65}}>
-              Check your inbox at <strong style={{color:'#0D9488'}}>{email}</strong>.<br/>
-              Click the link to set a new password.
-            </div>
-            <button onClick={() => switchMode('signin')} style={{marginTop:20,...s.btn}}>
-              Back to Sign In
-            </button>
-          </div>
-
-        ) : mode === 'forgot' ? (
-          <form onSubmit={handleSubmit}>
-            <div style={{marginBottom:6,fontWeight:800,color:'#F8FAFC',fontSize:16}}>Forgot your password?</div>
-            <div style={{fontSize:13,color:'#64748B',marginBottom:20,lineHeight:1.6}}>
-              Enter your email and we'll send you a reset link.
-            </div>
-            <div style={s.field}>
-              <label style={s.label}>EMAIL</label>
-              <input
-                type="email" required name="email" autoComplete="email"
-                value={email} onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com" style={s.input}
-                onFocus={e => e.target.style.borderColor='#0D9488'}
-                onBlur={e  => e.target.style.borderColor='#1E293B'}
-              />
-            </div>
-            {error && <div style={s.errBox}>{error}</div>}
-            <button type="submit" disabled={loading} style={{...s.btn, opacity: loading ? 0.6 : 1}}>
-              {loading ? 'Sending…' : 'Send Reset Link'}
-            </button>
-            <div style={s.toggle}>
-              <button type="button" onClick={() => switchMode('signin')} style={s.link}>← Back to Sign In</button>
-            </div>
-          </form>
-
+          </>
         ) : (
           <form onSubmit={handleSubmit}>
-            <div style={s.field}>
-              <label style={s.label}>EMAIL</label>
-              <input
-                type="email" required name="email" autoComplete="email"
-                value={email} onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com" style={s.input}
-                onFocus={e => e.target.style.borderColor='#0D9488'}
-                onBlur={e  => e.target.style.borderColor='#1E293B'}
-              />
-            </div>
-            <div style={s.field}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
-                <label style={{...s.label,marginBottom:0}}>PASSWORD</label>
+            <Divider label="OR WITH EMAIL" />
+            <Field label="EMAIL" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
+            <div style={{ marginBottom:14 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:5 }}>
+                <label style={labelS}>PASSWORD</label>
                 {mode === 'signin' && (
-                  <button type="button" onClick={() => switchMode('forgot')} style={{...s.link,fontSize:11}}>
-                    Forgot password?
+                  <button type="button" onClick={() => { switchMode('forgot'); setEmailExpanded(false) }} style={{ ...link, fontSize:11 }}>
+                    Forgot?
                   </button>
                 )}
               </div>
@@ -197,65 +178,138 @@ export default function AuthGate() {
                 type="password" required minLength={6}
                 name="password" autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                 value={password} onChange={e => setPassword(e.target.value)}
-                placeholder="6+ characters" style={s.input}
-                onFocus={e => e.target.style.borderColor='#0D9488'}
-                onBlur={e  => e.target.style.borderColor='#1E293B'}
+                placeholder="6+ characters" style={inputS}
+                onFocus={e => e.target.style.borderColor='#FF6B35'}
+                onBlur={e  => e.target.style.borderColor='#E2E8F0'}
               />
             </div>
-            {mode === 'signin' && (
-              <label style={s.rememberRow}>
-                <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} style={s.rememberCheck} />
-                <span style={s.rememberLabel}>Remember me</span>
-              </label>
-            )}
-            {error && <div style={s.errBox}>{error}</div>}
-            <div style={{display:'flex', gap:8, marginBottom:4}}>
-              <button
-                type="button" onClick={signInWithGoogle}
-                style={{
-                  flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:7,
-                  background:'#fff', border:'1.5px solid #E2E8F0', borderRadius:12,
-                  padding:'12px 8px', fontWeight:700, fontSize:13, color:'#1E293B',
-                  cursor:'pointer', fontFamily:'Inter,sans-serif', transition:'box-shadow 0.2s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.boxShadow='0 0 0 3px rgba(66,133,244,0.2)'}
-                onMouseLeave={e => e.currentTarget.style.boxShadow='none'}
-              >
-                <GoogleIcon /> Google
-              </button>
-              <button type="submit" disabled={loading} style={{...s.btn, flex:1, width:'auto', opacity: loading ? 0.6 : 1}}>
-                {loading ? 'Wait…' : mode === 'signup' ? 'Create Account' : 'Sign In →'}
-              </button>
-            </div>
-            <div style={s.toggle}>
+            {error && <ErrBox>{error}</ErrBox>}
+            <button type="submit" disabled={loading} style={{ ...btn(GRAD), opacity: loading ? 0.65 : 1 }}>
+              {loading ? 'Please wait…' : mode === 'signup' ? 'Create Account' : 'Sign In →'}
+            </button>
+            <div style={toggleRow}>
               {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
-              <button type="button" onClick={() => switchMode(mode === 'signin' ? 'signup' : 'signin')} style={s.link}>
+              <button type="button" onClick={() => switchMode(mode === 'signin' ? 'signup' : 'signin')} style={link}>
                 {mode === 'signin' ? 'Sign Up' : 'Sign In'}
               </button>
             </div>
           </form>
         )}
+      </>
+    )
+  }
+
+  return (
+    <div style={{ position:'fixed', inset:0, background:'linear-gradient(160deg,#FF6B35 0%,#FF3CAC 52%,#7B2FBE 100%)', overflow:'hidden', fontFamily:'Inter,sans-serif' }}>
+      <style>{css}</style>
+
+      {/* ── Bokeh circles ─────────────────────────────────────────────────── */}
+      {BOKEH.map((b, i) => (
+        <div key={i} style={{
+          position:'absolute',
+          width:b.w, height:b.h,
+          borderRadius:'50%',
+          background:`rgba(${b.r},${b.o})`,
+          filter:`blur(${b.blur}px)`,
+          top:b.top, left:b.left, right:b.right,
+          pointerEvents:'none',
+        }} />
+      ))}
+
+      {/* ── Logo / hero ────────────────────────────────────────────────────── */}
+      <div style={{
+        position:'absolute', top:0, left:0, right:0,
+        bottom: compact ? '66%' : '50%',
+        display:'flex', flexDirection:'column',
+        alignItems:'center', justifyContent:'flex-end',
+        padding:'0 24px 28px',
+        transition:'bottom 0.38s cubic-bezier(0.25,0.46,0.45,0.94)',
+        pointerEvents:'none',
+      }}>
+        <div className="animate-fade-up" style={{ textAlign:'center' }}>
+          <span style={{ fontSize:36, display:'block', marginBottom:4, animation:'float 3s ease-in-out infinite', color:'white', textShadow:'0 2px 16px rgba(0,0,0,0.2)' }}>✦</span>
+          <div style={{ position:'relative', display:'inline-block', marginBottom:10 }}>
+            <h1 style={titleS}>Nexora</h1>
+            <span style={{ position:'absolute', top:6, right:-40, background:'rgba(255,255,255,0.25)', backdropFilter:'blur(4px)', color:'white', fontSize:9, fontWeight:800, letterSpacing:'0.08em', padding:'2px 7px', borderRadius:6, border:'1px solid rgba(255,255,255,0.4)' }}>BETA</span>
+          </div>
+          <p style={{ color:'rgba(255,255,255,0.82)', fontSize:11, fontWeight:700, margin:0, letterSpacing:'0.16em' }}>
+            ACE YOUR ENTRANCE EXAMS
+          </p>
+        </div>
+
+        {/* Subject chips — hide when form is expanded to save space */}
+        {!compact && (
+          <div className="animate-fade-up" style={{ display:'flex', flexWrap:'wrap', gap:6, marginTop:20, justifyContent:'center' }}>
+            {CHIPS.map(label => (
+              <span key={label} style={{ background:'rgba(255,255,255,0.18)', backdropFilter:'blur(6px)', border:'1px solid rgba(255,255,255,0.34)', borderRadius:20, padding:'5px 11px', fontSize:11, fontWeight:700, color:'white' }}>
+                {label}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* ── Track chips ───────────────────────────────────────────────────── */}
-      <div style={s.tracks}>
-        <div style={{...s.trackGroup, borderColor:'#0D948830'}}>
-          <div style={{...s.trackLabel, color:'#0D9488'}}>GCSE TRACK</div>
-          <div style={s.trackItems}>
-            {[['📐','Maths'],['📚','English'],['🔬','Science'],['🧩','Verbal']].map(([e,n]) => (
-              <span key={n} style={{...s.trackChip, background:'#0D948814', border:'1px solid #0D948835', color:'#2DD4BF'}}>{e} {n}</span>
-            ))}
-          </div>
-        </div>
-        <div style={{...s.trackGroup, borderColor:'#7C3AED30'}}>
-          <div style={{...s.trackLabel, color:'#A78BFA'}}>A-LEVEL TRACK</div>
-          <div style={s.trackItems}>
-            {[['🏥','UCAT'],['⚖️','LNAT'],['∑','TMUA'],['⚗️','ESAT'],['🧠','TSA'],['📏','STEP']].map(([e,n]) => (
-              <span key={n} style={{...s.trackChip, background:'#7C3AED14', border:'1px solid #7C3AED30', color:'#C4B5FD'}}>{e} {n}</span>
-            ))}
-          </div>
-        </div>
+      {/* ── Bottom sheet ───────────────────────────────────────────────────── */}
+      <div style={{
+        position:'absolute', bottom:0, left:0, right:0,
+        background:'#FFFFFF',
+        borderRadius:'28px 28px 0 0',
+        padding:`24px 24px calc(40px + env(safe-area-inset-bottom, 0px))`,
+        boxShadow:'0 -16px 56px rgba(0,0,0,0.22)',
+        maxHeight:'78dvh',
+        overflowY:'auto',
+      }}>
+        {/* Drag pill */}
+        <div style={{ width:36, height:4, borderRadius:2, background:'#CBD5E1', margin:'0 auto 22px' }} />
+        {sheetBody()}
       </div>
+    </div>
+  )
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function GoogleBtn({ onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:10, background:'white', border:'1.5px solid #E2E8F0', borderRadius:16, padding:'15px', fontWeight:700, fontSize:14, color:'#1E293B', cursor:'pointer', fontFamily:'Inter,sans-serif', boxShadow:'0 2px 10px rgba(0,0,0,0.08)', marginBottom:12, transition:'box-shadow 0.2s,transform 0.15s' }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow='0 6px 20px rgba(0,0,0,0.14)'; e.currentTarget.style.transform='translateY(-1px)' }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow='0 2px 10px rgba(0,0,0,0.08)'; e.currentTarget.style.transform='translateY(0)' }}
+    >
+      <GoogleIcon /> Continue with Google
+    </button>
+  )
+}
+
+function Divider({ label }) {
+  return (
+    <div style={{ display:'flex', alignItems:'center', gap:10, margin:'4px 0 14px' }}>
+      <div style={{ flex:1, height:1, background:'#E2E8F0' }} />
+      <span style={{ fontSize:11, fontWeight:700, color:'#94A3B8', letterSpacing:'0.08em' }}>{label}</span>
+      <div style={{ flex:1, height:1, background:'#E2E8F0' }} />
+    </div>
+  )
+}
+
+function Field({ label, type, value, onChange, placeholder }) {
+  return (
+    <div style={{ marginBottom:14 }}>
+      <label style={labelS}>{label}</label>
+      <input
+        type={type} required name={type} autoComplete={type}
+        value={value} onChange={onChange} placeholder={placeholder} style={inputS}
+        onFocus={e => e.target.style.borderColor='#FF6B35'}
+        onBlur={e  => e.target.style.borderColor='#E2E8F0'}
+      />
+    </div>
+  )
+}
+
+function ErrBox({ children }) {
+  return (
+    <div style={{ background:'#FFF1F2', border:'1px solid #FECDD3', borderRadius:10, padding:'8px 12px', fontSize:12, color:'#BE123C', marginBottom:14 }}>
+      {children}
     </div>
   )
 }
@@ -271,55 +325,56 @@ function GoogleIcon() {
   )
 }
 
-const s = {
-  root:   {
-    minHeight:'100vh', background:'#080812',
-    display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-    padding:'24px 20px', fontFamily:'Inter,sans-serif',
-    position:'relative', overflow:'hidden',
-  },
-  logo:   { textAlign:'center', marginBottom:28 },
-  star:   { fontSize:44, marginBottom:6, animation:'float 3s ease-in-out infinite', display:'block' },
-  title:  {
-    fontSize:40, fontWeight:900, letterSpacing:'-1.5px', margin:'0 0 2px',
-    fontFamily:"'Playfair Display', Georgia, serif",
-    background:'linear-gradient(135deg, #F8FAFC 20%, #0D9488 60%, #A5B4FC 100%)',
-    WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
-    backgroundClip:'text',
-  },
-  sub:    { fontSize:11, color:'#475569', marginTop:8, letterSpacing:'0.1em', fontWeight:600 },
-  card:   {
-    background:'linear-gradient(180deg, #0D1B2A 0%, #0A1220 100%)',
-    border:'1.5px solid #1E3A5270',
-    borderTop:'1.5px solid #0D948850',
-    borderRadius:24, padding:'28px 24px',
-    width:'100%', maxWidth:360,
-    boxShadow:'0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(13,148,136,0.08)',
-  },
-  field:  { marginBottom:16 },
-  label:  { display:'block', fontSize:10, fontWeight:700, color:'#475569', letterSpacing:'0.08em', marginBottom:5 },
-  input:  {
-    width:'100%', padding:'12px 14px', borderRadius:10,
-    fontSize:14, background:'#0F1E35', border:'1.5px solid #1E3A52',
-    color:'#F8FAFC', outline:'none',
-    fontFamily:'Inter,sans-serif', transition:'border-color 0.2s', boxSizing:'border-box',
-  },
-  errBox: { background:'#EF444418', border:'1px solid #EF444450', borderRadius:8, padding:'8px 12px', fontSize:12, color:'#F87171', marginBottom:14 },
-  btn:    { width:'100%', background:'linear-gradient(135deg,#0D9488,#0F766E)', color:'white', border:'none', borderRadius:12, padding:'13px', fontWeight:800, cursor:'pointer', fontSize:15, fontFamily:'Inter,sans-serif', transition:'opacity 0.2s' },
-  toggle: { textAlign:'center', marginTop:14, fontSize:12, color:'#475569' },
-  link:   { background:'none', border:'none', cursor:'pointer', color:'#0D9488', fontWeight:700, fontSize:12, fontFamily:'Inter,sans-serif' },
-  rememberRow:   { display:'flex', alignItems:'center', gap:8, marginBottom:14, cursor:'pointer' },
-  rememberCheck: { width:15, height:15, accentColor:'#0D9488', cursor:'pointer' },
-  rememberLabel: { fontSize:13, color:'#64748B', userSelect:'none' },
-  tracks:     { marginTop:20, width:'100%', maxWidth:360, display:'flex', flexDirection:'column', gap:8 },
-  trackGroup: { background:'#0A1220', border:'1px solid #1E3A52', borderRadius:14, padding:'11px 16px' },
-  trackLabel: { fontSize:9, fontWeight:800, letterSpacing:'0.12em', marginBottom:7 },
-  trackItems: { display:'flex', flexWrap:'wrap', gap:5 },
-  trackChip:  { borderRadius:20, padding:'4px 11px', fontSize:11, fontWeight:600 },
+// ── Styles ────────────────────────────────────────────────────────────────────
+
+const GRAD = 'linear-gradient(135deg,#FF6B35,#FF3CAC)'
+
+const titleS = {
+  fontSize:54, fontWeight:900, letterSpacing:'-2px', margin:'0 0 2px',
+  fontFamily:"'Playfair Display', Georgia, serif",
+  color:'white',
+  textShadow:'0 4px 28px rgba(0,0,0,0.22)',
+}
+
+const heading = {
+  fontWeight:900, fontSize:22, color:'#1E293B',
+  marginBottom:20, letterSpacing:'-0.4px',
+}
+
+const labelS = {
+  display:'block', fontSize:10, fontWeight:700, color:'#94A3B8',
+  letterSpacing:'0.1em', marginBottom:5,
+}
+
+const inputS = {
+  width:'100%', padding:'13px 14px', borderRadius:12,
+  fontSize:14, background:'#F8FAFC', border:'1.5px solid #E2E8F0',
+  color:'#1E293B', outline:'none',
+  fontFamily:'Inter,sans-serif', transition:'border-color 0.2s', boxSizing:'border-box',
+}
+
+const toggleRow = {
+  textAlign:'center', marginTop:16, fontSize:13, color:'#64748B',
+}
+
+const link = {
+  background:'none', border:'none', cursor:'pointer',
+  color:'#FF6B35', fontWeight:700, fontSize:13,
+  fontFamily:'Inter,sans-serif', padding:0,
+}
+
+function btn(bg) {
+  return {
+    display:'block', width:'100%', background:bg, color:'white', border:'none',
+    borderRadius:16, padding:'15px', fontWeight:800, cursor:'pointer',
+    fontSize:15, fontFamily:'Inter,sans-serif',
+    transition:'opacity 0.2s', marginTop:4, marginBottom:4,
+    boxShadow:'0 4px 18px rgba(255,107,53,0.35)',
+  }
 }
 
 const css = `
-  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
-  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-  .animate-fade-up { animation: fadeUp 0.5s ease both; }
+  @keyframes float   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  @keyframes fadeUp  { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+  .animate-fade-up   { animation: fadeUp 0.5s ease both; }
 `
