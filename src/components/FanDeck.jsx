@@ -7,8 +7,8 @@
 import { useState, useRef, useEffect } from 'react'
 
 // ── Card geometry ─────────────────────────────────────────────────────────────
-const CARD_W      = 145
-const CARD_H      = 205
+const CARD_W      = 181   // 145 × 1.25
+const CARD_H      = 256   // 205 × 1.25
 const PIVOT_EXT   = 85    // px below card bottom for transformOrigin
 const SPREAD      = 18    // degrees between adjacent cards
 
@@ -196,7 +196,7 @@ export default function FanDeck({ subjects, stream, navigate, C }) {
       <div
         style={{
           position:'relative',
-          height: CARD_H + 65,
+          height: CARD_H + 80,
           overflow:'hidden',
           cursor:'grab',
           touchAction:'none',
