@@ -168,15 +168,21 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
             <span style={{fontSize:11,color:C.muted}}>{cfg.years}</span>
           </div>
         </div>
-        <div style={row('flex-end','center',{gap:8})}>
+        <div style={row('flex-end','center',{gap:6})}>
           <Streak streak={streak} />
           {isSupabaseConfigured && isAnon
-            ? <Btn onClick={() => setShowAuth(true)} C={C} small primary>Sign In</Btn>
+            ? <IconBtn onClick={() => setShowAuth(true)} color={C.primary} title="Sign In">
+                <SignInIcon color={C.primary} />
+              </IconBtn>
             : isSupabaseConfigured && !isAnon
-              ? <Btn onClick={signOut} C={C} small>Sign Out</Btn>
+              ? <IconBtn onClick={signOut} color={C.muted} title="Sign Out">
+                  <SignOutIcon color={C.muted} />
+                </IconBtn>
               : null
           }
-          <Btn onClick={switchStream} C={C} small>Switch</Btn>
+          <IconBtn onClick={switchStream} color={C.primary} title="Switch stream">
+            <SwitchIcon color={C.primary} />
+          </IconBtn>
         </div>
       </div>
 
@@ -501,6 +507,59 @@ export function Btn({ onClick, C, children, small, primary }) {
       color: primary ? 'white' : C.muted,
       cursor:'pointer',
     }}>{children}</button>
+  )
+}
+
+export function IconBtn({ onClick, color, title, children }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      style={{
+        width:40, height:40,
+        display:'flex', alignItems:'center', justifyContent:'center',
+        background: color + '15',
+        border: `1.5px solid ${color}30`,
+        borderRadius:12,
+        cursor:'pointer',
+        padding:0,
+        transition:'background 0.2s',
+        WebkitTapHighlightColor:'transparent',
+      }}
+      onMouseEnter={e => e.currentTarget.style.background = color + '28'}
+      onMouseLeave={e => e.currentTarget.style.background = color + '15'}
+    >
+      {children}
+    </button>
+  )
+}
+
+function SignInIcon({ color, size=20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
+      <polyline points="10 17 15 12 10 7" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
+      <line x1="15" y1="12" x2="3" y2="12" stroke={color} strokeWidth={2} strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function SignOutIcon({ color, size=20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
+      <polyline points="16 17 21 12 16 7" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
+      <line x1="21" y1="12" x2="9" y2="12" stroke={color} strokeWidth={2} strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function SwitchIcon({ color, size=20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M7 16V4m0 0L3 8m4-4 4 4" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M17 8v12m0 0 4-4m-4 4-4-4" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
   )
 }
 

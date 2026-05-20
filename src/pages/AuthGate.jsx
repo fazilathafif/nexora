@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 
 export default function AuthGate() {
-  const [mode,       setMode]       = useState('signin') // 'signin' | 'signup' | 'forgot'
+  const [mode,       setMode]       = useState('signin')
   const [email,      setEmail]      = useState('')
   const [password,   setPassword]   = useState('')
   const [rememberMe, setRememberMe] = useState(true)
@@ -59,15 +59,12 @@ export default function AuthGate() {
       return
     }
 
-    // sign in — set the remember-me flag BEFORE the API call so it's present
-    // even if the onAuthStateChange fires and unmounts this component first
     if (rememberMe) localStorage.setItem('nexora_remember_me', '1')
     else            localStorage.removeItem('nexora_remember_me')
 
     const { error: err } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
     if (err) {
-      // Sign-in failed — remove the flag we just set
       localStorage.removeItem('nexora_remember_me')
       const msg = err.message.toLowerCase()
       if (msg.includes('invalid login') || msg.includes('invalid credentials')) {
@@ -80,81 +77,80 @@ export default function AuthGate() {
     } else {
       sessionStorage.setItem('nexora_session_active', '1')
     }
-    // on success onAuthStateChange in useAuth fires automatically
   }
-
-  const subLabel = mode === 'signup' ? 'CREATE ACCOUNT'
-    : mode === 'forgot' ? 'RESET PASSWORD'
-    : 'SIGN IN TO CONTINUE'
 
   return (
     <div style={s.root}>
       <style>{css}</style>
 
-      {/* UK flag watermark */}
-      <div style={s.mapWrap} aria-hidden="true">
-        <svg viewBox="0 0 600 300" preserveAspectRatio="xMidYMid meet" style={s.mapSvg} xmlns="http://www.w3.org/2000/svg">
-          <rect width="600" height="300" fill="#012169"/>
-          <line x1="0" y1="0" x2="600" y2="300" stroke="white" strokeWidth="100"/>
-          <line x1="600" y1="0" x2="0" y2="300" stroke="white" strokeWidth="100"/>
-          <polygon points="600,0 600,50 300,150 350,150" fill="#C8102E"/>
-          <polygon points="0,300 0,250 300,150 250,150" fill="#C8102E"/>
-          <polygon points="0,0 50,0 300,150 250,150" fill="#C8102E"/>
-          <polygon points="600,300 550,300 300,150 350,150" fill="#C8102E"/>
-          <rect x="0" y="110" width="600" height="80" fill="white"/>
-          <rect x="260" y="0" width="80" height="300" fill="white"/>
-          <rect x="0" y="125" width="600" height="50" fill="#C8102E"/>
-          <rect x="275" y="0" width="50" height="300" fill="#C8102E"/>
-        </svg>
-      </div>
+      {/* ── Ambient background blobs ──────────────────────────────────────── */}
+      <div style={{
+        position:'absolute', top:'-8%', right:'-8%',
+        width:420, height:420, borderRadius:'50%',
+        background:'radial-gradient(circle, rgba(13,148,136,0.18) 0%, transparent 70%)',
+        pointerEvents:'none',
+      }} />
+      <div style={{
+        position:'absolute', bottom:'2%', left:'-12%',
+        width:380, height:380, borderRadius:'50%',
+        background:'radial-gradient(circle, rgba(124,58,237,0.14) 0%, transparent 70%)',
+        pointerEvents:'none',
+      }} />
+      <div style={{
+        position:'absolute', top:'40%', left:'50%', transform:'translate(-50%,-50%)',
+        width:600, height:300, borderRadius:'50%',
+        background:'radial-gradient(ellipse, rgba(13,148,136,0.05) 0%, transparent 65%)',
+        pointerEvents:'none',
+      }} />
 
-      {/* Logo */}
+      {/* ── Logo ─────────────────────────────────────────────────────────── */}
       <div style={s.logo} className="animate-fade-up">
         <div style={s.star}>✦</div>
-        <div style={{position:'relative', display:'inline-block'}}>
+        <div style={{position:'relative', display:'inline-block', marginBottom:6}}>
           <h1 style={s.title}>Nexora</h1>
-          <span style={{position:'absolute',top:2,right:-36,background:'#0D9488',color:'white',fontSize:9,fontWeight:800,letterSpacing:'0.08em',padding:'2px 6px',borderRadius:6}}>BETA</span>
+          <span style={{
+            position:'absolute', top:4, right:-40,
+            background:'linear-gradient(135deg,#0D9488,#06B6D4)',
+            color:'white', fontSize:9, fontWeight:800,
+            letterSpacing:'0.08em', padding:'2px 7px', borderRadius:6,
+          }}>BETA</span>
         </div>
         <p style={s.sub}>Your Personal AI Coach · UK Entrance Exams</p>
-        <p style={{fontSize:12,fontWeight:600,color:'#3B82F6',marginTop:6}}>© 2026 afif@nexora</p>
       </div>
 
-      {/* Card */}
+      {/* ── Card ─────────────────────────────────────────────────────────── */}
       <div style={s.card} className="animate-fade-up">
 
-        {/* Sign-up confirmation */}
         {done ? (
           <div style={{textAlign:'center',padding:'12px 0'}}>
-            <div style={{fontSize:40,marginBottom:12}}>📬</div>
-            <div style={{fontWeight:800,color:'#F8FAFC',fontSize:16,marginBottom:8}}>Check your inbox</div>
-            <div style={{fontSize:13,color:'#94A3B8',lineHeight:1.6}}>
+            <div style={{fontSize:44,marginBottom:14}}>📬</div>
+            <div style={{fontWeight:800,color:'#F8FAFC',fontSize:17,marginBottom:8}}>Check your inbox</div>
+            <div style={{fontSize:13,color:'#94A3B8',lineHeight:1.65}}>
               Confirmation link sent to <strong style={{color:'#0D9488'}}>{email}</strong>.<br/>
               Click it then come back to sign in.
             </div>
-            <button onClick={() => switchMode('signin')} style={{marginTop:18,...s.btn}}>
+            <button onClick={() => switchMode('signin')} style={{marginTop:20,...s.btn}}>
               Back to Sign In
             </button>
           </div>
 
-        /* Password reset sent */
         ) : resetSent ? (
           <div style={{textAlign:'center',padding:'12px 0'}}>
-            <div style={{fontSize:40,marginBottom:12}}>🔑</div>
-            <div style={{fontWeight:800,color:'#F8FAFC',fontSize:16,marginBottom:8}}>Reset link sent</div>
-            <div style={{fontSize:13,color:'#94A3B8',lineHeight:1.6}}>
+            <div style={{fontSize:44,marginBottom:14}}>🔑</div>
+            <div style={{fontWeight:800,color:'#F8FAFC',fontSize:17,marginBottom:8}}>Reset link sent</div>
+            <div style={{fontSize:13,color:'#94A3B8',lineHeight:1.65}}>
               Check your inbox at <strong style={{color:'#0D9488'}}>{email}</strong>.<br/>
               Click the link to set a new password.
             </div>
-            <button onClick={() => switchMode('signin')} style={{marginTop:18,...s.btn}}>
+            <button onClick={() => switchMode('signin')} style={{marginTop:20,...s.btn}}>
               Back to Sign In
             </button>
           </div>
 
-        /* Forgot password form */
         ) : mode === 'forgot' ? (
           <form onSubmit={handleSubmit}>
-            <div style={{marginBottom:6,fontWeight:800,color:'#F8FAFC',fontSize:15}}>Forgot your password?</div>
-            <div style={{fontSize:13,color:'#64748B',marginBottom:18,lineHeight:1.6}}>
+            <div style={{marginBottom:6,fontWeight:800,color:'#F8FAFC',fontSize:16}}>Forgot your password?</div>
+            <div style={{fontSize:13,color:'#64748B',marginBottom:20,lineHeight:1.6}}>
               Enter your email and we'll send you a reset link.
             </div>
             <div style={s.field}>
@@ -172,13 +168,10 @@ export default function AuthGate() {
               {loading ? 'Sending…' : 'Send Reset Link'}
             </button>
             <div style={s.toggle}>
-              <button type="button" onClick={() => switchMode('signin')} style={s.link}>
-                ← Back to Sign In
-              </button>
+              <button type="button" onClick={() => switchMode('signin')} style={s.link}>← Back to Sign In</button>
             </div>
           </form>
 
-        /* Sign in / Sign up form */
         ) : (
           <form onSubmit={handleSubmit}>
             <div style={s.field}>
@@ -211,26 +204,24 @@ export default function AuthGate() {
             </div>
             {mode === 'signin' && (
               <label style={s.rememberRow}>
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={e => setRememberMe(e.target.checked)}
-                  style={s.rememberCheck}
-                />
+                <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} style={s.rememberCheck} />
                 <span style={s.rememberLabel}>Remember me</span>
               </label>
             )}
             {error && <div style={s.errBox}>{error}</div>}
             <div style={{display:'flex', gap:8, marginBottom:4}}>
               <button
-                type="button"
-                onClick={signInWithGoogle}
-                style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:7,background:'#fff',border:'1.5px solid #E2E8F0',borderRadius:12,padding:'12px 8px',fontWeight:700,fontSize:13,color:'#1E293B',cursor:'pointer',fontFamily:'Inter,sans-serif',transition:'box-shadow 0.2s'}}
+                type="button" onClick={signInWithGoogle}
+                style={{
+                  flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:7,
+                  background:'#fff', border:'1.5px solid #E2E8F0', borderRadius:12,
+                  padding:'12px 8px', fontWeight:700, fontSize:13, color:'#1E293B',
+                  cursor:'pointer', fontFamily:'Inter,sans-serif', transition:'box-shadow 0.2s',
+                }}
                 onMouseEnter={e => e.currentTarget.style.boxShadow='0 0 0 3px rgba(66,133,244,0.2)'}
                 onMouseLeave={e => e.currentTarget.style.boxShadow='none'}
               >
-                <GoogleIcon />
-                Google
+                <GoogleIcon /> Google
               </button>
               <button type="submit" disabled={loading} style={{...s.btn, flex:1, width:'auto', opacity: loading ? 0.6 : 1}}>
                 {loading ? 'Wait…' : mode === 'signup' ? 'Create Account' : 'Sign In →'}
@@ -246,21 +237,21 @@ export default function AuthGate() {
         )}
       </div>
 
+      {/* ── Track chips ───────────────────────────────────────────────────── */}
       <div style={s.tracks}>
-        <div style={{...s.trackGroup, border:'1px solid #0D948840'}}>
+        <div style={{...s.trackGroup, borderColor:'#0D948830'}}>
           <div style={{...s.trackLabel, color:'#0D9488'}}>GCSE TRACK</div>
           <div style={s.trackItems}>
             {[['📐','Maths'],['📚','English'],['🔬','Science'],['🧩','Verbal']].map(([e,n]) => (
-              <span key={n} style={{...s.trackChip, background:'#0D948818', border:'1px solid #0D948840', color:'#2DD4BF'}}>{e} {n}</span>
+              <span key={n} style={{...s.trackChip, background:'#0D948814', border:'1px solid #0D948835', color:'#2DD4BF'}}>{e} {n}</span>
             ))}
           </div>
         </div>
-        <div style={s.divider} />
-        <div style={{...s.trackGroup, border:'1px solid #7C3AED40'}}>
+        <div style={{...s.trackGroup, borderColor:'#7C3AED30'}}>
           <div style={{...s.trackLabel, color:'#A78BFA'}}>A-LEVEL TRACK</div>
           <div style={s.trackItems}>
             {[['🏥','UCAT'],['⚖️','LNAT'],['∑','TMUA'],['⚗️','ESAT'],['🧠','TSA'],['📏','STEP']].map(([e,n]) => (
-              <span key={n} style={{...s.trackChip, background:'#7C3AED18', border:'1px solid #7C3AED40', color:'#C4B5FD'}}>{e} {n}</span>
+              <span key={n} style={{...s.trackChip, background:'#7C3AED14', border:'1px solid #7C3AED30', color:'#C4B5FD'}}>{e} {n}</span>
             ))}
           </div>
         </div>
@@ -281,30 +272,50 @@ function GoogleIcon() {
 }
 
 const s = {
-  root:   { minHeight:'100vh', background:'#0A0A14', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'24px 20px', fontFamily:'Inter,sans-serif', position:'relative', overflow:'hidden' },
-  mapWrap:{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', pointerEvents:'none' },
-  mapSvg: { width:'100%', height:'100%', opacity:0.12, transform:'scaleY(2)', transformOrigin:'center', filter:'grayscale(1)' },
+  root:   {
+    minHeight:'100vh', background:'#080812',
+    display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+    padding:'24px 20px', fontFamily:'Inter,sans-serif',
+    position:'relative', overflow:'hidden',
+  },
   logo:   { textAlign:'center', marginBottom:28 },
-  star:   { fontSize:40, color:'#F8FAFC', marginBottom:6, animation:'float 3s ease-in-out infinite', display:'block' },
-  title:  { fontSize:36, fontWeight:900, color:'#F8FAFC', letterSpacing:'-1px', margin:0, fontFamily:"'Playfair Display', Georgia, serif" },
-  sub:    { fontSize:12, color:'#94A3B8', marginTop:6, letterSpacing:'0.03em' },
-  card:   { background:'#0F172A', border:'1.5px solid #1E293B', borderRadius:24, padding:'28px 24px', width:'100%', maxWidth:360, boxShadow:'0 24px 64px rgba(0,0,0,0.5)' },
+  star:   { fontSize:44, marginBottom:6, animation:'float 3s ease-in-out infinite', display:'block' },
+  title:  {
+    fontSize:40, fontWeight:900, letterSpacing:'-1.5px', margin:'0 0 2px',
+    fontFamily:"'Playfair Display', Georgia, serif",
+    background:'linear-gradient(135deg, #F8FAFC 20%, #0D9488 60%, #A5B4FC 100%)',
+    WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
+    backgroundClip:'text',
+  },
+  sub:    { fontSize:11, color:'#475569', marginTop:8, letterSpacing:'0.1em', fontWeight:600 },
+  card:   {
+    background:'linear-gradient(180deg, #0D1B2A 0%, #0A1220 100%)',
+    border:'1.5px solid #1E3A5270',
+    borderTop:'1.5px solid #0D948850',
+    borderRadius:24, padding:'28px 24px',
+    width:'100%', maxWidth:360,
+    boxShadow:'0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(13,148,136,0.08)',
+  },
   field:  { marginBottom:16 },
-  label:  { display:'block', fontSize:10, fontWeight:700, color:'#64748B', letterSpacing:'0.08em' },
-  input:  { width:'100%', padding:'11px 14px', borderRadius:10, fontSize:14, background:'#1E293B', border:'1.5px solid #1E293B', color:'#F8FAFC', outline:'none', fontFamily:'Inter,sans-serif', transition:'border-color 0.2s', boxSizing:'border-box' },
-  errBox: { background:'#EF444420', border:'1px solid #EF4444', borderRadius:8, padding:'8px 12px', fontSize:12, color:'#F87171', marginBottom:14 },
+  label:  { display:'block', fontSize:10, fontWeight:700, color:'#475569', letterSpacing:'0.08em', marginBottom:5 },
+  input:  {
+    width:'100%', padding:'12px 14px', borderRadius:10,
+    fontSize:14, background:'#0F1E35', border:'1.5px solid #1E3A52',
+    color:'#F8FAFC', outline:'none',
+    fontFamily:'Inter,sans-serif', transition:'border-color 0.2s', boxSizing:'border-box',
+  },
+  errBox: { background:'#EF444418', border:'1px solid #EF444450', borderRadius:8, padding:'8px 12px', fontSize:12, color:'#F87171', marginBottom:14 },
   btn:    { width:'100%', background:'linear-gradient(135deg,#0D9488,#0F766E)', color:'white', border:'none', borderRadius:12, padding:'13px', fontWeight:800, cursor:'pointer', fontSize:15, fontFamily:'Inter,sans-serif', transition:'opacity 0.2s' },
-  toggle: { textAlign:'center', marginTop:14, fontSize:12, color:'#64748B' },
+  toggle: { textAlign:'center', marginTop:14, fontSize:12, color:'#475569' },
   link:   { background:'none', border:'none', cursor:'pointer', color:'#0D9488', fontWeight:700, fontSize:12, fontFamily:'Inter,sans-serif' },
   rememberRow:   { display:'flex', alignItems:'center', gap:8, marginBottom:14, cursor:'pointer' },
   rememberCheck: { width:15, height:15, accentColor:'#0D9488', cursor:'pointer' },
-  rememberLabel: { fontSize:13, color:'#94A3B8', userSelect:'none' },
-  tracks:     { marginTop:24, width:'100%', maxWidth:360, display:'flex', flexDirection:'column', gap:10 },
-  trackGroup: { background:'#0F172A', border:'1px solid #1E293B', borderRadius:14, padding:'12px 16px' },
-  trackLabel: { fontSize:9, fontWeight:800, color:'#334155', letterSpacing:'0.12em', marginBottom:8 },
-  trackItems: { display:'flex', flexWrap:'wrap', gap:6 },
-  trackChip:  { background:'#1E293B', border:'1px solid #334155', borderRadius:20, padding:'4px 11px', fontSize:12, color:'#94A3B8', fontWeight:600 },
-  divider:    { display:'none' },
+  rememberLabel: { fontSize:13, color:'#64748B', userSelect:'none' },
+  tracks:     { marginTop:20, width:'100%', maxWidth:360, display:'flex', flexDirection:'column', gap:8 },
+  trackGroup: { background:'#0A1220', border:'1px solid #1E3A52', borderRadius:14, padding:'11px 16px' },
+  trackLabel: { fontSize:9, fontWeight:800, letterSpacing:'0.12em', marginBottom:7 },
+  trackItems: { display:'flex', flexWrap:'wrap', gap:5 },
+  trackChip:  { borderRadius:20, padding:'4px 11px', fontSize:11, fontWeight:600 },
 }
 
 const css = `
