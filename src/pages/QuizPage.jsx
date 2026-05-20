@@ -53,6 +53,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
 
   const [qIndex,      setQIndex]      = useState(0)
   const [chosen,      setChosen]      = useState(null)   // null=unanswered | -1=timed out | ≥0=option index
+  const [inputBlocked, setInputBlocked] = useState(false) // blocks ghost taps during question transition
   const [score,       setScore]       = useState(0)
   const [answers,     setAnswers]     = useState([])
   const [hintShown,   setHintShown]   = useState(false)
@@ -82,6 +83,12 @@ export default function QuizPage({ user, profile, refreshProfile }) {
   useLayoutEffect(() => {
     setChosen(null)
     setHintShown(false)
+    // Block all pointer events on answer buttons for 600 ms so that OS-generated
+    // ghost taps (synthetic click fired at the same screen coords after touchend)
+    // cannot reach React's event system at all — CSS-level prevention.
+    setInputBlocked(true)
+    const t = setTimeout(() => setInputBlocked(false), 600)
+    return () => clearTimeout(t)
   }, [qIndex])
 
   // Scroll AI panel into view once explanation is ready
@@ -354,9 +361,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
             <button
               key={i} onClick={() => handleAnswer(i)}
               disabled={chosen !== null}
-              style={{background:bg,border,borderRadius:14,padding:'14px 16px',textAlign:'left',cursor:chosen!==null?'default':'pointer',fontSize:14,fontWeight:600,color:col,transition:'all 0.2s',touchAction:'manipulation'}}
-              onMouseEnter={e=>{ if(chosen===null) e.currentTarget.style.borderColor=C.primary }}
-              onMouseLeave={e=>{ if(chosen===null) e.currentTarget.style.borderColor=C.border }}
+              style={{background:bg,border,borderRadius:14,padding:'14px 16px',textAlign:'left',cursor:chosen!==null?'default':'pointer',fontSize:14,fontWeight:600,color:col,transition:'all 0.2s',touchAction:'manipulation',pointerEvents:inputBlocked?'none':'auto',WebkitTapHighlightColor:'transparent',outline:'none'}}
             >
               <span style={{fontWeight:900,marginRight:10,opacity:0.4,fontSize:12}}>{['A','B','C','D'][i]}</span>
               {opt}
