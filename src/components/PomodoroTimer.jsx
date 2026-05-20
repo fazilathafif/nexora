@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { NAV_HEIGHT } from '../styles/tokens.js'
 
 const WORK_SECS  = 25 * 60
 const BREAK_SECS = 5  * 60
@@ -88,7 +89,7 @@ export default function PomodoroTimer({ active, setActive }) {
   if (mini) {
     return (
       <button onClick={() => setMini(false)} style={{
-        position:'fixed', bottom:20, right:16, zIndex:200,
+        position:'fixed', bottom:`calc(${NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px) + 12px)`, right:16, zIndex:200,
         background: isWork ? '#1a1740' : '#042f2e',
         border: `1.5px solid ${color}50`, borderRadius:20,
         padding:'7px 14px', display:'flex', alignItems:'center', gap:7,
@@ -107,7 +108,7 @@ export default function PomodoroTimer({ active, setActive }) {
   const SZ = 78, R = (SZ - 8) / 2, CIRC = 2 * Math.PI * R
   return (
     <div style={{
-      position:'fixed', bottom:20, right:16, zIndex:200,
+      position:'fixed', bottom:`calc(${NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px) + 12px)`, right:16, zIndex:200,
       background: isWork ? '#13113a' : '#042f2e',
       border: `1.5px solid ${color}40`, borderRadius:20,
       padding:'12px 14px', display:'flex', flexDirection:'column',
