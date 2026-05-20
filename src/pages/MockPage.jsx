@@ -328,22 +328,19 @@ export default function MockPage({ user, profile, refreshProfile }) {
         </>
       )}
 
-      {/* ── Exit confirmation sheet ─────────────────────────────────────────── */}
+      {/* ── Exit confirmation modal ─────────────────────────────────────────── */}
       {showExit && (
-        <>
+        <div
+          onClick={() => setShowExit(false)}
+          style={{position:'fixed', inset:0, zIndex:150, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'center', justifyContent:'center', padding:'0 24px'}}
+        >
           <div
-            onClick={() => setShowExit(false)}
-            style={{position:'fixed', inset:0, zIndex:130, background:'rgba(0,0,0,0.5)'}}
-          />
-          <div className="animate-slide-up" style={{
-            position:'fixed', bottom:0, left:0, right:0, zIndex:140,
-            background:'white', borderRadius:'20px 20px 0 0',
-            padding:'24px 20px 36px',
-            boxShadow:'0 -8px 40px rgba(0,0,0,0.18)',
-          }}>
-            <div style={{width:36, height:4, borderRadius:2, background:'#E2E8F0', margin:'0 auto 20px'}} />
-            <div style={{fontSize:18, fontWeight:800, color:'#1E293B', marginBottom:8}}>Exit mock exam?</div>
-            <div style={{fontSize:14, color:'#64748B', marginBottom:24, lineHeight:1.6}}>
+            onClick={e => e.stopPropagation()}
+            style={{background:'white', borderRadius:20, padding:'28px 22px 24px', width:'100%', maxWidth:340, boxShadow:'0 24px 60px rgba(0,0,0,0.25)'}}
+          >
+            <div style={{fontSize:32, textAlign:'center', marginBottom:12}}>🚪</div>
+            <div style={{fontSize:18, fontWeight:800, color:'#1E293B', marginBottom:8, textAlign:'center'}}>Exit mock exam?</div>
+            <div style={{fontSize:14, color:'#64748B', marginBottom:24, lineHeight:1.6, textAlign:'center'}}>
               Your progress will be lost and the exam will not be submitted.
             </div>
             <div style={{display:'flex', gap:10}}>
@@ -357,7 +354,7 @@ export default function MockPage({ user, profile, refreshProfile }) {
               >Exit exam</button>
             </div>
           </div>
-        </>
+        </div>
       )}
     </Shell>
   )
