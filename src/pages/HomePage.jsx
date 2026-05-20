@@ -183,24 +183,35 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
       {showAuth && <AuthModal C={C} dark={dark} onClose={() => setShowAuth(false)} />}
       <WelcomeModal user={user} C={C} dark={dark} />
 
-      {/* XP banner */}
-      <div style={{
-        background: dark
-          ? `linear-gradient(135deg,${C.primary},#1E1B4B)`
-          : `linear-gradient(135deg,${C.primary},#0F766E)`,
-        borderRadius:20, padding:'18px 20px', marginBottom:18,
-        position:'relative', overflow:'hidden',
-      }}>
-        <div style={{position:'absolute',top:-30,right:-30,width:120,height:120,borderRadius:'50%',background:'rgba(255,255,255,0.05)'}} />
-        <div style={{fontSize:12,color:'rgba(255,255,255,0.7)',marginBottom:2}}>Level {level} Scholar</div>
-        <div style={{fontSize:52,fontWeight:900,color:'white',marginBottom:8,lineHeight:1}}>{xp} XP</div>
-        <ProgressBar pct={pct} color={dark ? C.secondary : C.accent} />
-        <div style={{fontSize:11,color:'rgba(255,255,255,0.6)',marginTop:4}}>
-          {Math.round(150 - (xp % 150))} XP to Level {level + 1}
+      {/* ── Subject / exam picker (PRIMARY — top of page) ─────────────────── */}
+      <SectionLabel C={C}>{stream === 'alevel' ? 'Choose Your Exam' : 'Choose Subject'}</SectionLabel>
+      {stream === 'alevel' ? (
+        <div style={{marginBottom:18}}>
+          <FanDeck subjects={cfg.subjects} stream={stream} navigate={navigate} />
         </div>
-      </div>
+      ) : (
+        <div className="scroll-x" style={{marginBottom:18, paddingBottom:8}}>
+          {cfg.subjects.map(s => (
+            <div key={s.id} style={{width:170, flexShrink:0}}>
+              <SubjectCard
+                subject={s} C={C} dark={dark}
+                compact={false}
+                onClick={() => navigate(`/${stream}/quiz/${s.id}`)}
+                onMock={() => navigate(`/${stream}/mock/${s.id}`)}
+                onFlashcards={() => navigate(`/${stream}/flashcards/${s.id}`)}
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
-      {/* Exam date countdown */}
+      {stream === 'alevel' && (
+        <div style={{marginBottom:20,padding:'12px 14px',background:C.primary+'18',border:`1px solid ${C.primary}30`,borderRadius:12,fontSize:12,color:dark?'#A5B4FC':C.primary,lineHeight:1.5}}>
+          🎓 Questions mirror real UCAT, LNAT, TMUA, ESAT, TSA & STEP style and difficulty
+        </div>
+      )}
+
+      {/* ── Exam date countdown ───────────────────────────────────────────── */}
       {editingDate ? (
         <div style={{background:C.card,border:`1.5px solid ${C.primary}40`,borderRadius:14,padding:'12px 16px',marginBottom:16,display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
           <span style={{fontSize:12,color:C.muted,fontWeight:700}}>📅 Exam date:</span>
@@ -248,21 +259,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
         </button>
       )}
 
-      {/* Daily mission */}
-      <div style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:16,padding:'14px 18px',marginBottom:20,display:'flex',alignItems:'center',gap:14}}>
-        <div style={{width:44,height:44,borderRadius:'50%',background:C.primary+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>⚡</div>
-        <div>
-          <div style={{fontWeight:800,color:C.navy,fontSize:14}}>Daily Mission</div>
-          <div style={{fontSize:12,color:C.muted,marginTop:2}}>Complete 2 more sessions to hit today's goal</div>
-          <div style={{display:'flex',gap:4,marginTop:6}}>
-            {[1,2,3,4,5].map(i => (
-              <div key={i} style={{width:20,height:6,borderRadius:3,background: i<=3 ? C.primary : C.border,transition:'background 0.3s'}} />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Spaced-repetition review nudge */}
+      {/* ── Spaced-repetition review nudge ───────────────────────────────── */}
       {dueCount > 0 && (
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',background:`${C.secondary ?? C.primary}18`,border:`1px solid ${C.secondary ?? C.primary}40`,borderRadius:14,padding:'11px 16px',marginBottom:14}}>
           <div>
@@ -278,7 +275,38 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
         </div>
       )}
 
-      {/* Focus session launcher */}
+      {/* ── XP banner ────────────────────────────────────────────────────── */}
+      <div style={{
+        background: dark
+          ? `linear-gradient(135deg,${C.primary},#1E1B4B)`
+          : `linear-gradient(135deg,${C.primary},#0F766E)`,
+        borderRadius:20, padding:'18px 20px', marginBottom:18,
+        position:'relative', overflow:'hidden',
+      }}>
+        <div style={{position:'absolute',top:-30,right:-30,width:120,height:120,borderRadius:'50%',background:'rgba(255,255,255,0.05)'}} />
+        <div style={{fontSize:12,color:'rgba(255,255,255,0.7)',marginBottom:2}}>Level {level} Scholar</div>
+        <div style={{fontSize:52,fontWeight:900,color:'white',marginBottom:8,lineHeight:1}}>{xp} XP</div>
+        <ProgressBar pct={pct} color={dark ? C.secondary : C.accent} />
+        <div style={{fontSize:11,color:'rgba(255,255,255,0.6)',marginTop:4}}>
+          {Math.round(150 - (xp % 150))} XP to Level {level + 1}
+        </div>
+      </div>
+
+      {/* ── Daily mission ────────────────────────────────────────────────── */}
+      <div style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:16,padding:'14px 18px',marginBottom:18,display:'flex',alignItems:'center',gap:14}}>
+        <div style={{width:44,height:44,borderRadius:'50%',background:C.primary+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>⚡</div>
+        <div>
+          <div style={{fontWeight:800,color:C.navy,fontSize:14}}>Daily Mission</div>
+          <div style={{fontSize:12,color:C.muted,marginTop:2}}>Complete 2 more sessions to hit today's goal</div>
+          <div style={{display:'flex',gap:4,marginTop:6}}>
+            {[1,2,3,4,5].map(i => (
+              <div key={i} style={{width:20,height:6,borderRadius:3,background: i<=3 ? C.primary : C.border,transition:'background 0.3s'}} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Focus session launcher ───────────────────────────────────────── */}
       <button
         onClick={startPomodoro}
         style={{
@@ -286,7 +314,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
           background: dark ? '#1a1740' : `${C.primary}10`,
           border: `1.5px solid ${C.primary}35`,
           borderRadius:14, padding:'12px 16px', cursor:'pointer',
-          fontFamily:'Inter,sans-serif', marginBottom:18, textAlign:'left',
+          fontFamily:'Inter,sans-serif', marginBottom:8, textAlign:'left',
         }}
       >
         <span style={{fontSize:22}}>🍅</span>
@@ -296,33 +324,6 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
         </div>
         <span style={{marginLeft:'auto', fontSize:12, fontWeight:700, color:C.primary}}>Start →</span>
       </button>
-
-      {/* Subject / exam grid */}
-      <SectionLabel C={C}>{stream === 'alevel' ? 'Choose Your Exam' : 'Choose Subject'}</SectionLabel>      {stream === 'alevel' ? (
-        <div style={{marginBottom:18}}>
-          <FanDeck subjects={cfg.subjects} stream={stream} navigate={navigate} />
-        </div>
-      ) : (
-        <div className="scroll-x" style={{marginBottom:18, paddingBottom:8}}>
-          {cfg.subjects.map(s => (
-            <div key={s.id} style={{width:170, flexShrink:0}}>
-              <SubjectCard
-                subject={s} C={C} dark={dark}
-                compact={false}
-                onClick={() => navigate(`/${stream}/quiz/${s.id}`)}
-                onMock={() => navigate(`/${stream}/mock/${s.id}`)}
-                onFlashcards={() => navigate(`/${stream}/flashcards/${s.id}`)}
-              />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {stream === 'alevel' && (
-        <div style={{marginTop:14,padding:'12px 14px',background:C.primary+'18',border:`1px solid ${C.primary}30`,borderRadius:12,fontSize:12,color:dark?'#A5B4FC':C.primary,lineHeight:1.5}}>
-          🎓 Questions mirror real UCAT, LNAT, TMUA, ESAT, TSA & STEP style and difficulty
-        </div>
-      )}
     </Shell>
   )
 }

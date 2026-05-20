@@ -4,7 +4,6 @@ import { STREAM_CONFIG } from '../data/questions.js'
 import { getColors } from '../pages/HomePage.jsx'
 import { NAV_HEIGHT } from '../styles/tokens.js'
 
-// Parse stream from path so this works outside a <Route> context
 function useStream() {
   const { pathname } = useLocation()
   const m = pathname.match(/^\/(gcse|alevel)/)
@@ -15,8 +14,8 @@ function useActiveTab(stream) {
   const { pathname } = useLocation()
   if (!stream) return null
   if (pathname === `/${stream}`) return 'home'
-  if (pathname.includes('/progress'))           return 'progress'
-  if (pathname.includes('/plan'))               return 'plan'
+  if (pathname.includes('/progress'))  return 'progress'
+  if (pathname.includes('/plan'))      return 'plan'
   if (
     pathname.includes('/quiz/') ||
     pathname.includes('/mock/') ||
@@ -24,6 +23,64 @@ function useActiveTab(stream) {
     pathname.includes('/match/')
   ) return 'practice'
   return 'home'
+}
+
+// ── SVG icons ─────────────────────────────────────────────────────────────────
+
+function HomeIcon({ color, size = 26 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-4.5v-5a1.5 1.5 0 00-3 0v5H4a1 1 0 01-1-1z"
+        stroke={color} strokeWidth={1.9} strokeLinejoin="round" strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+function PracticeIcon({ color, size = 26 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      {/* Lightning bolt — energy, action */}
+      <path
+        d="M13 2L4.5 13.5H12L11 22L19.5 10.5H12z"
+        stroke={color} strokeWidth={1.9} strokeLinejoin="round" strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+function ProgressIcon({ color, size = 26 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      {/* Trending up with arrow */}
+      <polyline
+        points="3,18 8,12 13,15 20,7"
+        stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round"
+      />
+      <polyline
+        points="16,7 20,7 20,11"
+        stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function PlanIcon({ color, size = 26 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      {/* Calendar with checkmark */}
+      <rect x="3" y="4" width="18" height="17" rx="2.5"
+        stroke={color} strokeWidth={1.9} strokeLinejoin="round"
+      />
+      <path d="M16 2v4M8 2v4M3 9h18"
+        stroke={color} strokeWidth={1.9} strokeLinecap="round"
+      />
+      <path d="M8.5 15l2 2 5-5"
+        stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round"
+      />
+    </svg>
+  )
 }
 
 // ── Subject picker bottom sheet ───────────────────────────────────────────────
@@ -35,69 +92,44 @@ function SubjectSheet({ stream, C, dark, onClose }) {
 
   return (
     <>
-      {/* Backdrop */}
       <div
         onClick={onClose}
-        style={{
-          position: 'fixed', inset: 0, zIndex: 110,
-          background: 'rgba(0,0,0,0.45)',
-        }}
+        style={{ position:'fixed', inset:0, zIndex:110, background:'rgba(0,0,0,0.45)' }}
       />
-
-      {/* Sheet */}
       <div
         className="animate-slide-up"
         style={{
-          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 120,
+          position:'fixed', bottom:0, left:0, right:0, zIndex:120,
           background: C.card,
-          borderRadius: '20px 20px 0 0',
-          paddingBottom: `calc(${NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px))`,
-          boxShadow: '0 -8px 40px rgba(0,0,0,0.18)',
-          maxHeight: '80dvh',
-          overflowY: 'auto',
+          borderRadius:'20px 20px 0 0',
+          paddingBottom:`calc(${NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px))`,
+          boxShadow:'0 -8px 40px rgba(0,0,0,0.18)',
+          maxHeight:'80dvh', overflowY:'auto',
         }}
       >
-        {/* Handle */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: C.border }} />
+        <div style={{ display:'flex', justifyContent:'center', padding:'12px 0 4px' }}>
+          <div style={{ width:36, height:4, borderRadius:2, background:C.border }} />
         </div>
-
-        {/* Title */}
-        <div style={{
-          padding: '8px 20px 16px',
-          fontSize: 17, fontWeight: 800, color: C.navy, letterSpacing: '-0.3px',
-        }}>
+        <div style={{ padding:'8px 20px 16px', fontSize:17, fontWeight:800, color:C.navy, letterSpacing:'-0.3px' }}>
           Choose subject
         </div>
-
-        {/* Subject rows */}
         {cfg.subjects.map(s => (
-          <div key={s.id} style={{
-            marginBottom: 2,
-            borderTop: `1px solid ${C.border}`,
-          }}>
-            {/* Subject header */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 12,
-              padding: '14px 20px 10px',
-            }}>
+          <div key={s.id} style={{ marginBottom:2, borderTop:`1px solid ${C.border}` }}>
+            <div style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 20px 10px' }}>
               <div style={{
-                width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-                background: `${C.primary}18`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 20,
+                width:40, height:40, borderRadius:12, flexShrink:0,
+                background:`${C.primary}18`,
+                display:'flex', alignItems:'center', justifyContent:'center', fontSize:20,
               }}>
                 {s.emoji}
               </div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: C.navy }}>{s.label}</div>
+              <div style={{ fontSize:15, fontWeight:800, color:C.navy }}>{s.label}</div>
             </div>
-
-            {/* Mode buttons */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, padding: '0 20px 14px' }}>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, padding:'0 20px 14px' }}>
               {[
-                { label: 'Quiz',   icon: '📝', path: `/${stream}/quiz/${s.id}` },
-                { label: 'Cards',  icon: '🃏', path: `/${stream}/flashcards/${s.id}` },
-                { label: 'Mock',   icon: '📋', path: `/${stream}/mock/${s.id}` },
+                { label:'Quiz',  icon:'📝', path:`/${stream}/quiz/${s.id}` },
+                { label:'Cards', icon:'🃏', path:`/${stream}/flashcards/${s.id}` },
+                { label:'Mock',  icon:'📋', path:`/${stream}/mock/${s.id}` },
               ].map(m => (
                 <button
                   key={m.label}
@@ -105,14 +137,13 @@ function SubjectSheet({ stream, C, dark, onClose }) {
                   style={{
                     background: dark ? `${C.primary}20` : `${C.primary}10`,
                     border: `1.5px solid ${C.primary}30`,
-                    borderRadius: 12,
-                    padding: '10px 4px',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                    cursor: 'pointer', fontFamily: 'Inter,sans-serif',
+                    borderRadius:12, padding:'10px 4px',
+                    display:'flex', flexDirection:'column', alignItems:'center', gap:4,
+                    cursor:'pointer', fontFamily:'Inter,sans-serif',
                   }}
                 >
-                  <span style={{ fontSize: 18 }}>{m.icon}</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: C.primary }}>{m.label}</span>
+                  <span style={{ fontSize:18 }}>{m.icon}</span>
+                  <span style={{ fontSize:11, fontWeight:700, color:C.primary }}>{m.label}</span>
                 </button>
               ))}
             </div>
@@ -125,9 +156,9 @@ function SubjectSheet({ stream, C, dark, onClose }) {
 
 // ── BottomNav ─────────────────────────────────────────────────────────────────
 export default function BottomNav() {
-  const navigate   = useNavigate()
-  const stream     = useStream()
-  const activeTab  = useActiveTab(stream)
+  const navigate      = useNavigate()
+  const stream        = useStream()
+  const activeTab     = useActiveTab(stream)
   const [showPicker, setShowPicker] = useState(false)
 
   if (!stream) return null
@@ -136,21 +167,36 @@ export default function BottomNav() {
   const dark = stream === 'alevel'
 
   const tabs = [
-    { id: 'home',     icon: '🏠', label: 'Home',     action: () => navigate(`/${stream}`) },
-    { id: 'practice', icon: '📝', label: 'Practice',  action: () => setShowPicker(true) },
-    { id: 'progress', icon: '📊', label: 'Progress',  action: () => navigate(`/${stream}/progress`) },
-    { id: 'plan',     icon: '📅', label: 'Plan',      action: () => navigate(`/${stream}/plan`) },
+    {
+      id: 'home',
+      label: 'Home',
+      Icon: HomeIcon,
+      action: () => navigate(`/${stream}`),
+    },
+    {
+      id: 'practice',
+      label: 'Practice',
+      Icon: PracticeIcon,
+      action: () => setShowPicker(true),
+    },
+    {
+      id: 'progress',
+      label: 'Progress',
+      Icon: ProgressIcon,
+      action: () => navigate(`/${stream}/progress`),
+    },
+    {
+      id: 'plan',
+      label: 'Plan',
+      Icon: PlanIcon,
+      action: () => navigate(`/${stream}/plan`),
+    },
   ]
 
   return (
     <>
       {showPicker && (
-        <SubjectSheet
-          stream={stream}
-          C={C}
-          dark={dark}
-          onClose={() => setShowPicker(false)}
-        />
+        <SubjectSheet stream={stream} C={C} dark={dark} onClose={() => setShowPicker(false)} />
       )}
 
       <nav style={{
@@ -162,10 +208,14 @@ export default function BottomNav() {
         alignItems: 'stretch',
         zIndex: 100,
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        boxShadow: '0 -2px 16px rgba(0,0,0,0.06)',
+        boxShadow: dark
+          ? '0 -1px 0 rgba(255,255,255,0.06), 0 -8px 32px rgba(0,0,0,0.4)'
+          : '0 -1px 0 rgba(0,0,0,0.06), 0 -4px 20px rgba(0,0,0,0.07)',
       }}>
         {tabs.map(tab => {
           const active = activeTab === tab.id
+          const iconColor = active ? C.primary : C.muted
+
           return (
             <button
               key={tab.id}
@@ -174,38 +224,50 @@ export default function BottomNav() {
                 flex: 1,
                 display: 'flex', flexDirection: 'column',
                 alignItems: 'center', justifyContent: 'center',
-                gap: 3,
+                gap: 4,
                 border: 'none',
                 background: 'transparent',
                 cursor: 'pointer',
-                padding: '6px 4px 0',
+                padding: '0 6px',
                 position: 'relative',
                 fontFamily: 'Inter,sans-serif',
                 WebkitTapHighlightColor: 'transparent',
               }}
             >
-              {/* Active indicator dot */}
-              {active && (
-                <div style={{
-                  position: 'absolute', top: 6, left: '50%', transform: 'translateX(-50%)',
-                  width: 28, height: 28, borderRadius: 10,
-                  background: `${C.primary}18`,
-                }} />
-              )}
+              {/* Active top bar */}
+              <div style={{
+                position: 'absolute',
+                top: 0, left: '15%', right: '15%',
+                height: 3,
+                borderRadius: '0 0 3px 3px',
+                background: active ? C.primary : 'transparent',
+                transition: 'background 0.2s ease',
+                boxShadow: active && dark ? `0 0 10px ${C.primary}` : 'none',
+              }} />
 
-              <span style={{
-                fontSize: 20, lineHeight: 1,
-                position: 'relative', zIndex: 1,
-                transform: active ? 'scale(1.1)' : 'scale(1)',
-                transition: 'transform 0.15s ease',
+              {/* Icon wrapper — fills most of the bar */}
+              <div style={{
+                width: 46, height: 36,
+                borderRadius: 12,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: active ? `${C.primary}18` : 'transparent',
+                transition: 'background 0.2s ease',
+                flexShrink: 0,
               }}>
-                {tab.icon}
-              </span>
+                <tab.Icon
+                  color={iconColor}
+                  size={26}
+                />
+              </div>
+
+              {/* Label */}
               <span style={{
-                fontSize: 10, fontWeight: active ? 800 : 500,
-                color: active ? C.primary : C.muted,
-                lineHeight: 1.2,
-                transition: 'color 0.15s ease',
+                fontSize: 10.5,
+                fontWeight: active ? 800 : 500,
+                color: iconColor,
+                lineHeight: 1,
+                letterSpacing: active ? '-0.01em' : '0',
+                transition: 'color 0.2s ease, font-weight 0.1s',
               }}>
                 {tab.label}
               </span>
