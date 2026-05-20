@@ -64,6 +64,21 @@ export default function QuizPage({ user, profile, refreshProfile }) {
   const aiPanelRef                        = useRef(null)
   const [breakCard,     setBreakCard]     = useState(null)  // null | { type, emoji, text, nextIndex }
 
+  // Synchronous ghost-tap blocker: a full-screen transparent overlay that's activated
+  // via direct DOM mutation (no React render cycle) the moment the user taps Next/Continue.
+  // The overlay sits above all quiz content and absorbs any OS-synthesised clicks that
+  // fire at the same screen coordinates after an element disappears.
+  const overlayRef   = useRef(null)
+  const overlayTimer = useRef(null)
+  function activateBlock() {
+    if (!overlayRef.current) return
+    overlayRef.current.style.display = 'block'
+    clearTimeout(overlayTimer.current)
+    overlayTimer.current = setTimeout(() => {
+      if (overlayRef.current) overlayRef.current.style.display = 'none'
+    }, 800)
+  }
+
   // Stable refs so timer callback never captures stale values
   const chosenRef    = useRef(null)
   const hintRef      = useRef(false)
@@ -158,6 +173,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
   }
 
   async function handleNext() {
+    activateBlock()                          // synchronous DOM block — fires before any state update
     advancedAtRef.current = Date.now()
     if (qIndex + 1 < total) {
       const nextIndex = qIndex + 1
@@ -179,6 +195,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
   }
 
   function dismissBreak(card) {
+    activateBlock()                          // synchronous DOM block
     advancedAtRef.current = Date.now()
     setBreakCard(null)
     setQIndex(card.nextIndex)
@@ -325,9 +342,9 @@ export default function QuizPage({ user, profile, refreshProfile }) {
         </div>
       )}
 
-      {/* Question + hint + options — keyed so the whole block remounts on question change,
-          clearing any browser focus, hover, or inline-style state from the previous question */}
-      <div key={currentQ.id}>
+      {/* Question + hint + options — keyed by qIndex so the whole block remounts on every
+          question advance, wiping all DOM state (focus, inline styles) from the previous question */}
+      <div key={qIndex}>
 
       {/* Question */}
       <div style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:20,padding:'22px 20px',marginBottom:16,minHeight:90}}>
@@ -361,7 +378,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
             <button
               key={i} onClick={() => handleAnswer(i)}
               disabled={chosen !== null}
-              style={{background:bg,border,borderRadius:14,padding:'14px 16px',textAlign:'left',cursor:chosen!==null?'default':'pointer',fontSize:14,fontWeight:600,color:col,transition:'all 0.2s',touchAction:'manipulation',pointerEvents:inputBlocked?'none':'auto',WebkitTapHighlightColor:'transparent',outline:'none'}}
+              style={{background:bg,border,borderRadius:14,padding:'14px 16px',textAlign:'left',cursor:chosen!==null?'default':'pointer',fontSize:14,fontWeight:600,color:col,touchAction:'manipulation',pointerEvents:inputBlocked?'none':'auto',WebkitTapHighlightColor:'transparent',outline:'none'}}
             >
               <span style={{fontWeight:900,marginRight:10,opacity:0.4,fontSize:12}}>{['A','B','C','D'][i]}</span>
               {opt}
@@ -469,8 +486,19 @@ export default function QuizPage({ user, profile, refreshProfile }) {
         </button>
       )}
 
-      {/* Brain Break overlay */}
-      {breakCard && (
+      {/* Ghost-tap blocker: transparent full-screen overlay activated synchronously
+          (direct DOM ref, no React render cycle) when the user advances to the next question.
+          Sits above all quiz content (z:150) but below brain-break overlay (z:200).
+          Absorbs any OS-synthesised clicks at stale coordinates for 800 ms. */}
+      <div
+        ref={overlayRef}
+        style={{position:'fixed',inset:0,zIndex:150,display:'none'}}
+        onClick={e=>{e.stopPropagation();e.preventDefault()}}
+        onTouchStart={e=>e.stopPropagation()}
+        onTouchEnd={e=>{e.stopPropagation();e.preventDefault()}}
+      />
+
+      {/* Brain Break overlay */}      {breakCard && (
         <div style={{
           position:'fixed', inset:0, zIndex:200,
           background: dark ? 'rgba(10,8,20,0.97)' : 'rgba(248,250,252,0.97)',
