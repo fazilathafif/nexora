@@ -3,7 +3,7 @@
  * then navigates to ResultPage with session state via router state.
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { getQuestions, TIMER_CONFIG }  from '../data/questions.js'
@@ -73,6 +73,13 @@ export default function QuizPage({ user, profile, refreshProfile }) {
 
   // Reset AI panel when question changes
   useEffect(() => { setAiText(null); setAiOpen(false); setAiElaboration(null) }, [qIndex])
+
+  // Synchronously clear answer state before the new question paints —
+  // guards against any render frame where qIndex advanced but chosen didn't reset yet
+  useLayoutEffect(() => {
+    setChosen(null)
+    setHintShown(false)
+  }, [qIndex])
 
   // Scroll AI panel into view once explanation is ready
   useEffect(() => {
@@ -304,6 +311,10 @@ export default function QuizPage({ user, profile, refreshProfile }) {
         </div>
       )}
 
+      {/* Question + hint + options — keyed so the whole block remounts on question change,
+          clearing any browser focus, hover, or inline-style state from the previous question */}
+      <div key={currentQ.id}>
+
       {/* Question */}
       <div style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:20,padding:'22px 20px',marginBottom:16,minHeight:90}}>
         <p style={{fontSize:16,fontWeight:700,color:C.navy,lineHeight:1.65,margin:0}}>{currentQ.q}</p>
@@ -314,7 +325,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
         <button
           onClick={() => setHintShown(true)}
           disabled={chosen !== null}
-          style={{width:'100%',background:'transparent',border:`1px dashed ${C.border}`,borderRadius:10,padding:'8px 14px',fontSize:12,color:C.muted,cursor:chosen!==null?'default':'pointer',marginBottom:12,opacity:chosen!==null?0.5:1}}
+          style={{width:'100%',background:'transparent',border:`1px dashed ${C.border}`,borderRadius:10,padding:'8px 14px',fontSize:12,color:C.muted,cursor:chosen!==null?'default':'pointer',marginBottom:12,opacity:chosen!==null?0.5:1,touchAction:'manipulation'}}
         >
           💡 Show hint (−2 XP)
         </button>
@@ -325,7 +336,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
       )}
 
       {/* Answer options */}
-      <div key={currentQ.id} style={{display:'grid',gap:9,marginBottom:16}}>
+      <div style={{display:'grid',gap:9,marginBottom:16}}>
         {currentQ.opts.map((opt, i) => {
           let bg = C.card, border = `1.5px solid ${C.border}`, col = C.navy
           if (chosen !== null) {
@@ -336,7 +347,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
             <button
               key={i} onClick={() => handleAnswer(i)}
               disabled={chosen !== null}
-              style={{background:bg,border,borderRadius:14,padding:'14px 16px',textAlign:'left',cursor:chosen!==null?'default':'pointer',fontSize:14,fontWeight:600,color:col,transition:'all 0.2s'}}
+              style={{background:bg,border,borderRadius:14,padding:'14px 16px',textAlign:'left',cursor:chosen!==null?'default':'pointer',fontSize:14,fontWeight:600,color:col,transition:'all 0.2s',touchAction:'manipulation'}}
               onMouseEnter={e=>{ if(chosen===null) e.currentTarget.style.borderColor=C.primary }}
               onMouseLeave={e=>{ if(chosen===null) e.currentTarget.style.borderColor=C.border }}
             >
@@ -348,6 +359,8 @@ export default function QuizPage({ user, profile, refreshProfile }) {
           )
         })}
       </div>
+
+      </div>{/* end keyed question block */}
 
       {/* Post-answer AI explanation */}
       {chosen !== null && isSupabaseConfigured && (
@@ -438,7 +451,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
       {chosen !== null && (
         <button
           onClick={handleNext}
-          style={{width:'100%',background:`linear-gradient(135deg,${C.primary},${dark?'#1E1B4B':'#0F766E'})`,color:'white',border:'none',borderRadius:16,padding:'15px',fontSize:15,fontWeight:800,cursor:'pointer',boxShadow:`0 4px 16px ${C.primary}40`}}
+          style={{width:'100%',background:`linear-gradient(135deg,${C.primary},${dark?'#1E1B4B':'#0F766E'})`,color:'white',border:'none',borderRadius:16,padding:'15px',fontSize:15,fontWeight:800,cursor:'pointer',boxShadow:`0 4px 16px ${C.primary}40`,touchAction:'manipulation'}}
         >
           {qIndex + 1 < total ? 'Next →' : 'See Results 🎉'}
         </button>
