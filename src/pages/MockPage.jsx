@@ -40,6 +40,7 @@ export default function MockPage({ user, profile, refreshProfile }) {
   const [sessionReady, setSessionReady] = useState(false)
   const [submitted,    setSubmitted]    = useState(false)
   const [showNav,      setShowNav]      = useState(false)
+  const [showExit,     setShowExit]     = useState(false)
 
   const intervalRef = useRef(null)
   const answersRef  = useRef(answers)
@@ -121,9 +122,7 @@ export default function MockPage({ user, profile, refreshProfile }) {
 
         {/* Exit */}
         <button
-          onClick={() => {
-            if (window.confirm('Exit mock exam? All answers will be lost.')) navigate(`/${stream}`)
-          }}
+          onClick={() => setShowExit(true)}
           style={{
             width:36, height:36, borderRadius:10,
             border:`1px solid ${C.border}`, background:'transparent',
@@ -324,6 +323,38 @@ export default function MockPage({ user, profile, refreshProfile }) {
               >
                 Submit Paper 🎉 ({answered}/{questions.length})
               </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── Exit confirmation sheet ─────────────────────────────────────────── */}
+      {showExit && (
+        <>
+          <div
+            onClick={() => setShowExit(false)}
+            style={{position:'fixed', inset:0, zIndex:130, background:'rgba(0,0,0,0.5)'}}
+          />
+          <div className="animate-slide-up" style={{
+            position:'fixed', bottom:0, left:0, right:0, zIndex:140,
+            background:'white', borderRadius:'20px 20px 0 0',
+            padding:'24px 20px 36px',
+            boxShadow:'0 -8px 40px rgba(0,0,0,0.18)',
+          }}>
+            <div style={{width:36, height:4, borderRadius:2, background:'#E2E8F0', margin:'0 auto 20px'}} />
+            <div style={{fontSize:18, fontWeight:800, color:'#1E293B', marginBottom:8}}>Exit mock exam?</div>
+            <div style={{fontSize:14, color:'#64748B', marginBottom:24, lineHeight:1.6}}>
+              Your progress will be lost and the exam will not be submitted.
+            </div>
+            <div style={{display:'flex', gap:10}}>
+              <button
+                onClick={() => setShowExit(false)}
+                style={{flex:1, background:'#F1F5F9', border:'none', borderRadius:14, padding:'14px', fontSize:14, fontWeight:700, color:'#64748B', cursor:'pointer'}}
+              >Keep going</button>
+              <button
+                onClick={() => navigate(`/${stream}`)}
+                style={{flex:1, background:'linear-gradient(135deg,#EF4444,#DC2626)', border:'none', borderRadius:14, padding:'14px', fontSize:14, fontWeight:800, color:'white', cursor:'pointer'}}
+              >Exit exam</button>
             </div>
           </div>
         </>
