@@ -172,9 +172,11 @@ function Flashcard({ card, C, onDismiss, onFlipChange }) {
           <div style={{
             position:'absolute', inset:0,
             backfaceVisibility:'hidden', WebkitBackfaceVisibility:'hidden',
-            background:C.card, border:`1.5px solid ${C.border}`,
+            background: C.soft,
+            border:`1.5px solid ${C.primary}25`,
             borderRadius:20, padding:'24px', overflow:'hidden',
             display:'flex', flexDirection:'column', justifyContent:'space-between',
+            boxShadow:'0 8px 28px rgba(0,0,0,0.09)',
           }}>
             <div>
               <div style={{
@@ -248,7 +250,7 @@ export default function FlashcardDeck({ cards, C = DEFAULT_C, height = 260, onDi
       {[2, 1].map(offset => (
         <div key={offset} style={{
           position:'absolute', inset:0,
-          background:C.card, border:`1.5px solid ${C.border}`,
+          background:C.soft, border:`1.5px solid ${C.primary}20`,
           borderRadius:20,
           transform:`translateY(${offset * 8}px) scale(${1 - offset * 0.04})`,
           opacity: 1 - offset * 0.35,
