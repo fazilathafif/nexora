@@ -142,6 +142,8 @@ export default function QuizPage({ user, profile, refreshProfile }) {
     if (qIndex + 1 < total) {
       const nextIndex = qIndex + 1
       if (nextIndex % 5 === 0) {
+        setChosen(null)
+        setHintShown(false)
         setBreakCard({ ...getRandomBreak(), nextIndex })
       } else {
         setQIndex(nextIndex)
@@ -323,7 +325,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
       )}
 
       {/* Answer options */}
-      <div style={{display:'grid',gap:9,marginBottom:16}}>
+      <div key={currentQ.id} style={{display:'grid',gap:9,marginBottom:16}}>
         {currentQ.opts.map((opt, i) => {
           let bg = C.card, border = `1.5px solid ${C.border}`, col = C.navy
           if (chosen !== null) {
