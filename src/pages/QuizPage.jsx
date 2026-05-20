@@ -444,7 +444,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
                   .ai-md strong{font-weight:800}
                   .ai-md code{background:${dark?'#2D1B69':'#EEF2FF'};padding:1px 5px;border-radius:4px;font-size:12px}
                 `}</style>
-                <ReactMarkdown className="ai-md">{aiText}</ReactMarkdown>
+                <div className="ai-md"><ReactMarkdown>{aiText}</ReactMarkdown></div>
               </div>
 
               {/* Go deeper button — only shown once initial response is fully streamed */}
@@ -470,7 +470,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
                     <span style={{fontSize:10,fontWeight:800,color:dark?'#A78BFA':'#6366F1',letterSpacing:'0.1em'}}>🔍 DEEPER DIVE</span>
                     <CopyButton text={aiElaboration} dark={dark} />
                   </div>
-                  <ReactMarkdown className="ai-md">{aiElaboration}</ReactMarkdown>
+                  <div className="ai-md"><ReactMarkdown>{aiElaboration}</ReactMarkdown></div>
                 </div>
               ) : null}
             </div>
