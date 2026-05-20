@@ -123,11 +123,18 @@ function useSwipe({ onDismiss, onFlip }) {
 }
 
 // ── Flashcard ─────────────────────────────────────────────────────────────────
-function Flashcard({ card, C, onDismiss }) {
+function Flashcard({ card, C, onDismiss, onFlipChange }) {
   const [flipped, setFlipped] = useState(false)
 
   const { cardRef, leftRef, rightRef, onPointerDown, onPointerMove, onPointerUp } =
-    useSwipe({ onDismiss, onFlip: () => setFlipped(f => !f) })
+    useSwipe({
+      onDismiss,
+      onFlip: () => setFlipped(f => {
+        const next = !f
+        onFlipChange?.(next)
+        return next
+      }),
+    })
 
   return (
     <div
@@ -222,13 +229,14 @@ const DEFAULT_C = {
   navy:'#134E4A', muted:'#6B7280',
 }
 
-export default function FlashcardDeck({ cards, C = DEFAULT_C, height = 260, onDismiss, onComplete }) {
+export default function FlashcardDeck({ cards, C = DEFAULT_C, height = 260, onDismiss, onFlipChange, onComplete }) {
   const [index, setIndex] = useState(0)
 
   if (!cards?.length || index >= cards.length) return null
 
   function handleDismiss(dir) {
     onDismiss?.(cards[index].id, dir)
+    onFlipChange?.(false)
     const next = index + 1
     if (next >= cards.length) onComplete?.()
     else setIndex(next)
@@ -255,6 +263,7 @@ export default function FlashcardDeck({ cards, C = DEFAULT_C, height = 260, onDi
         card={cards[index]}
         C={C}
         onDismiss={handleDismiss}
+        onFlipChange={onFlipChange}
       />
     </div>
   )

@@ -1,8 +1,9 @@
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getQuestions } from '../data/questions.js'
 import { scheduleReview } from '../lib/srs.js'
 import { getColors, Shell } from './HomePage.jsx'
+import FlashcardDeck from '../components/FlashcardDeck.jsx'
 
 // ── Rating config ─────────────────────────────────────────────────────────────
 const RATINGS = [
@@ -61,23 +62,14 @@ export default function FlashcardsPage() {
     [allQs],
   )
 
-  const [topicFilter, setTopicFilter] = useState('All')
-  const [cardIndex,   setCardIndex]   = useState(0)
-  const [flipped,     setFlipped]     = useState(false)
+  const [topicFilter,    setTopicFilter]    = useState('All')
+  const [flipped,        setFlipped]        = useState(false)
+  const [deckKey,        setDeckKey]        = useState(0)
+  const [cardsAnswered,  setCardsAnswered]  = useState(0)
   const [done,        setDone]        = useState(false)
   const [counts,      setCounts]      = useState({ again:0, hard:0, good:0, easy:0, mastered:0 })
   const [showHint,    setShowHint]    = useState(true)
-  const [heaven,      setHeaven]      = useState(false)   // Card-to-Heaven animation active
-
-  // Swipe state
-  const [dragX,      setDragX]      = useState(0)
-  const [isDragging, setIsDragging] = useState(false)
-  const [swipeFlash, setSwipeFlash] = useState(null)
-  const dragStartX   = useRef(0)
-  const dragStartY   = useRef(0)
-  const isDragActive = useRef(false)
-  const isHoriz      = useRef(false)
-  const didDrag      = useRef(false)
+  const [heaven,      setHeaven]      = useState(false)
 
   useEffect(() => {
     const t = setTimeout(() => setShowHint(false), 3000)
@@ -90,66 +82,60 @@ export default function FlashcardsPage() {
   )
 
   function selectTopic(t) {
-    setTopicFilter(t); setCardIndex(0); setFlipped(false)
+    setTopicFilter(t); setFlipped(false)
     setDone(false); setCounts({ again:0, hard:0, good:0, easy:0, mastered:0 })
-    setShowHint(false); setHeaven(false)
+    setShowHint(false); setHeaven(false); setDeckKey(k => k + 1); setCardsAnswered(0)
   }
 
-  function advanceCard() {
-    if (cardIndex + 1 >= cards.length) setDone(true)
-    else { setCardIndex(i => i + 1); setFlipped(false) }
+  function advanceCard(currentIndex) {
+    if (currentIndex + 1 >= cards.length) setDone(true)
+    else setFlipped(false)
   }
 
-  function respond(quality) {
+  function respond(quality, currentIndex) {
     const knew = quality >= 2
-    scheduleReview(cards[cardIndex].id, knew)
+    scheduleReview(cards[currentIndex].id, knew)
 
     if (quality === 3) {
-      const newCount = incrementEasyCount(cards[cardIndex].id)
+      const newCount = incrementEasyCount(cards[currentIndex].id)
       if (newCount >= HEAVEN_THRESHOLD) {
         setCounts(prev => ({ ...prev, mastered: prev.mastered + 1 }))
         setHeaven(true)
-        setTimeout(() => { setHeaven(false); advanceCard() }, 700)
         return
       }
     }
 
     setCounts(prev => ({ ...prev, [RATINGS[quality].key]: prev[RATINGS[quality].key] + 1 }))
-    advanceCard()
+  }
+
+  // Called by FlashcardDeck when a card is swiped away
+  function handleDeckDismiss(id, dir) {
+    setCardsAnswered(n => n + 1)
+    const knew  = dir === 'right'
+    scheduleReview(id, knew)
+
+    if (knew) {
+      const newCount = incrementEasyCount(id)
+      if (newCount >= HEAVEN_THRESHOLD) {
+        setCounts(prev => ({ ...prev, mastered: prev.mastered + 1 }))
+        setHeaven(true)
+        setTimeout(() => setHeaven(false), 700)
+        return
+      }
+      setCounts(prev => ({ ...prev, good: prev.good + 1 }))
+    } else {
+      setCounts(prev => ({ ...prev, again: prev.again + 1 }))
+    }
+  }
+
+  function handleDeckComplete() {
+    setDone(true)
   }
 
   function restart() {
-    setCardIndex(0); setFlipped(false); setDone(false)
-    setCounts({ again:0, hard:0, good:0, easy:0, mastered:0 }); setShowHint(false)
-  }
-
-  // Pointer / swipe handlers
-  function onPointerDown(e) {
-    dragStartX.current = e.clientX; dragStartY.current = e.clientY
-    isDragActive.current = true; isHoriz.current = false; didDrag.current = false
-    setDragX(0); setIsDragging(false)
-  }
-  function onPointerMove(e) {
-    if (!isDragActive.current) return
-    const dx = e.clientX - dragStartX.current, dy = e.clientY - dragStartY.current
-    if (!isHoriz.current) {
-      if (Math.abs(dx) > Math.abs(dy) + 4) { isHoriz.current = true; setIsDragging(true); e.currentTarget.setPointerCapture(e.pointerId) }
-      else if (Math.abs(dy) > Math.abs(dx) + 4) { isDragActive.current = false; return }
-    }
-    if (isHoriz.current) { didDrag.current = true; setDragX(dx) }
-  }
-  function onPointerUp() {
-    if (!isDragActive.current) return
-    isDragActive.current = false
-    const finalDx = dragX
-    setIsDragging(false); setDragX(0)
-    if (Math.abs(finalDx) > 80 && flipped) {
-      const goRight = finalDx > 0
-      setSwipeFlash(goRight ? 'good' : 'again')
-      setTimeout(() => { setSwipeFlash(null); respond(goRight ? 2 : 0) }, 320)
-    } else if (!didDrag.current) {
-      setFlipped(f => !f)
-    }
+    setFlipped(false); setDone(false); setCardsAnswered(0)
+    setCounts({ again:0, hard:0, good:0, easy:0, mastered:0 })
+    setShowHint(false); setDeckKey(k => k + 1)
   }
 
   if (!allQs.length) {
@@ -206,11 +192,8 @@ export default function FlashcardsPage() {
     )
   }
 
-  const current      = cards[cardIndex]
-  const progressPct  = (cardIndex / cards.length) * 100
-  const dragAngle    = isDragging ? Math.min(Math.max(dragX * 0.035, -12), 12) : 0
-  const dragOpacity  = isDragging ? Math.min(Math.abs(dragX) / 100, 1) : 0
-  const topicDeco    = TOPIC_EMOJI[current.topic] ?? null
+  const progressPct = (cardsAnswered / cards.length) * 100
+  const deckCards   = cards.map(q => ({ id: q.id, front: q.q, back: q.opts[q.ans], label: q.topic }))
 
   return (
     <Shell C={C}>
@@ -231,7 +214,7 @@ export default function FlashcardsPage() {
           >
             🔗 Match
           </button>
-          <span style={{fontSize:12, color:C.muted, fontWeight:700}}>{cardIndex + 1}/{cards.length}</span>
+          <span style={{fontSize:12, color:C.muted, fontWeight:700}}>{cardsAnswered + 1}/{cards.length}</span>
         </div>
       </div>
 
@@ -267,157 +250,29 @@ export default function FlashcardsPage() {
         ))}
       </div>
 
-      {/* Card Heaven progress indicator */}
+      {/* Card Heaven indicator */}
       {counts.mastered > 0 && (
-        <div style={{
-          textAlign:'center', marginBottom:12, fontSize:12,
-          color:'#7C3AED', fontWeight:700,
-        }}>
+        <div style={{textAlign:'center', marginBottom:12, fontSize:12, color:'#7C3AED', fontWeight:700}}>
           ✨ {counts.mastered} card{counts.mastered !== 1 ? 's' : ''} mastered → Card Heaven
         </div>
       )}
 
-      {/* Card stack area */}
-      <div style={{position:'relative', height:240, marginBottom: flipped ? 20 : 36, userSelect:'none'}}>
-        {[2,1].map(n => (
-          <div key={n} style={{
-            position:'absolute', inset:0, background:C.card,
-            border:`1.5px solid ${C.border}`, borderRadius:20,
-            transform:`translateY(${n*8}px) scale(${1-n*0.04})`,
-            opacity: 1-n*0.38, zIndex: 3-n,
-          }}/>
-        ))}
-
-        {/* Swipe + heaven card */}
-        <div
-          style={{
-            position:'absolute', inset:0, zIndex:5,
-            transform: heaven
-              ? 'translateY(-120px) scale(0.6) rotate(5deg)'
-              : `translateX(${isDragging ? dragX : 0}px) rotate(${dragAngle}deg)`,
-            opacity: heaven ? 0 : 1,
-            transition: heaven
-              ? 'all 0.65s cubic-bezier(0.25,0.46,0.45,0.94)'
-              : isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)',
-            touchAction:'pan-y',
-          }}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
-        >
-          {/* Drag colour overlay */}
-          {isDragging && Math.abs(dragX) > 15 && (
-            <div style={{
-              position:'absolute', inset:0, borderRadius:20, zIndex:10, pointerEvents:'none',
-              background: dragX > 0 ? `rgba(16,185,129,${dragOpacity*0.35})` : `rgba(239,68,68,${dragOpacity*0.35})`,
-              display:'flex', alignItems:'center', justifyContent:'center',
-              fontSize:40, opacity:dragOpacity,
-            }}>
-              {dragX > 0 ? '✓' : '✗'}
-            </div>
-          )}
-          {swipeFlash && (
-            <div style={{
-              position:'absolute', inset:0, borderRadius:20, zIndex:11, pointerEvents:'none',
-              background: swipeFlash==='good' ? 'rgba(16,185,129,0.45)' : 'rgba(239,68,68,0.45)',
-              display:'flex', alignItems:'center', justifyContent:'center',
-              fontSize:48, color:'white', fontWeight:900, animation:'swipeFlash 0.32s ease forwards',
-            }}>
-              {swipeFlash==='good' ? '✓' : '✗'}
-            </div>
-          )}
-          {heaven && (
-            <div style={{
-              position:'absolute', inset:0, borderRadius:20, zIndex:12, pointerEvents:'none',
-              display:'flex', alignItems:'center', justifyContent:'center',
-              fontSize:40,
-            }}>
-              ✨
-            </div>
-          )}
-
-          <div style={{perspective:'1200px', height:'100%'}}>
-            <div style={{
-              height:'100%', transformStyle:'preserve-3d',
-              transition:'transform 0.45s ease',
-              transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-            }}>
-              {/* Front face */}
-              <div style={{
-                position:'absolute', inset:0,
-                backfaceVisibility:'hidden', WebkitBackfaceVisibility:'hidden',
-                background:C.card, border:`1.5px solid ${C.border}`,
-                borderRadius:20, padding:'20px', overflow:'hidden',
-                display:'flex', flexDirection:'column', justifyContent:'space-between',
-              }}>
-                {/* Topic decoration */}
-                {topicDeco && (
-                  <div style={{
-                    position:'absolute', bottom:12, right:16,
-                    fontSize:44, opacity: dark ? 0.15 : 0.1,
-                    userSelect:'none', pointerEvents:'none',
-                    fontFamily:'system-ui,sans-serif', lineHeight:1,
-                  }}>
-                    {topicDeco}
-                  </div>
-                )}
-                <div>
-                  <div style={{fontSize:9, fontWeight:800, color:C.muted, letterSpacing:'0.1em', marginBottom:10}}>
-                    QUESTION · {current.topic}
-                  </div>
-                  <p style={{fontSize:15, fontWeight:700, color:C.navy, lineHeight:1.65, margin:0}}>
-                    {current.q}
-                  </p>
-                </div>
-                <div style={{textAlign:'center', fontSize:11, color:C.muted, marginTop:10, opacity:0.6}}>
-                  Tap to reveal answer
-                </div>
-              </div>
-
-              {/* Back face */}
-              <div style={{
-                position:'absolute', inset:0,
-                backfaceVisibility:'hidden', WebkitBackfaceVisibility:'hidden',
-                transform:'rotateY(180deg)',
-                background: dark ? '#261E4E' : C.primary+'12',
-                border:`1.5px solid ${C.primary}50`,
-                borderRadius:20, padding:'20px',
-                display:'flex', flexDirection:'column', justifyContent:'space-between',
-              }}>
-                <div>
-                  <div style={{fontSize:9, fontWeight:800, color:C.primary, letterSpacing:'0.1em', marginBottom:10}}>
-                    ANSWER
-                  </div>
-                  <p style={{fontSize:16, fontWeight:800, color:C.navy, lineHeight:1.6, margin:0}}>
-                    {current.opts[current.ans]}
-                  </p>
-                  {current.hint && (
-                    <div style={{
-                      marginTop:14, background:(dark?'#C4B5FD':'#FCD34D')+'25',
-                      border:`1px solid ${dark?'#C4B5FD':'#FCD34D'}60`,
-                      borderRadius:10, padding:'9px 12px',
-                      fontSize:12, color:dark?'#DDD6FE':'#92400E', fontWeight:600, lineHeight:1.5,
-                    }}>
-                      💡 {current.hint}
-                    </div>
-                  )}
-                </div>
-                <div style={{textAlign:'center', fontSize:11, color:C.muted, opacity:0.5}}>
-                  Tap to flip back · swipe to rate
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Swipe hint on first card */}
-        {showHint && cardIndex === 0 && (
+      {/* Stacked deck — FlashcardDeck handles 3D flip + swipe */}
+      <div style={{marginBottom: flipped ? 20 : 36, position:'relative'}}>
+        <FlashcardDeck
+          key={deckKey}
+          cards={deckCards}
+          C={C}
+          height={240}
+          onDismiss={handleDeckDismiss}
+          onFlipChange={setFlipped}
+          onComplete={handleDeckComplete}
+        />
+        {showHint && cardsAnswered === 0 && (
           <div style={{
-            position:'absolute', bottom:-28, left:0, right:0,
             display:'flex', justifyContent:'space-between',
             fontSize:10, fontWeight:700, letterSpacing:'0.05em',
-            animation:'hintFade 1s ease 2s forwards', pointerEvents:'none',
+            marginTop:12, animation:'hintFade 1s ease 2s forwards', pointerEvents:'none',
           }}>
             <span style={{color:'#EF4444'}}>← Again</span>
             <span style={{color:C.muted, opacity:0.6}}>swipe to rate</span>
@@ -426,27 +281,10 @@ export default function FlashcardsPage() {
         )}
       </div>
 
-      {/* 4-level response buttons */}
+      {/* Rating prompt */}
       {flipped ? (
-        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:8}}>
-          {RATINGS.map(r => (
-            <button
-              key={r.key}
-              onClick={e => { e.stopPropagation(); respond(r.quality) }}
-              style={{
-                background:r.bg, border:`2px solid ${r.border}`,
-                borderRadius:12, padding:'12px 4px',
-                fontSize:11, fontWeight:800, color:r.color,
-                cursor:'pointer', fontFamily:'Inter,sans-serif',
-                display:'flex', flexDirection:'column', alignItems:'center', gap:3,
-              }}
-              onMouseEnter={e=>{e.currentTarget.style.filter='brightness(1.15)'}}
-              onMouseLeave={e=>{e.currentTarget.style.filter='none'}}
-            >
-              <span style={{fontSize:16}}>{r.emoji}</span>
-              {r.label}
-            </button>
-          ))}
+        <div style={{textAlign:'center', fontSize:11, color:C.muted, padding:'4px 0'}}>
+          Swipe right if you knew it · swipe left if you didn't
         </div>
       ) : (
         <div style={{textAlign:'center', fontSize:12, color:C.muted, padding:'6px 0'}}>
