@@ -3,7 +3,7 @@
  * Reads stream from URL param so bookmarking works.
  */
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { STREAM_CONFIG, getQuestions } from '../data/questions.js'
 import { upsertProfile } from '../lib/db.js'
@@ -450,7 +450,9 @@ export function Shell({ C, children, noNav }) {
         @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
         @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes bounceY{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(5px)}}
       `}</style>
+      <ScrollBar C={C} />
       <div style={{
         width:'100%', maxWidth:520, margin:'0 auto',
         padding:`20px 16px calc(${noNav ? 24 : NAV_HEIGHT + 24}px + env(safe-area-inset-bottom, 0px))`,
@@ -560,6 +562,62 @@ function SwitchIcon({ color, size=20 }) {
       <path d="M7 16V4m0 0L3 8m4-4 4 4" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
       <path d="M17 8v12m0 0 4-4m-4 4-4-4" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
+  )
+}
+
+function ScrollBar({ C }) {
+  const [pct, setPct] = useState(0)
+
+  useEffect(() => {
+    function update() {
+      const max = document.documentElement.scrollHeight - window.innerHeight
+      setPct(max > 0 ? Math.min(100, (window.scrollY / max) * 100) : 0)
+    }
+    window.addEventListener('scroll', update, { passive: true })
+    update()
+    return () => window.removeEventListener('scroll', update)
+  }, [])
+
+  if (pct >= 98) return null
+
+  return (
+    <div style={{
+      position: 'fixed',
+      right: 5,
+      top: '10%',
+      bottom: '10%',
+      width: 3,
+      borderRadius: 3,
+      background: C.border + '60',
+      zIndex: 50,
+      pointerEvents: 'none',
+    }}>
+      <div style={{
+        position: 'absolute',
+        top: 0, left: 0, right: 0,
+        height: pct + '%',
+        background: C.primary,
+        borderRadius: 3,
+        transition: 'height 0.12s ease',
+        boxShadow: `0 0 6px ${C.primary}80`,
+      }} />
+      {/* chevron hint at bottom */}
+      <div style={{
+        position: 'absolute',
+        bottom: -18,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
+        opacity: pct < 20 ? 1 : 0,
+        transition: 'opacity 0.4s ease',
+        animation: 'bounceY 1.4s ease-in-out infinite',
+      }}>
+        <div style={{ width: 5, height: 5, borderRight: `2px solid ${C.primary}`, borderBottom: `2px solid ${C.primary}`, transform: 'rotate(45deg)' }} />
+        <div style={{ width: 5, height: 5, borderRight: `2px solid ${C.primary}80`, borderBottom: `2px solid ${C.primary}80`, transform: 'rotate(45deg)', marginTop: -3 }} />
+      </div>
+    </div>
   )
 }
 

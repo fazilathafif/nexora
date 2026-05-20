@@ -7,9 +7,9 @@
 import { useState, useRef, useEffect } from 'react'
 
 // ── Card geometry ─────────────────────────────────────────────────────────────
-const CARD_W      = 181   // 145 × 1.25
-const CARD_H      = 256   // 205 × 1.25
-const PIVOT_EXT   = 85    // px below card bottom for transformOrigin
+const CARD_W      = 226   // 181 × 1.25
+const CARD_H      = 320   // 256 × 1.25
+const PIVOT_EXT   = 106   // 85 × 1.25 — keeps fan spread proportional
 const SPREAD      = 18    // degrees between adjacent cards
 
 // ── Physics ───────────────────────────────────────────────────────────────────
