@@ -12,6 +12,7 @@ import { useTimer }                    from '../hooks/useTimer.js'
 import { scheduleReview, sortByDue, getDueIds } from '../lib/srs.js'
 import { getColors, Shell, Badge }     from './HomePage.jsx'
 import { getRandomBreak }              from '../data/breaks.js'
+import { NAV_HEIGHT }                  from '../styles/tokens.js'
 
 function CopyButton({ text, dark }) {
   const [copied, setCopied] = useState(false)
@@ -319,7 +320,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
               {chosen === -1 ? "Time's up!" : `${remaining}s`}
             </span>
           </div>
-          <div style={{background:C.border,borderRadius:8,height:4}}>
+          <div style={{background:C.border,borderRadius:8,height:6}}>
             <div style={{
               width:`${timerPct}%`,
               background:timerColor,
@@ -353,7 +354,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
       <div key={qIndex}>
 
       {/* Question */}
-      <div style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:20,padding:'22px 20px',marginBottom:16,minHeight:90}}>
+      <div style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:20,padding:'22px 20px',marginBottom:16}}>
         <p style={{fontSize:16,fontWeight:700,color:C.navy,lineHeight:1.65,margin:0}}>{currentQ.q}</p>
       </div>
 
@@ -384,7 +385,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
             <button
               key={i} onClick={() => handleAnswer(i)}
               disabled={chosen !== null}
-              style={{background:bg,border,borderRadius:14,padding:'14px 16px',textAlign:'left',cursor:chosen!==null?'default':'pointer',fontSize:14,fontWeight:600,color:col,touchAction:'manipulation',pointerEvents:inputBlocked?'none':'auto',WebkitTapHighlightColor:'transparent',outline:'none'}}
+              style={{background:bg,border,borderRadius:14,padding:'14px 16px',minHeight:56,textAlign:'left',cursor:chosen!==null?'default':'pointer',fontSize:14,fontWeight:600,color:col,touchAction:'manipulation',pointerEvents:inputBlocked?'none':'auto',WebkitTapHighlightColor:'transparent',outline:'none'}}
             >
               <span style={{fontWeight:900,marginRight:10,opacity:0.4,fontSize:12}}>{['A','B','C','D'][i]}</span>
               {opt}
@@ -397,7 +398,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
 
       </div>{/* end keyed question block */}
 
-      {/* Post-answer AI explanation — always shown; uses its own hardcoded endpoint */}
+      {/* Post-answer AI explanation trigger */}
       {chosen !== null && (
         <div style={{marginBottom:12}}>
           <button
@@ -411,76 +412,88 @@ export default function QuizPage({ user, profile, refreshProfile }) {
             }}
           >
             <span style={{fontSize:16}}>✨</span>
-            {aiText === 'loading' ? 'Thinking…' : aiOpen ? 'Hide AI Explanation' : 'Explain with AI'}
+            {aiText === 'loading' ? 'Thinking…' : aiOpen ? 'Hide Explanation' : 'Explain with AI'}
           </button>
-
-          {aiOpen && aiText !== null && aiText !== 'loading' && aiText !== '' && (
-            <div ref={aiPanelRef} style={{
-              marginTop:8, background:dark?'#181432':'#F8FAFF',
-              border:`1px solid ${dark?'#7C3AED':'#6366F1'}30`,
-              borderRadius:12, padding:'14px 16px',
-              fontSize:13, color:C.navy, lineHeight:1.85,
-              opacity:1, animation:'fadeIn 0.3s ease both',
-            }}>
-              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
-                <div style={{display:'flex',alignItems:'center',gap:6}}>
-                  <span style={{fontSize:14}}>🤖</span>
-                  <span style={{fontSize:10,fontWeight:800,color:dark?'#C4B5FD':'#6366F1',letterSpacing:'0.1em'}}>AI TUTOR</span>
-                </div>
-                <CopyButton text={aiText} dark={dark} />
-              </div>
-              <div style={{
-                '--md-h1': dark?'#E2E8F0':'#1E293B',
-                '--md-h2': dark?'#C4B5FD':'#4F46E5',
-                '--md-li': '0.4em',
-              }}>
-                <style>{`
-                  .ai-md h1{font-size:15px;font-weight:900;margin:0 0 6px;color:${dark?'#E2E8F0':'#1E293B'}}
-                  .ai-md h2{font-size:13px;font-weight:800;margin:14px 0 4px;color:${dark?'#C4B5FD':'#4F46E5'}}
-                  .ai-md h3{font-size:12px;font-weight:700;margin:10px 0 3px;color:${dark?'#A78BFA':'#6366F1'}}
-                  .ai-md p{margin:0 0 10px}
-                  .ai-md ul,.ai-md ol{margin:4px 0 10px;padding-left:20px}
-                  .ai-md li{margin-bottom:4px}
-                  .ai-md strong{font-weight:800}
-                  .ai-md code{background:${dark?'#2D1B69':'#EEF2FF'};padding:1px 5px;border-radius:4px;font-size:12px}
-                `}</style>
-                <div className="ai-md"><ReactMarkdown>{aiText}</ReactMarkdown></div>
-              </div>
-
-              {/* Go deeper button — only shown once initial response is fully streamed */}
-              {aiElaboration === null && (
-                <button onClick={handleElaborate} style={{
-                  marginTop:12, width:'100%', background:'transparent',
-                  border:`1px dashed ${dark?'#7C3AED':'#6366F1'}50`,
-                  borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:700,
-                  color: dark?'#A78BFA':'#6366F1', cursor:'pointer',
-                }}>
-                  🔍 Go deeper
-                </button>
-              )}
-
-              {/* Elaboration loading spinner */}
-              {aiElaboration === 'loading' || aiElaboration === '' ? (
-                <div style={{marginTop:10,textAlign:'center',padding:'10px 0'}}>
-                  <div style={{display:'inline-block',width:16,height:16,border:`2px solid ${dark?'#A78BFA':'#6366F1'}`,borderTopColor:'transparent',borderRadius:'50%',animation:'spin 0.8s linear infinite'}} />
-                </div>
-              ) : aiElaboration ? (
-                <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${dark?'#7C3AED':'#6366F1'}25`}}>
-                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
-                    <span style={{fontSize:10,fontWeight:800,color:dark?'#A78BFA':'#6366F1',letterSpacing:'0.1em'}}>🔍 DEEPER DIVE</span>
-                    <CopyButton text={aiElaboration} dark={dark} />
-                  </div>
-                  <div className="ai-md"><ReactMarkdown>{aiElaboration}</ReactMarkdown></div>
-                </div>
-              ) : null}
-            </div>
-          )}
-          {aiOpen && (aiText === 'loading' || aiText === '') && (
-            <div style={{marginTop:8,background:dark?'#181432':'#F8FAFF',border:`1px solid ${dark?'#7C3AED':'#6366F1'}30`,borderRadius:12,padding:'16px',textAlign:'center'}}>
-              <div style={{display:'inline-block',width:20,height:20,border:`2px solid ${dark?'#C4B5FD':'#6366F1'}`,borderTopColor:'transparent',borderRadius:'50%',animation:'spin 0.8s linear infinite'}} />
-            </div>
-          )}
         </div>
+      )}
+
+      {/* AI Tutor bottom sheet */}
+      {aiOpen && chosen !== null && (
+        <>
+          <div onClick={() => setAiOpen(false)} style={{position:'fixed',inset:0,zIndex:155,background:'rgba(0,0,0,0.4)'}} />
+          <div
+            ref={aiPanelRef}
+            className="animate-slide-up"
+            style={{
+              position:'fixed', bottom:NAV_HEIGHT, left:0, right:0, zIndex:160,
+              background: dark ? '#181432' : '#F8FAFF',
+              borderRadius:'20px 20px 0 0',
+              maxHeight:'62dvh',
+              overflowY:'auto',
+              boxShadow:'0 -8px 32px rgba(0,0,0,0.18)',
+            }}
+          >
+            <div style={{display:'flex',justifyContent:'center',padding:'10px 0 4px'}}>
+              <div style={{width:36,height:4,borderRadius:2,background:C.border}} />
+            </div>
+            {(aiText === 'loading' || aiText === '') && (
+              <div style={{padding:'24px 16px',textAlign:'center'}}>
+                <div style={{display:'inline-block',width:20,height:20,border:`2px solid ${dark?'#C4B5FD':'#6366F1'}`,borderTopColor:'transparent',borderRadius:'50%',animation:'spin 0.8s linear infinite'}} />
+              </div>
+            )}
+            {aiText !== null && aiText !== 'loading' && aiText !== '' && (
+              <div style={{padding:'4px 16px 24px'}}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+                  <div style={{display:'flex',alignItems:'center',gap:6}}>
+                    <span style={{fontSize:14}}>🤖</span>
+                    <span style={{fontSize:10,fontWeight:800,color:dark?'#C4B5FD':'#6366F1',letterSpacing:'0.1em'}}>AI TUTOR</span>
+                  </div>
+                  <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                    <CopyButton text={aiText} dark={dark} />
+                    <button onClick={() => setAiOpen(false)} style={{background:'none',border:'none',fontSize:18,color:C.muted,cursor:'pointer',padding:'0 2px'}}>✕</button>
+                  </div>
+                </div>
+                <div>
+                  <style>{`
+                    .ai-md h1{font-size:15px;font-weight:900;margin:0 0 6px;color:${dark?'#E2E8F0':'#1E293B'}}
+                    .ai-md h2{font-size:13px;font-weight:800;margin:14px 0 4px;color:${dark?'#C4B5FD':'#4F46E5'}}
+                    .ai-md h3{font-size:12px;font-weight:700;margin:10px 0 3px;color:${dark?'#A78BFA':'#6366F1'}}
+                    .ai-md p{margin:0 0 10px}
+                    .ai-md ul,.ai-md ol{margin:4px 0 10px;padding-left:20px}
+                    .ai-md li{margin-bottom:4px}
+                    .ai-md strong{font-weight:800}
+                    .ai-md code{background:${dark?'#2D1B69':'#EEF2FF'};padding:1px 5px;border-radius:4px;font-size:12px}
+                  `}</style>
+                  <div className="ai-md" style={{fontSize:13,color:C.navy,lineHeight:1.85}}><ReactMarkdown>{aiText}</ReactMarkdown></div>
+                </div>
+                {aiElaboration === null && (
+                  <button onClick={handleElaborate} style={{
+                    marginTop:12, width:'100%', background:'transparent',
+                    border:`1px dashed ${dark?'#7C3AED':'#6366F1'}50`,
+                    borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:700,
+                    color: dark?'#A78BFA':'#6366F1', cursor:'pointer',
+                  }}>
+                    🔍 Go deeper
+                  </button>
+                )}
+                {(aiElaboration === 'loading' || aiElaboration === '') && (
+                  <div style={{marginTop:10,textAlign:'center',padding:'10px 0'}}>
+                    <div style={{display:'inline-block',width:16,height:16,border:`2px solid ${dark?'#A78BFA':'#6366F1'}`,borderTopColor:'transparent',borderRadius:'50%',animation:'spin 0.8s linear infinite'}} />
+                  </div>
+                )}
+                {aiElaboration && aiElaboration !== 'loading' && aiElaboration !== '' && (
+                  <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${dark?'#7C3AED':'#6366F1'}25`}}>
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+                      <span style={{fontSize:10,fontWeight:800,color:dark?'#A78BFA':'#6366F1',letterSpacing:'0.1em'}}>🔍 DEEPER DIVE</span>
+                      <CopyButton text={aiElaboration} dark={dark} />
+                    </div>
+                    <div className="ai-md"><ReactMarkdown>{aiElaboration}</ReactMarkdown></div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {chosen !== null && (

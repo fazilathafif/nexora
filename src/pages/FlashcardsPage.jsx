@@ -201,8 +201,7 @@ export default function FlashcardsPage() {
 
       {/* Header */}
       <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14}}>
-        <button onClick={() => navigate(`/${stream}`)} style={backBtn(C)}>← Back</button>
-        <div style={{fontWeight:900, color:C.navy, fontSize:16}}>Flashcards</div>
+        <div style={{fontWeight:900, color:C.navy, fontSize:17}}>Flashcards</div>
         <div style={{display:'flex', gap:6, alignItems:'center'}}>
           <button
             onClick={() => navigate(`/${stream}/match/${subject}`)}
@@ -233,7 +232,7 @@ export default function FlashcardsPage() {
           <button key={t} onClick={() => selectTopic(t)} style={{
             background: topicFilter === t ? C.primary : 'transparent',
             border: `1.5px solid ${topicFilter === t ? C.primary : C.border}`,
-            borderRadius:20, padding:'4px 12px', fontSize:11, fontWeight:700,
+            borderRadius:20, padding:'8px 16px', fontSize:13, fontWeight:700,
             color: topicFilter === t ? 'white' : C.muted,
             cursor:'pointer', fontFamily:'Inter,sans-serif', transition:'all 0.2s',
           }}>{t}</button>
@@ -243,7 +242,7 @@ export default function FlashcardsPage() {
       {/* 4-level score tally */}
       <div style={{display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:6, marginBottom:16}}>
         {RATINGS.map(r => (
-          <div key={r.key} style={{textAlign:'center', background:r.bg, border:`1px solid ${r.border}`, borderRadius:8, padding:'5px 4px'}}>
+          <div key={r.key} style={{textAlign:'center', background:r.bg, border:`1px solid ${r.border}`, borderRadius:8, padding:'8px 6px'}}>
             <span style={{fontWeight:800, color:r.color, fontSize:13}}>{counts[r.key]}</span>
             <span style={{fontSize:9, color:C.muted, marginLeft:3, display:'block'}}>{r.label}</span>
           </div>

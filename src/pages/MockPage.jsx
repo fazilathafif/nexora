@@ -149,7 +149,7 @@ export default function MockPage({ user, profile, refreshProfile }) {
           <button
             key={i} onClick={() => setQIndex(i)}
             style={{
-              width:28, height:28, borderRadius:6, border:'none', cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'Inter,sans-serif',
+              width:40, height:40, borderRadius:8, border:'none', cursor:'pointer', fontSize:13, fontWeight:700, fontFamily:'Inter,sans-serif',
               background: i === qIndex ? C.primary : answers[i] !== null ? C.success+'40' : C.border,
               color: i === qIndex ? 'white' : answers[i] !== null ? C.success : C.muted,
             }}

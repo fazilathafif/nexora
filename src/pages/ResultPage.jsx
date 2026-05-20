@@ -55,7 +55,7 @@ export default function ResultPage({ user, profile }) {
 
       {/* Answer breakdown */}
       <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:10}}>Review</div>
-      <div style={{display:'grid',gap:8,marginBottom:20}}>
+      <div style={{display:'grid',gap:10,marginBottom:20}}>
         {answers.map((a, i) => (
           <div key={i} style={{
             background: a.correct ? C.success+'15' : '#EF4444'+'12',
@@ -75,7 +75,7 @@ export default function ResultPage({ user, profile }) {
             {!a.correct && (
               <button
                 onClick={() => openExplain(a)}
-                style={{background:C.primary,color:'white',border:'none',borderRadius:10,padding:'7px 12px',fontSize:12,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}
+                style={{background:C.primary,color:'white',border:'none',borderRadius:10,padding:'9px 16px',fontSize:12,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}
               >
                 Ask AI 🤖
               </button>
