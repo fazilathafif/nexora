@@ -76,7 +76,7 @@ export default function ProgressPage({ user, profile }) {
     <Shell C={C}>
       {/* Header */}
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,marginBottom:22}}>
-        <div style={{fontSize:22,fontWeight:900,color:C.navy}}>My Progress</div>
+        <div style={{fontSize:26,fontWeight:900,color:C.navy,fontFamily:"'Playfair Display', Georgia, serif",letterSpacing:'-0.4px'}}>My Progress</div>
         <button
           onClick={() => navigate(`/${stream}/plan`)}
           style={{background:`linear-gradient(135deg,${C.primary},${stream==='alevel'?'#312E81':'#0F766E'})`,color:'white',border:'none',borderRadius:10,padding:'7px 14px',cursor:'pointer',fontWeight:700,fontSize:12,display:'flex',alignItems:'center',gap:6}}
@@ -97,7 +97,7 @@ export default function ProgressPage({ user, profile }) {
       </div>
 
       {/* Weekly heatmap */}
-      <div style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:16,padding:'18px',marginBottom:14}}>
+      <div style={{background:C.card,borderRadius:16,padding:'18px',marginBottom:14,boxShadow:dark?'0 4px 20px rgba(0,0,0,0.35)':'0 4px 20px rgba(0,0,0,0.07)'}}>
         <SectionLabel C={C}>This Week</SectionLabel>
         {loading ? <Skeleton C={C} height={80} /> : (
           <div style={{display:'flex',gap:6,alignItems:'flex-end',height:120}}>
@@ -112,7 +112,7 @@ export default function ProgressPage({ user, profile }) {
       </div>
 
       {/* Topic accuracy */}
-      <div style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:16,padding:'18px',marginBottom:14}}>
+      <div style={{background:C.card,borderRadius:16,padding:'18px',marginBottom:14,boxShadow:dark?'0 4px 20px rgba(0,0,0,0.35)':'0 4px 20px rgba(0,0,0,0.07)'}}>
         <SectionLabel C={C}>{dark ? 'Exam Readiness' : 'Subject Strength'}</SectionLabel>
         {loading ? <Skeleton C={C} height={120} /> : topics.length === 0 ? (
           // Show demo bars if no data yet

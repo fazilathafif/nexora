@@ -23,9 +23,12 @@ export const radius = {
 }
 
 export const shadow = {
-  sm: '0 1px 4px rgba(0,0,0,0.07)',
-  md: '0 4px 14px rgba(0,0,0,0.10)',
-  lg: '0 8px 28px rgba(0,0,0,0.14)',
+  sm:     '0 1px 4px rgba(0,0,0,0.07)',
+  md:     '0 4px 14px rgba(0,0,0,0.10)',
+  lg:     '0 8px 28px rgba(0,0,0,0.14)',
+  smDark: '0 1px 4px rgba(0,0,0,0.25)',
+  mdDark: '0 4px 16px rgba(0,0,0,0.35)',
+  lgDark: '0 8px 32px rgba(0,0,0,0.50)',
 }
 
 export const fontSize = {
@@ -38,3 +41,5 @@ export const fontSize = {
   '3xl': 32,
   '4xl': 48,
 }
+
+export const SERIF = "'Playfair Display', Georgia, serif"

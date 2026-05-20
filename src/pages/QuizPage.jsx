@@ -299,7 +299,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:12,color:C.muted,marginBottom:6}}>
           <button
             onClick={handleExit}
-            style={{background:'transparent',border:`1px solid ${C.border}`,borderRadius:8,padding:'4px 10px',fontSize:11,fontWeight:700,color:C.muted,cursor:'pointer',fontFamily:'Inter,sans-serif'}}
+            style={{background:'transparent',border:`1.5px solid ${C.border}`,borderRadius:12,padding:'6px 14px',fontSize:12,fontWeight:700,color:C.muted,cursor:'pointer',fontFamily:'Inter,sans-serif',boxShadow:'none'}}
           >
             ← Exit
           </button>
@@ -343,7 +343,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
 
       {/* LNAT passage (shown when present) */}
       {currentQ.passage && (
-        <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:'14px 16px',marginBottom:12,maxHeight:190,overflowY:'auto',fontSize:13,color:C.muted,lineHeight:1.75}}>
+        <div style={{background:C.card,border:`1px solid ${C.border}30`,borderRadius:16,padding:'14px 16px',marginBottom:12,maxHeight:190,overflowY:'auto',fontSize:13,color:C.muted,lineHeight:1.75,boxShadow:dark?'0 4px 16px rgba(0,0,0,0.3)':'0 4px 12px rgba(0,0,0,0.06)'}}>
           <p style={{margin:'0 0 8px',fontWeight:700,color:C.primary,fontSize:10,letterSpacing:'0.12em'}}>PASSAGE — READ CAREFULLY</p>
           <p style={{margin:0}}>{currentQ.passage}</p>
         </div>
@@ -354,7 +354,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
       <div key={qIndex}>
 
       {/* Question */}
-      <div style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:20,padding:'22px 20px',marginBottom:16}}>
+      <div style={{background:C.card,borderRadius:22,padding:'22px 20px',marginBottom:16,boxShadow:dark?'0 6px 28px rgba(0,0,0,0.40)':'0 6px 24px rgba(0,0,0,0.08)'}}>
         <p style={{fontSize:16,fontWeight:700,color:C.navy,lineHeight:1.65,margin:0}}>{currentQ.q}</p>
       </div>
 
@@ -376,16 +376,16 @@ export default function QuizPage({ user, profile, refreshProfile }) {
       {/* Answer options */}
       <div style={{display:'grid',gap:9,marginBottom:16}}>
         {currentQ.opts.map((opt, i) => {
-          let bg = C.card, border = `1.5px solid ${C.border}`, col = C.navy
+          let bg = C.card, border = `1.5px solid ${C.border}50`, col = C.navy, shadow = 'none'
           if (chosen !== null) {
-            if (i === currentQ.ans)                              { bg = C.success+'20'; border = `2px solid ${C.success}`; col = dark?'#4ADE80':'#166534' }
-            else if (chosen >= 0 && i === chosen && i !== currentQ.ans) { bg = '#EF4444'+'20'; border = '2px solid #EF4444'; col = dark?'#F87171':'#991B1B' }
+            if (i === currentQ.ans)                              { bg = C.success+'22'; border = `2px solid ${C.success}`; col = dark?'#4ADE80':'#166534'; shadow = `0 0 0 3px ${C.success}18` }
+            else if (chosen >= 0 && i === chosen && i !== currentQ.ans) { bg = '#EF444422'; border = '2px solid #EF4444'; col = dark?'#F87171':'#991B1B'; shadow = '0 0 0 3px #EF444418' }
           }
           return (
             <button
               key={i} onClick={() => handleAnswer(i)}
               disabled={chosen !== null}
-              style={{background:bg,border,borderRadius:14,padding:'14px 16px',minHeight:56,textAlign:'left',cursor:chosen!==null?'default':'pointer',fontSize:14,fontWeight:600,color:col,touchAction:'manipulation',pointerEvents:inputBlocked?'none':'auto',WebkitTapHighlightColor:'transparent',outline:'none'}}
+              style={{background:bg,border,borderRadius:16,padding:'14px 16px',minHeight:56,textAlign:'left',cursor:chosen!==null?'default':'pointer',fontSize:14,fontWeight:600,color:col,touchAction:'manipulation',pointerEvents:inputBlocked?'none':'auto',WebkitTapHighlightColor:'transparent',outline:'none',boxShadow:shadow,transition:'box-shadow 0.2s'}}
             >
               <span style={{fontWeight:900,marginRight:10,opacity:0.4,fontSize:12}}>{['A','B','C','D'][i]}</span>
               {opt}

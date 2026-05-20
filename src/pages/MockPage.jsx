@@ -181,14 +181,14 @@ export default function MockPage({ user, profile, refreshProfile }) {
 
       {/* Passage */}
       {currentQ.passage && (
-        <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:'14px 16px', marginBottom:12, maxHeight:190, overflowY:'auto', fontSize:13, color:C.muted, lineHeight:1.75}}>
+        <div style={{background:C.card, border:`1px solid ${C.border}30`, borderRadius:16, padding:'14px 16px', marginBottom:12, maxHeight:190, overflowY:'auto', fontSize:13, color:C.muted, lineHeight:1.75, boxShadow: dark?'0 4px 16px rgba(0,0,0,0.3)':'0 4px 12px rgba(0,0,0,0.06)'}}>
           <p style={{margin:'0 0 8px', fontWeight:700, color:C.primary, fontSize:10, letterSpacing:'0.12em'}}>PASSAGE — READ CAREFULLY</p>
           <p style={{margin:0}}>{currentQ.passage}</p>
         </div>
       )}
 
       {/* Question */}
-      <div style={{background:C.card, border:`1.5px solid ${C.border}`, borderRadius:20, padding:'22px 20px', marginBottom:14}}>
+      <div style={{background:C.card, borderRadius:22, padding:'22px 20px', marginBottom:14, boxShadow:dark?'0 6px 28px rgba(0,0,0,0.40)':'0 6px 24px rgba(0,0,0,0.08)'}}>
         <p style={{fontSize:16, fontWeight:700, color:C.navy, lineHeight:1.65, margin:0}}>{currentQ.q}</p>
       </div>
 
@@ -202,10 +202,11 @@ export default function MockPage({ user, profile, refreshProfile }) {
               key={i} onClick={() => chooseAnswer(i)}
               style={{
                 background: selected ? C.primary+'25' : C.card,
-                border: selected ? `2px solid ${C.primary}` : `1.5px solid ${C.border}`,
-                borderRadius:14, padding:'14px 16px', minHeight:56,
+                border: selected ? `2px solid ${C.primary}` : `1.5px solid ${C.border}40`,
+                borderRadius:16, padding:'14px 16px', minHeight:56,
                 textAlign:'left', cursor:'pointer',
                 fontSize:14, fontWeight:600, color:C.navy, transition:'all 0.2s',
+                boxShadow: selected ? `0 0 0 3px ${C.primary}18` : (dark ? '0 2px 10px rgba(0,0,0,0.25)' : '0 2px 8px rgba(0,0,0,0.05)'),
               }}
             >
               <span style={{fontWeight:900, marginRight:10, opacity:0.4, fontSize:12}}>{['A','B','C','D'][i]}</span>

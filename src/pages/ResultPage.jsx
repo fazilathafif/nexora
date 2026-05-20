@@ -42,7 +42,7 @@ export default function ResultPage({ user, profile }) {
       {/* Hero */}
       <div style={{textAlign:'center',padding:'16px 0 20px'}}>
         <div style={{fontSize:52,marginBottom:8}}>{medal}</div>
-        <div style={{fontSize:26,fontWeight:900,color:C.navy}}>{msg}</div>
+        <div style={{fontSize:28,fontWeight:900,color:C.navy,fontFamily:"'Playfair Display', Georgia, serif",letterSpacing:'-0.5px'}}>{msg}</div>
         <div style={{fontSize:14,color:C.muted,marginTop:4}}>
           {score}/{total} correct · <span style={{color:C.primary,fontWeight:700}}>+{xpEarned} XP</span>
         </div>
@@ -50,7 +50,7 @@ export default function ResultPage({ user, profile }) {
 
       {/* Score ring */}
       <div style={{display:'flex',justifyContent:'center',marginBottom:22}}>
-        <ScoreRing pct={pct} color={pct>=60 ? C.primary : '#F97316'} />
+        <ScoreRing pct={pct} color={pct>=60 ? C.primary : '#F97316'} size={120} />
       </div>
 
       {/* Answer breakdown */}
@@ -59,9 +59,9 @@ export default function ResultPage({ user, profile }) {
         {answers.map((a, i) => (
           <div key={i} style={{
             background: a.correct ? C.success+'15' : '#EF4444'+'12',
-            border:`1.5px solid ${a.correct ? C.success : '#EF4444'}40`,
-            borderRadius:12, padding:'12px 14px',
+            borderRadius:16, padding:'14px 16px',
             display:'flex', justifyContent:'space-between', alignItems:'center',
+            boxShadow: dark ? '0 4px 16px rgba(0,0,0,0.3)' : '0 4px 14px rgba(0,0,0,0.07)',
           }}>
             <div>
               <div style={{fontSize:12,fontWeight:800,color:a.correct?C.success:'#EF4444'}}>
@@ -147,11 +147,11 @@ export default function ResultPage({ user, profile }) {
   )
 }
 
-function ScoreRing({ pct, color }) {
-  const size=100, stroke=9, r=(size-stroke)/2
+function ScoreRing({ pct, color, size=120 }) {
+  const stroke=10, r=(size-stroke)/2
   const circ = 2 * Math.PI * r
   return (
-    <div style={{position:'relative',display:'inline-flex',alignItems:'center',justifyContent:'center'}}>
+    <div style={{position:'relative',display:'inline-flex',alignItems:'center',justifyContent:'center',filter:`drop-shadow(0 4px 16px ${color}50)`}}>
       <svg width={size} height={size} style={{transform:'rotate(-90deg)'}}>
         <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#E2E8F0" strokeWidth={stroke}/>
         <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color}
@@ -160,7 +160,7 @@ function ScoreRing({ pct, color }) {
           style={{transition:'stroke-dashoffset 0.8s ease'}}/>
       </svg>
       <div style={{position:'absolute',textAlign:'center'}}>
-        <div style={{fontSize:22,fontWeight:900,color}}>{pct}%</div>
+        <div style={{fontSize:26,fontWeight:900,color,fontFamily:"'Playfair Display', Georgia, serif"}}>{pct}%</div>
       </div>
     </div>
   )

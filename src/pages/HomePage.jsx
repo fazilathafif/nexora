@@ -160,7 +160,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
       {/* Header */}
       <div style={row('space-between','flex-start',{marginBottom:20})}>
         <div>
-          <div style={{fontSize:26,fontWeight:900,color:C.navy,letterSpacing:'-0.5px',fontFamily:"'Playfair Display', Georgia, serif"}}>
+          <div style={{fontSize:28,fontWeight:900,color:C.navy,letterSpacing:'-0.8px',fontFamily:"'Playfair Display', Georgia, serif"}}>
             Nexora <span style={{color:C.primary}}>✦</span>
           </div>
           <div style={row('flex-start','center',{gap:6,marginTop:4})}>
@@ -283,7 +283,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
       </div>
 
       {/* ── Daily mission ────────────────────────────────────────────────── */}
-      <div style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:16,padding:'14px 18px',marginBottom:18,display:'flex',alignItems:'center',gap:14}}>
+      <div style={{background:C.card,borderRadius:20,padding:'16px 18px',marginBottom:18,display:'flex',alignItems:'center',gap:14,boxShadow:dark?'0 4px 20px rgba(0,0,0,0.35)':'0 4px 20px rgba(0,0,0,0.07)'}}>
         <div style={{width:44,height:44,borderRadius:'50%',background:C.primary+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>⚡</div>
         <div>
           <div style={{fontWeight:800,color:C.navy,fontSize:14}}>Daily Mission</div>
@@ -301,9 +301,10 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
         onClick={startPomodoro}
         style={{
           width:'100%', display:'flex', alignItems:'center', gap:12,
-          background: dark ? '#1a1740' : `${C.primary}10`,
-          border: `1.5px solid ${C.primary}35`,
-          borderRadius:14, padding:'12px 16px', cursor:'pointer',
+          background: dark ? '#1a1740' : 'white',
+          boxShadow: dark ? '0 4px 20px rgba(0,0,0,0.35)' : '0 4px 20px rgba(0,0,0,0.07)',
+          border: 'none',
+          borderRadius:18, padding:'14px 16px', cursor:'pointer',
           fontFamily:'Inter,sans-serif', marginBottom:8, textAlign:'left',
         }}
       >
@@ -444,8 +445,13 @@ function SubjectCard({ subject, C, dark, compact, onClick, onMock, onFlashcards 
 }
 
 export function Shell({ C, children, noNav }) {
+  const bgR    = parseInt((C.bg || '#f').replace('#', '').slice(0, 2), 16)
+  const isDark = bgR < 50
+  const bgGrad = isDark
+    ? `linear-gradient(165deg, #090318 0%, ${C.bg} 100%)`
+    : `linear-gradient(165deg, #FFFCF9 0%, ${C.bg} 65%)`
   return (
-    <div style={{minHeight:'100dvh',background:C.bg,fontFamily:'Inter,sans-serif'}}>
+    <div style={{ minHeight:'100dvh', background:bgGrad, fontFamily:'Inter,sans-serif' }}>
       <style>{`*{box-sizing:border-box}button{font-family:inherit}
         @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}

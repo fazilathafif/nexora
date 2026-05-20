@@ -194,7 +194,7 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
     <Shell C={C}>
       {/* Header */}
       <div style={{marginBottom:22}}>
-        <div style={{fontSize:22,fontWeight:900,color:C.navy}}>Study Plan</div>
+        <div style={{fontSize:26,fontWeight:900,color:C.navy,fontFamily:"'Playfair Display', Georgia, serif",letterSpacing:'-0.4px'}}>Study Plan</div>
         <div style={{fontSize:11,color:C.muted,marginTop:1}}>Personalised to your performance</div>
       </div>
 
@@ -282,7 +282,7 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
 
       {/* Readiness overview */}
       {!loading && topics.length > 0 && (
-        <div style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:16,padding:'18px',marginBottom:16}}>
+        <div style={{background:C.card,borderRadius:16,padding:'18px',marginBottom:16,boxShadow:dark?'0 4px 20px rgba(0,0,0,0.35)':'0 4px 20px rgba(0,0,0,0.07)'}}>
           <SectionLabel C={C}>Exam Readiness</SectionLabel>
           <div style={{display:'flex',alignItems:'center',gap:16}}>
             <div style={{
@@ -314,7 +314,7 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
 
       {/* Today's priority */}
       {!loading && weakTopics.length > 0 && (
-        <div style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:16,padding:'18px',marginBottom:16}}>
+        <div style={{background:C.card,borderRadius:16,padding:'18px',marginBottom:16,boxShadow:dark?'0 4px 20px rgba(0,0,0,0.35)':'0 4px 20px rgba(0,0,0,0.07)'}}>
           <SectionLabel C={C}>Today's Priority</SectionLabel>
           <div style={{display:'flex',flexDirection:'column',gap:9}}>
             {weakTopics.slice(0,3).map((t, i) => {
@@ -346,7 +346,7 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
 
       {/* Phased schedule */}
       {schedule.length > 0 && (
-        <div style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:16,padding:'18px',marginBottom:16}}>
+        <div style={{background:C.card,borderRadius:16,padding:'18px',marginBottom:16,boxShadow:dark?'0 4px 20px rgba(0,0,0,0.35)':'0 4px 20px rgba(0,0,0,0.07)'}}>
           <SectionLabel C={C}>Study Schedule</SectionLabel>
           <div style={{display:'flex',flexDirection:'column',gap:0}}>
             {schedule.map((phase, i) => (
@@ -381,7 +381,7 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
 
       {/* All topics overview */}
       {!loading && topics.length > 0 && (
-        <div style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:16,padding:'18px',marginBottom:16}}>
+        <div style={{background:C.card,borderRadius:16,padding:'18px',marginBottom:16,boxShadow:dark?'0 4px 20px rgba(0,0,0,0.35)':'0 4px 20px rgba(0,0,0,0.07)'}}>
           <SectionLabel C={C}>All Topics</SectionLabel>
           {[...weakTopics, ...strongTopics].map(t => {
             const subj = subjectForTopic(t.topic)
@@ -417,7 +417,7 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
 
       {/* No data state */}
       {!loading && topics.length === 0 && (
-        <div style={{background:C.card,border:`1.5px solid ${C.border}`,borderRadius:16,padding:'28px',textAlign:'center',marginBottom:16}}>
+        <div style={{background:C.card,borderRadius:16,padding:'28px',textAlign:'center',marginBottom:16,boxShadow:dark?'0 4px 20px rgba(0,0,0,0.35)':'0 4px 20px rgba(0,0,0,0.07)'}}>
           <div style={{fontSize:36,marginBottom:12}}>📊</div>
           <div style={{fontWeight:800,color:C.navy,fontSize:15,marginBottom:6}}>No performance data yet</div>
           <div style={{fontSize:13,color:C.muted,lineHeight:1.6,marginBottom:16}}>

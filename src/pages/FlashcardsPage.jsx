@@ -201,7 +201,7 @@ export default function FlashcardsPage() {
 
       {/* Header */}
       <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14}}>
-        <div style={{fontWeight:900, color:C.navy, fontSize:17}}>Flashcards</div>
+        <div style={{fontWeight:900, color:C.navy, fontSize:22, fontFamily:"'Playfair Display', Georgia, serif", letterSpacing:'-0.4px'}}>Flashcards</div>
         <div style={{display:'flex', gap:6, alignItems:'center'}}>
           <button
             onClick={() => navigate(`/${stream}/match/${subject}`)}
@@ -242,8 +242,8 @@ export default function FlashcardsPage() {
       {/* 4-level score tally */}
       <div style={{display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:6, marginBottom:16}}>
         {RATINGS.map(r => (
-          <div key={r.key} style={{textAlign:'center', background:r.bg, border:`1px solid ${r.border}`, borderRadius:8, padding:'8px 6px'}}>
-            <span style={{fontWeight:800, color:r.color, fontSize:13}}>{counts[r.key]}</span>
+          <div key={r.key} style={{textAlign:'center', background:r.bg, borderRadius:12, padding:'10px 6px', boxShadow:`0 2px 8px ${r.color}20`}}>
+            <span style={{fontWeight:800, color:r.color, fontSize:15}}>{counts[r.key]}</span>
             <span style={{fontSize:9, color:C.muted, marginLeft:3, display:'block'}}>{r.label}</span>
           </div>
         ))}
