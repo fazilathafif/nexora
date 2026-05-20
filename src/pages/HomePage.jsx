@@ -185,25 +185,9 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
 
       {/* ── Subject / exam picker (PRIMARY — top of page) ─────────────────── */}
       <SectionLabel C={C}>{stream === 'alevel' ? 'Choose Your Exam' : 'Choose Subject'}</SectionLabel>
-      {stream === 'alevel' ? (
-        <div style={{marginBottom:18}}>
-          <FanDeck subjects={cfg.subjects} stream={stream} navigate={navigate} />
-        </div>
-      ) : (
-        <div className="scroll-x" style={{marginBottom:18, paddingBottom:8}}>
-          {cfg.subjects.map(s => (
-            <div key={s.id} style={{width:170, flexShrink:0}}>
-              <SubjectCard
-                subject={s} C={C} dark={dark}
-                compact={false}
-                onClick={() => navigate(`/${stream}/quiz/${s.id}`)}
-                onMock={() => navigate(`/${stream}/mock/${s.id}`)}
-                onFlashcards={() => navigate(`/${stream}/flashcards/${s.id}`)}
-              />
-            </div>
-          ))}
-        </div>
-      )}
+      <div style={{marginBottom:18}}>
+        <FanDeck subjects={cfg.subjects} stream={stream} navigate={navigate} C={C} />
+      </div>
 
       {stream === 'alevel' && (
         <div style={{marginBottom:20,padding:'12px 14px',background:C.primary+'18',border:`1px solid ${C.primary}30`,borderRadius:12,fontSize:12,color:dark?'#A5B4FC':C.primary,lineHeight:1.5}}>

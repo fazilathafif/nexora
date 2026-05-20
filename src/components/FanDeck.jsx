@@ -1,6 +1,6 @@
 /**
- * FanDeck — physical fan of exam cards with angular-momentum drag physics.
- * Pivot point is below each card so all cards arc around a shared anchor.
+ * FanDeck — physical fan of exam/subject cards with angular-momentum drag.
+ * Works for both dark A-Level cards and light GCSE cards.
  * Ref-based: zero React re-renders during drag/decel.
  */
 
@@ -18,16 +18,23 @@ const DECEL_60    = 0.87  // velocity multiplier per 16 ms frame
 const SNAP_THRESH = 0.04  // deg/ms — snap once velocity drops below this
 const RUBBER_K    = 0.28  // fraction of out-of-bound displacement applied
 
-// ── Per-exam colours (self-contained, no HomePage import) ─────────────────────
+// ── Per-subject colours ───────────────────────────────────────────────────────
 const EXAM_COLORS = {
-  ucat: { primary:'#06B6D4', card:'#071B2C', navy:'#E0F9FF' },
-  lnat: { primary:'#F59E0B', card:'#1C0E00', navy:'#FEFCE8' },
-  tmua: { primary:'#818CF8', card:'#131029', navy:'#EEF2FF' },
-  esat: { primary:'#F97316', card:'#201000', navy:'#FFF4E8' },
-  tsa:  { primary:'#A855F7', card:'#180A32', navy:'#F5F3FF' },
-  step: { primary:'#10B981', card:'#041E1B', navy:'#ECFDF5' },
+  // A-Level (dark cards)
+  ucat:    { primary:'#06B6D4', card:'#071B2C', navy:'#E0F9FF' },
+  lnat:    { primary:'#F59E0B', card:'#1C0E00', navy:'#FEFCE8' },
+  tmua:    { primary:'#818CF8', card:'#131029', navy:'#EEF2FF' },
+  esat:    { primary:'#F97316', card:'#201000', navy:'#FFF4E8' },
+  tsa:     { primary:'#A855F7', card:'#180A32', navy:'#F5F3FF' },
+  step:    { primary:'#10B981', card:'#041E1B', navy:'#ECFDF5' },
+  // GCSE (light cards)
+  maths:   { primary:'#3B82F6', card:'#EFF6FF', navy:'#1E3A5F' },
+  english: { primary:'#D97706', card:'#FFFBEB', navy:'#78350F' },
+  science: { primary:'#0F766E', card:'#F0FDFA', navy:'#134E4A' },
+  verbal:  { primary:'#DB2777', card:'#FDF2F8', navy:'#500724' },
 }
 
+// A-Level exam metadata; GCSE subjects fall back to subject.desc
 const EXAM_META = {
   ucat: { type:'Medicine & Dentistry',       unis:'Oxford · Imperial · UCL · Sheffield' },
   lnat: { type:'Law',                        unis:'Oxford · Cambridge · LSE · UCL' },
@@ -39,23 +46,29 @@ const EXAM_META = {
 
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)) }
 
-export default function FanDeck({ subjects, stream, navigate }) {
+// Detect whether a hex card background is dark (R channel < 50)
+function isDarkCard(hex) {
+  if (!hex || hex[0] !== '#') return true
+  return parseInt(hex.slice(1, 3), 16) < 50
+}
+
+export default function FanDeck({ subjects, stream, navigate, C }) {
   const N = subjects.length
 
   const [activeIdx, setActiveIdx] = useState(0)
   const [showHint,  setShowHint]  = useState(true)
 
-  const fanOffsetRef   = useRef(0)   // degrees: card[i] angle = i*SPREAD - fanOffset
-  const velocityRef    = useRef(0)   // deg/ms
-  const activeIdxRef   = useRef(0)
-  const isDraggingRef  = useRef(false)
-  const wasDragRef     = useRef(false)
-  const startXRef      = useRef(0)
-  const startOffRef    = useRef(0)
-  const prevXRef       = useRef(0)
-  const prevTimeRef    = useRef(0)
-  const rafRef         = useRef(null)
-  const cardRefs       = useRef([])
+  const fanOffsetRef  = useRef(0)
+  const velocityRef   = useRef(0)
+  const activeIdxRef  = useRef(0)
+  const isDraggingRef = useRef(false)
+  const wasDragRef    = useRef(false)
+  const startXRef     = useRef(0)
+  const startOffRef   = useRef(0)
+  const prevXRef      = useRef(0)
+  const prevTimeRef   = useRef(0)
+  const rafRef        = useRef(null)
+  const cardRefs      = useRef([])
 
   useEffect(() => { activeIdxRef.current = activeIdx }, [activeIdx])
 
@@ -72,7 +85,7 @@ export default function FanDeck({ subjects, stream, navigate }) {
       const angle   = i * SPREAD - offset
       const dist    = Math.abs(i - snapped)
       const scale   = Math.max(0.76, 1 - dist * 0.06)
-      const opacity = Math.max(0.3, 1 - dist * 0.2)
+      const opacity = Math.max(0.3,  1 - dist * 0.2)
       el.style.transition = withTransition
         ? 'transform 0.36s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.36s ease'
         : 'none'
@@ -98,7 +111,6 @@ export default function FanDeck({ subjects, stream, navigate }) {
     velocityRef.current  *= Math.pow(DECEL_60, dt / 16)
     fanOffsetRef.current += velocityRef.current * dt
 
-    // Rubber-band edges
     const lo = 0, hi = (N - 1) * SPREAD
     if (fanOffsetRef.current < lo) {
       fanOffsetRef.current = lo + (fanOffsetRef.current - lo) * RUBBER_K
@@ -140,7 +152,7 @@ export default function FanDeck({ subjects, stream, navigate }) {
     const dt     = now - prevTimeRef.current
     if (dt > 0) velocityRef.current = -(dxInst * SENSITIVITY) / dt
 
-    prevXRef.current  = e.clientX
+    prevXRef.current    = e.clientX
     prevTimeRef.current = now
 
     const lo = 0, hi = (N - 1) * SPREAD
@@ -170,9 +182,12 @@ export default function FanDeck({ subjects, stream, navigate }) {
   useEffect(() => { applyTransforms(0) }, []) // eslint-disable-line
 
   // ── Active card data ───────────────────────────────────────────────────────
-  const subj = subjects[activeIdx]
-  const meta = EXAM_META[subj?.id]  || {}
-  const SC   = EXAM_COLORS[subj?.id] || { primary:'#7C3AED', card:'#181432', navy:'#F0F4FF' }
+  const subj       = subjects[activeIdx]
+  const meta       = EXAM_META[subj?.id] || {}
+  const SC         = EXAM_COLORS[subj?.id] || { primary:'#7C3AED', card:'#181432', navy:'#F0F4FF' }
+  const dark       = stream === 'alevel'
+  const hintColor  = dark ? 'rgba(255,255,255,0.28)' : (C?.muted ?? 'rgba(0,0,0,0.3)')
+  const dotInColor = dark ? 'rgba(255,255,255,0.15)' : (C?.border ?? 'rgba(0,0,0,0.15)')
 
   return (
     <div style={{ userSelect:'none', marginBottom:4 }}>
@@ -192,8 +207,21 @@ export default function FanDeck({ subjects, stream, navigate }) {
         onPointerCancel={handlePointerUp}
       >
         {subjects.map((s, i) => {
-          const m  = EXAM_META[s.id]   || {}
-          const sc = EXAM_COLORS[s.id] || { primary:'#7C3AED', card:'#181432', navy:'#F0F4FF' }
+          const m    = EXAM_META[s.id]   || {}
+          const sc   = EXAM_COLORS[s.id] || { primary:'#7C3AED', card:'#181432', navy:'#F0F4FF' }
+          const dark = isDarkCard(sc.card)
+
+          const cardShadow = dark
+            ? '0 14px 44px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.07)'
+            : '0 6px 28px rgba(0,0,0,0.12), inset 0 -1px 0 rgba(0,0,0,0.05)'
+          const cardBorder = `2px solid ${sc.primary}${dark ? '30' : '50'}`
+          const subtleText = dark ? 'rgba(255,255,255,0.32)' : 'rgba(0,0,0,0.42)'
+
+          // Subtitle: exam type for A-Level, desc for GCSE
+          const subtitle = m.type || s.desc || ''
+          // Bottom detail: unis for A-Level, empty for GCSE (desc already used above)
+          const detail   = m.unis || ''
+
           return (
             <div
               key={s.id}
@@ -207,8 +235,8 @@ export default function FanDeck({ subjects, stream, navigate }) {
                 transformOrigin: `center calc(100% + ${PIVOT_EXT}px)`,
                 borderRadius: 20,
                 background: sc.card,
-                border: `2px solid ${sc.primary}30`,
-                boxShadow: `0 14px 44px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.07)`,
+                border: cardBorder,
+                boxShadow: cardShadow,
                 display:'flex', flexDirection:'column',
                 alignItems:'center', justifyContent:'center',
                 padding:'22px 16px',
@@ -219,24 +247,26 @@ export default function FanDeck({ subjects, stream, navigate }) {
               <div style={{fontSize:40, marginBottom:10}}>{s.emoji}</div>
               <div style={{
                 fontSize:15, fontWeight:900, color:sc.navy,
-                textAlign:'center', letterSpacing:'-0.3px', marginBottom:3,
+                textAlign:'center', letterSpacing:'-0.3px', marginBottom:4,
               }}>
                 {s.label}
               </div>
               <div style={{
                 fontSize:10, fontWeight:700, color:sc.primary,
-                textAlign:'center', marginBottom:10,
+                textAlign:'center', marginBottom: detail ? 10 : 0,
               }}>
-                {m.type}
+                {subtitle}
               </div>
-              <div style={{
-                fontSize:9, color:'rgba(255,255,255,0.32)',
-                textAlign:'center', lineHeight:1.65,
-                borderTop:`1px solid ${sc.primary}18`,
-                paddingTop:8, width:'100%',
-              }}>
-                {m.unis}
-              </div>
+              {detail && (
+                <div style={{
+                  fontSize:9, color: subtleText,
+                  textAlign:'center', lineHeight:1.65,
+                  borderTop:`1px solid ${sc.primary}18`,
+                  paddingTop:8, width:'100%',
+                }}>
+                  {detail}
+                </div>
+              )}
             </div>
           )
         })}
@@ -245,7 +275,8 @@ export default function FanDeck({ subjects, stream, navigate }) {
       {/* ── Swipe hint ─────────────────────────────────────────────────────── */}
       <div style={{
         textAlign:'center', fontSize:10, fontWeight:700, letterSpacing:'0.06em',
-        color:'rgba(255,255,255,0.28)', marginBottom:10, marginTop:4,
+        color: hintColor,
+        marginBottom:10, marginTop:4,
         transition:'opacity 0.6s ease',
         opacity: showHint ? 1 : 0,
         pointerEvents:'none',
@@ -262,7 +293,7 @@ export default function FanDeck({ subjects, stream, navigate }) {
             style={{
               width: i === activeIdx ? 20 : 6, height:6,
               borderRadius:3,
-              background: i === activeIdx ? SC.primary : 'rgba(255,255,255,0.15)',
+              background: i === activeIdx ? SC.primary : dotInColor,
               transition:'all 0.3s ease',
               cursor:'pointer',
             }}
@@ -270,7 +301,7 @@ export default function FanDeck({ subjects, stream, navigate }) {
         ))}
       </div>
 
-      {/* ── Action buttons (re-mount on active change for fade-in) ──────────── */}
+      {/* ── Action buttons (re-mounts on active change for fade-in) ─────────── */}
       <div key={activeIdx} style={{animation:'fadeUp 0.22s ease'}}>
         <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8}}>
           <button
