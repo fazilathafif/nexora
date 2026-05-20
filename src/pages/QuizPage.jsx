@@ -10,7 +10,6 @@ import { getQuestions, TIMER_CONFIG }  from '../data/questions.js'
 import { useProgress }                 from '../hooks/useProgress.js'
 import { useTimer }                    from '../hooks/useTimer.js'
 import { scheduleReview, sortByDue, getDueIds } from '../lib/srs.js'
-import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
 import { getColors, Shell, Badge }     from './HomePage.jsx'
 import { getRandomBreak }              from '../data/breaks.js'
 
@@ -45,10 +44,17 @@ export default function QuizPage({ user, profile, refreshProfile }) {
   const C                   = getColors(stream, subject)
   const dark                = stream === 'alevel'
 
-  const allQs     = getQuestions(stream, subject, topicFilter)
-  const questions = reviewMode
-    ? allQs.filter(q => getDueIds(allQs).includes(q.id))
-    : sortByDue(allQs)
+  // Computed once on mount — never re-sorted during the session.
+  // sortByDue reads localStorage; scheduleReview writes it. If questions were
+  // recomputed on every render, a correct answer would cause the array to
+  // re-sort mid-quiz and questions[qIndex] would silently change to a different
+  // question while chosen still held the previous answer's value.
+  const [questions] = useState(() => {
+    const allQs = getQuestions(stream, subject, topicFilter)
+    return reviewMode
+      ? allQs.filter(q => getDueIds(allQs).includes(q.id))
+      : sortByDue(allQs)
+  })
   const { startQuizSession, submitAnswer, finishQuizSession } = useProgress(user, profile, refreshProfile)
 
   const [qIndex,      setQIndex]      = useState(0)
@@ -391,8 +397,8 @@ export default function QuizPage({ user, profile, refreshProfile }) {
 
       </div>{/* end keyed question block */}
 
-      {/* Post-answer AI explanation */}
-      {chosen !== null && isSupabaseConfigured && (
+      {/* Post-answer AI explanation — always shown; uses its own hardcoded endpoint */}
+      {chosen !== null && (
         <div style={{marginBottom:12}}>
           <button
             onClick={handleAiExplain}
