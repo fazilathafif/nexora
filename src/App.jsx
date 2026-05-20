@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuth } from './hooks/useAuth.js'
 import { isSupabaseConfigured } from './lib/supabase.js'
@@ -17,10 +17,12 @@ import FlashcardsPage      from './pages/FlashcardsPage.jsx'
 import MatchPage           from './pages/MatchPage.jsx'
 import LoadingSpinner      from './components/LoadingSpinner.jsx'
 import PomodoroTimer       from './components/PomodoroTimer.jsx'
+import BottomNav           from './components/BottomNav.jsx'
 
 export default function App() {
   const { user, profile, loading, refreshProfile, signOut, isPasswordRecovery } = useAuth()
   const [pomodoroActive, setPomodoroActive] = useState(false)
+  const location = useLocation()
 
   if (loading) return <LoadingSpinner />
 
@@ -29,6 +31,9 @@ export default function App() {
 
   // Require sign-in when Supabase is configured
   if (isSupabaseConfigured && !user) return <AuthGate />
+
+  // Show bottom nav only on stream routes
+  const showNav = /^\/(gcse|alevel)(\/|$)/.test(location.pathname)
 
   return (
     <>
@@ -79,6 +84,7 @@ export default function App() {
       </Routes>
 
       <PomodoroTimer active={pomodoroActive} setActive={setPomodoroActive} />
+      {showNav && <BottomNav />}
     </>
   )
 }

@@ -9,6 +9,7 @@ import { STREAM_CONFIG, getQuestions } from '../data/questions.js'
 import { upsertProfile } from '../lib/db.js'
 import { isSupabaseConfigured } from '../lib/supabase.js'
 import { getDueCount, getDueIds } from '../lib/srs.js'
+import { NAV_HEIGHT } from '../styles/tokens.js'
 import AuthModal from '../components/AuthModal.jsx'
 import WelcomeModal from '../components/WelcomeModal.jsx'
 
@@ -458,14 +459,19 @@ function SubjectCard({ subject, C, dark, compact, onClick, onMock, onFlashcards 
   )
 }
 
-export function Shell({ C, children }) {
+export function Shell({ C, children, noNav }) {
   return (
-    <div style={{minHeight:'100vh',background:C.bg,display:'flex',justifyContent:'center',fontFamily:'Inter,sans-serif'}}>
+    <div style={{minHeight:'100dvh',background:C.bg,fontFamily:'Inter,sans-serif'}}>
       <style>{`*{box-sizing:border-box}button{font-family:inherit}
         @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+        @keyframes spin{to{transform:rotate(360deg)}}
       `}</style>
-      <div style={{width:'100%',maxWidth:430,padding:'28px 18px 48px',animation:'fadeUp 0.4s ease'}}>
+      <div style={{
+        width:'100%', maxWidth:520, margin:'0 auto',
+        padding:`20px 16px calc(${noNav ? 24 : NAV_HEIGHT + 24}px + env(safe-area-inset-bottom, 0px))`,
+        animation:'fadeUp 0.35s ease',
+      }}>
         {children}
       </div>
     </div>

@@ -36,10 +36,52 @@ img, svg { display: block; max-width: 100%; }
   to { transform: rotate(360deg); }
 }
 
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes slideDown {
+  from { transform: translateY(0);    opacity: 1; }
+  to   { transform: translateY(100%); opacity: 0; }
+}
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
 /* ── Utility classes ──────────────────────────────────────────────────────── */
-.animate-fade-up  { animation: fadeUp  0.4s ease both; }
-.animate-fade-in  { animation: fadeIn  0.3s ease both; }
-.animate-float    { animation: float   3s ease-in-out infinite; }
+.animate-fade-up  { animation: fadeUp   0.4s ease both; }
+.animate-fade-in  { animation: fadeIn   0.3s ease both; }
+.animate-float    { animation: float    3s ease-in-out infinite; }
+.animate-slide-up { animation: slideUp  0.28s cubic-bezier(0.25,0.46,0.45,0.94) both; }
+.animate-scale-in { animation: scaleIn  0.2s ease both; }
 
 /* Safe area for notched phones */
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 16px); }
+
+/* Horizontal scroll strip — snap to cards */
+.scroll-x {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  gap: 10px;
+  padding-bottom: 4px;
+}
+.scroll-x::-webkit-scrollbar { display: none; }
+.scroll-x > * { scroll-snap-align: start; flex-shrink: 0; }
+
+/* Touch feedback on interactive elements */
+@media (hover: none) {
+  button:active { opacity: 0.75; transform: scale(0.97); }
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
