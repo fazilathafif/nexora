@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getQuestions } from '../data/questions.js'
 import { scheduleReview } from '../lib/srs.js'
@@ -68,13 +68,7 @@ export default function FlashcardsPage() {
   const [cardsAnswered,  setCardsAnswered]  = useState(0)
   const [done,        setDone]        = useState(false)
   const [counts,      setCounts]      = useState({ again:0, hard:0, good:0, easy:0, mastered:0 })
-  const [showHint,    setShowHint]    = useState(true)
   const [heaven,      setHeaven]      = useState(false)
-
-  useEffect(() => {
-    const t = setTimeout(() => setShowHint(false), 3000)
-    return () => clearTimeout(t)
-  }, [])
 
   const cards = useMemo(
     () => topicFilter === 'All' ? allQs : allQs.filter(q => q.topic === topicFilter),
@@ -84,7 +78,7 @@ export default function FlashcardsPage() {
   function selectTopic(t) {
     setTopicFilter(t); setFlipped(false)
     setDone(false); setCounts({ again:0, hard:0, good:0, easy:0, mastered:0 })
-    setShowHint(false); setHeaven(false); setDeckKey(k => k + 1); setCardsAnswered(0)
+    setHeaven(false); setDeckKey(k => k + 1); setCardsAnswered(0)
   }
 
   function advanceCard(currentIndex) {
@@ -135,7 +129,7 @@ export default function FlashcardsPage() {
   function restart() {
     setFlipped(false); setDone(false); setCardsAnswered(0)
     setCounts({ again:0, hard:0, good:0, easy:0, mastered:0 })
-    setShowHint(false); setDeckKey(k => k + 1)
+    setDeckKey(k => k + 1)
   }
 
   if (!allQs.length) {
@@ -262,8 +256,8 @@ export default function FlashcardsPage() {
         </div>
       )}
 
-      {/* Stacked deck — FlashcardDeck handles 3D flip + swipe */}
-      <div style={{marginBottom: flipped ? 20 : 36, position:'relative'}}>
+      {/* Stacked deck */}
+      <div style={{ marginBottom:16, position:'relative' }}>
         <FlashcardDeck
           key={deckKey}
           cards={deckCards}
@@ -273,29 +267,49 @@ export default function FlashcardsPage() {
           onFlipChange={setFlipped}
           onComplete={handleDeckComplete}
         />
-        {showHint && cardsAnswered === 0 && (
-          <div style={{
-            display:'flex', justifyContent:'space-between',
-            fontSize:10, fontWeight:700, letterSpacing:'0.05em',
-            marginTop:12, animation:'hintFade 1s ease 2s forwards', pointerEvents:'none',
-          }}>
-            <span style={{color:'#EF4444'}}>← Again</span>
-            <span style={{color:C.muted, opacity:0.6}}>swipe to rate</span>
-            <span style={{color:'#10B981'}}>Good →</span>
-          </div>
-        )}
       </div>
 
-      {/* Rating prompt */}
-      {flipped ? (
-        <div style={{textAlign:'center', fontSize:11, color:C.muted, padding:'4px 0'}}>
-          Swipe right if you knew it · swipe left if you didn't
+      {/* Persistent SKIP / action / KNOW row */}
+      <div style={{ display:'flex', alignItems:'stretch', gap:10, marginBottom:8 }}>
+        {/* Skip pill */}
+        <div style={{
+          flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:3,
+          background: flipped ? '#EF444418' : '#EF44440d',
+          border:`1.5px solid ${flipped ? '#EF444445' : '#EF444420'}`,
+          borderRadius:14, padding:'10px 8px',
+          transition:'all 0.3s ease', opacity: flipped ? 1 : 0.55,
+        }}>
+          <span style={{ fontSize:20, lineHeight:1 }}>←</span>
+          <span style={{ fontSize:14, fontWeight:800, color:'#EF4444' }}>Skip</span>
+          <span style={{ fontSize:10, color:'#EF4444', opacity:0.7 }}>I forgot</span>
         </div>
-      ) : (
-        <div style={{textAlign:'center', fontSize:12, color:C.muted, padding:'6px 0'}}>
-          Tap the card to reveal the answer
+
+        {/* Centre instruction */}
+        <div style={{
+          flex:1.2, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4,
+          background:`${C.primary}10`, border:`1px solid ${C.primary}22`,
+          borderRadius:14, padding:'10px 8px',
+          transition:'all 0.3s ease',
+        }}>
+          <span style={{ fontSize:flipped ? 18 : 22 }}>{flipped ? '↔' : '👆'}</span>
+          <span style={{ fontSize:13, fontWeight:700, color:C.primary, textAlign:'center', lineHeight:1.3 }}>
+            {flipped ? 'Swipe to rate' : 'Tap to reveal'}
+          </span>
         </div>
-      )}
+
+        {/* Know pill */}
+        <div style={{
+          flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:3,
+          background: flipped ? '#10B98118' : '#10B9810d',
+          border:`1.5px solid ${flipped ? '#10B98145' : '#10B98120'}`,
+          borderRadius:14, padding:'10px 8px',
+          transition:'all 0.3s ease', opacity: flipped ? 1 : 0.55,
+        }}>
+          <span style={{ fontSize:20, lineHeight:1 }}>→</span>
+          <span style={{ fontSize:14, fontWeight:800, color:'#10B981' }}>Know</span>
+          <span style={{ fontSize:10, color:'#10B981', opacity:0.7 }}>I knew it</span>
+        </div>
+      </div>
     </Shell>
   )
 }

@@ -1,35 +1,16 @@
 /**
  * FlashcardDeck — stacked deck with 3D flip + Tinder-style swipe-to-dismiss.
- *
- * Usage:
- *   <FlashcardDeck
- *     cards={[{ id, front, back, label? }]}
- *     C={colorScheme}         // { card, border, primary, navy, muted }
- *     height={260}            // optional, default 260
- *     onDismiss={(id, dir) => {}}   // 'left' | 'right', called after fly-out
- *     onComplete={() => {}}   // called when last card dismissed
- *   />
- *
- * Implementation notes:
- *   - Card position and overlay opacity are applied directly via refs (no
- *     React state during drag) so zero re-renders occur per pointer-move event.
- *   - Velocity check on pointerUp enables fast-flick dismissal below the px
- *     threshold — matches the feel of native swipe-to-dismiss UIs.
- *   - Each new top card is mounted via `key={index}` so flip state resets.
  */
 
 import { useState, useRef } from 'react'
 
-const DISMISS_PX  = 80    // px — commit dismiss above this
-const DISMISS_VEL = 0.4   // px/ms — fast-flick always dismisses
+const DISMISS_PX  = 80
+const DISMISS_VEL = 0.4
 
-// ── useSwipe ──────────────────────────────────────────────────────────────────
-// All drag tracking lives in refs. DOM nodes (cardRef, leftRef, rightRef) are
-// mutated directly so no React re-renders fire during a drag gesture.
 function useSwipe({ onDismiss, onFlip }) {
   const cardRef  = useRef(null)
-  const leftRef  = useRef(null)   // "skip" red overlay
-  const rightRef = useRef(null)   // "know" green overlay
+  const leftRef  = useRef(null)
+  const rightRef = useRef(null)
 
   const startX   = useRef(0)
   const startY   = useRef(0)
@@ -44,7 +25,7 @@ function useSwipe({ onDismiss, onFlip }) {
     if (!el) return
 
     const angle   = Math.max(-14, Math.min(14, dx * 0.05))
-    const opacity = Math.min(Math.abs(dx) / 100, 1)
+    const opacity = Math.min(Math.abs(dx) / 80, 1)
 
     el.style.transition = withTransition
       ? 'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)'
@@ -53,11 +34,11 @@ function useSwipe({ onDismiss, onFlip }) {
 
     if (leftRef.current) {
       leftRef.current.style.opacity    = dx < -10 ? opacity : 0
-      leftRef.current.style.background = `rgba(239,68,68,${opacity * 0.38})`
+      leftRef.current.style.background = `rgba(239,68,68,${opacity * 0.45})`
     }
     if (rightRef.current) {
       rightRef.current.style.opacity    = dx > 10 ? opacity : 0
-      rightRef.current.style.background = `rgba(16,185,129,${opacity * 0.38})`
+      rightRef.current.style.background = `rgba(16,185,129,${opacity * 0.45})`
     }
   }
 
@@ -106,7 +87,7 @@ function useSwipe({ onDismiss, onFlip }) {
       const dir   = dx > 0 ? 'right' : 'left'
       const flyX  = dir === 'right' ? 640 : -640
       const angle = dir === 'right' ? 22 : -22
-      paint(0, false)  // reset overlays immediately
+      paint(0, false)
       const el = cardRef.current
       if (el) {
         el.style.transition = 'transform 0.32s cubic-bezier(0.25,0.46,0.45,0.94)'
@@ -139,25 +120,34 @@ function Flashcard({ card, C, onDismiss, onFlipChange }) {
   return (
     <div
       ref={cardRef}
-      style={{ position:'absolute', inset:0, zIndex:5, touchAction:'pan-y', cursor:'grab' }}
+      style={{
+        position:'absolute', inset:0, zIndex:5, touchAction:'pan-y', cursor:'grab',
+        animation:'cardEntrance 0.35s cubic-bezier(0.34,1.56,0.64,1) both',
+      }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
     >
-      {/* Skip overlay — fades in on left swipe */}
+      {/* Skip overlay */}
       <div ref={leftRef} style={{
         position:'absolute', inset:0, borderRadius:20, zIndex:10, pointerEvents:'none',
-        display:'flex', alignItems:'center', justifyContent:'center',
-        fontSize:44, color:'white', fontWeight:900, opacity:0,
-      }}>✗</div>
+        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+        gap:6, opacity:0,
+      }}>
+        <span style={{ fontSize:52, lineHeight:1 }}>✗</span>
+        <span style={{ fontSize:18, fontWeight:900, color:'white', letterSpacing:'0.08em' }}>SKIP</span>
+      </div>
 
-      {/* Know overlay — fades in on right swipe */}
+      {/* Know overlay */}
       <div ref={rightRef} style={{
         position:'absolute', inset:0, borderRadius:20, zIndex:10, pointerEvents:'none',
-        display:'flex', alignItems:'center', justifyContent:'center',
-        fontSize:44, color:'white', fontWeight:900, opacity:0,
-      }}>✓</div>
+        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+        gap:6, opacity:0,
+      }}>
+        <span style={{ fontSize:52, lineHeight:1 }}>✓</span>
+        <span style={{ fontSize:18, fontWeight:900, color:'white', letterSpacing:'0.08em' }}>KNOW</span>
+      </div>
 
       {/* 3D flip scene */}
       <div style={{ perspective:'900px', height:'100%' }}>
@@ -174,23 +164,48 @@ function Flashcard({ card, C, onDismiss, onFlipChange }) {
             backfaceVisibility:'hidden', WebkitBackfaceVisibility:'hidden',
             background: C.soft,
             border:`1.5px solid ${C.primary}25`,
-            borderRadius:20, padding:'24px', overflow:'hidden',
+            borderRadius:20, padding:'20px 20px 16px', overflow:'hidden',
             display:'flex', flexDirection:'column', justifyContent:'space-between',
             boxShadow:'0 8px 28px rgba(0,0,0,0.09)',
           }}>
-            <div>
+            {/* Edge direction cues */}
+            <div style={{
+              position:'absolute', left:0, top:0, bottom:0, width:32,
+              display:'flex', alignItems:'center', justifyContent:'center',
+              background:'linear-gradient(to right,rgba(239,68,68,0.07),transparent)',
+              borderRadius:'20px 0 0 20px', pointerEvents:'none',
+            }}>
+              <span style={{ fontSize:11, fontWeight:900, color:'#EF4444', opacity:0.5, writingMode:'vertical-rl', transform:'rotate(180deg)', letterSpacing:'0.1em' }}>SKIP</span>
+            </div>
+            <div style={{
+              position:'absolute', right:0, top:0, bottom:0, width:32,
+              display:'flex', alignItems:'center', justifyContent:'center',
+              background:'linear-gradient(to left,rgba(16,185,129,0.07),transparent)',
+              borderRadius:'0 20px 20px 0', pointerEvents:'none',
+            }}>
+              <span style={{ fontSize:11, fontWeight:900, color:'#10B981', opacity:0.5, writingMode:'vertical-rl', letterSpacing:'0.1em' }}>KNOW</span>
+            </div>
+
+            <div style={{ padding:'0 12px' }}>
               <div style={{
-                fontSize:10, fontWeight:800, color:C.muted,
+                fontSize:11, fontWeight:800, color:C.muted,
                 letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:12,
               }}>
                 {card.label ?? 'Question'}
               </div>
-              <p style={{ fontSize:16, fontWeight:700, color:C.navy, lineHeight:1.65, margin:0 }}>
+              <p style={{ fontSize:17, fontWeight:700, color:C.navy, lineHeight:1.65, margin:0 }}>
                 {card.front}
               </p>
             </div>
-            <div style={{ textAlign:'center', fontSize:11, color:C.muted, opacity:0.6 }}>
-              Tap to reveal · swipe to rate
+
+            {/* Tap hint */}
+            <div style={{
+              display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+              background:`${C.primary}10`, border:`1px solid ${C.primary}20`,
+              borderRadius:12, padding:'10px 14px', margin:'0 12px',
+            }}>
+              <span style={{ fontSize:16 }}>👆</span>
+              <span style={{ fontSize:14, fontWeight:700, color:C.muted }}>Tap to reveal answer</span>
             </div>
           </div>
 
@@ -200,22 +215,50 @@ function Flashcard({ card, C, onDismiss, onFlipChange }) {
             backfaceVisibility:'hidden', WebkitBackfaceVisibility:'hidden',
             transform:'rotateY(180deg)',
             background:`${C.primary}14`, border:`1.5px solid ${C.primary}50`,
-            borderRadius:20, padding:'24px', overflow:'hidden',
+            borderRadius:20, padding:'20px 20px 16px', overflow:'hidden',
             display:'flex', flexDirection:'column', justifyContent:'space-between',
           }}>
-            <div>
+            {/* Edge direction cues */}
+            <div style={{
+              position:'absolute', left:0, top:0, bottom:0, width:32,
+              display:'flex', alignItems:'center', justifyContent:'center',
+              background:'linear-gradient(to right,rgba(239,68,68,0.1),transparent)',
+              borderRadius:'20px 0 0 20px', pointerEvents:'none',
+            }}>
+              <span style={{ fontSize:11, fontWeight:900, color:'#EF4444', opacity:0.7, writingMode:'vertical-rl', transform:'rotate(180deg)', letterSpacing:'0.1em' }}>SKIP</span>
+            </div>
+            <div style={{
+              position:'absolute', right:0, top:0, bottom:0, width:32,
+              display:'flex', alignItems:'center', justifyContent:'center',
+              background:'linear-gradient(to left,rgba(16,185,129,0.1),transparent)',
+              borderRadius:'0 20px 20px 0', pointerEvents:'none',
+            }}>
+              <span style={{ fontSize:11, fontWeight:900, color:'#10B981', opacity:0.7, writingMode:'vertical-rl', letterSpacing:'0.1em' }}>KNOW</span>
+            </div>
+
+            <div style={{ padding:'0 12px' }}>
               <div style={{
-                fontSize:10, fontWeight:800, color:C.primary,
+                fontSize:11, fontWeight:800, color:C.primary,
                 letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:12,
               }}>
                 Answer
               </div>
-              <p style={{ fontSize:16, fontWeight:800, color:C.navy, lineHeight:1.6, margin:0 }}>
+              <p style={{ fontSize:17, fontWeight:800, color:C.navy, lineHeight:1.6, margin:0 }}>
                 {card.back}
               </p>
             </div>
-            <div style={{ textAlign:'center', fontSize:11, color:C.muted, opacity:0.5 }}>
-              Tap to flip back · swipe left/right to rate
+
+            {/* Swipe hint */}
+            <div style={{
+              display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+              background:`${C.primary}14`, border:`1px solid ${C.primary}30`,
+              borderRadius:12, padding:'10px 14px', margin:'0 12px',
+            }}>
+              <span style={{ fontSize:14, fontWeight:800, color:'#EF4444' }}>← Skip</span>
+              <span style={{ fontSize:13, color:C.muted, fontWeight:600 }}>·</span>
+              <span style={{ fontSize:14, fontWeight:800, color:C.muted }}>swipe to rate</span>
+              <span style={{ fontSize:13, color:C.muted, fontWeight:600 }}>·</span>
+              <span style={{ fontSize:14, fontWeight:800, color:'#10B981' }}>Know →</span>
             </div>
           </div>
 
@@ -246,7 +289,14 @@ export default function FlashcardDeck({ cards, C = DEFAULT_C, height = 260, onDi
 
   return (
     <div style={{ position:'relative', height, userSelect:'none' }}>
-      {/* Ghost cards — visible depth behind the top card */}
+      <style>{`
+        @keyframes cardEntrance {
+          from { transform: scale(0.94) translateY(8px); opacity:0; }
+          to   { transform: scale(1)    translateY(0);   opacity:1; }
+        }
+      `}</style>
+
+      {/* Ghost stack */}
       {[2, 1].map(offset => (
         <div key={offset} style={{
           position:'absolute', inset:0,
@@ -259,7 +309,6 @@ export default function FlashcardDeck({ cards, C = DEFAULT_C, height = 260, onDi
         }} />
       ))}
 
-      {/* Top card — key resets flip state on each new card */}
       <Flashcard
         key={index}
         card={cards[index]}
