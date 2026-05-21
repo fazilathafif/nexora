@@ -15,6 +15,10 @@ import { HISTORY_BATCH }    from './batch_history.js'
 import { ENGLISHLIT_BATCH } from './batch_englishlit.js'
 import { CS_BATCH }         from './batch_cs.js'
 import { RS_BATCH }         from './batch_rs.js'
+import { SPANISH_BATCH }    from './batch_spanish.js'
+import { FRENCH_BATCH }     from './batch_french.js'
+import { GERMAN_BATCH }     from './batch_german.js'
+import { BUSINESS_BATCH }   from './batch_business.js'
 import { UCAT_BATCH }    from './batch_ucat.js'
 import { LNAT_BATCH }    from './batch_lnat.js'
 import { TMUA_BATCH }    from './batch_tmua.js'
@@ -312,6 +316,10 @@ export const GCSE = {
   englishlit: [ ...ENGLISHLIT_BATCH ],
   cs:         [ ...CS_BATCH         ],
   rs:         [ ...RS_BATCH         ],
+  spanish:    [ ...SPANISH_BATCH    ],
+  french:     [ ...FRENCH_BATCH     ],
+  german:     [ ...GERMAN_BATCH     ],
+  business:   [ ...BUSINESS_BATCH   ],
 }
 
 // ── A-LEVEL STREAM ────────────────────────────────────────────────────────────
@@ -619,11 +627,12 @@ export const ALEVEL = {
 
 // ── Helper: get questions for a subject ──────────────────────────────────────
 
-export function getQuestions(stream, subject, topicFilter = null) {
+export function getQuestions(stream, subject, topicFilter = null, tier = null) {
   const bank = stream === 'gcse' ? GCSE : ALEVEL
-  const qs   = bank[subject] ?? []
-  if (!topicFilter) return qs
-  return qs.filter(q => q.topic === topicFilter)
+  let qs = bank[subject] ?? []
+  if (topicFilter) qs = qs.filter(q => q.topic === topicFilter)
+  if (tier) qs = qs.filter(q => !q.tier || q.tier === tier)
+  return qs
 }
 
 // ── All subjects metadata ─────────────────────────────────────────────────────
@@ -639,8 +648,12 @@ export const STREAM_CONFIG = {
       { id:'science',    label:'Science',              emoji:'🔬', desc:'Biology, Chemistry, Physics',      ebacc:true  },
       { id:'history',    label:'History',              emoji:'🏛️',  desc:'Medicine, Germany, America',       ebacc:true  },
       { id:'geography',  label:'Geography',            emoji:'🌍', desc:'Landscapes, Hazards, Development', ebacc:true  },
+      { id:'spanish',    label:'Spanish',              emoji:'🇪🇸', desc:'MFL — AQA/Edexcel/OCR',           ebacc:true,  mfl:true, mflLang:'es', group:'Languages' },
+      { id:'french',     label:'French',               emoji:'🇫🇷', desc:'MFL — AQA/Edexcel/OCR',           ebacc:true,  mfl:true, mflLang:'fr', group:'Languages' },
+      { id:'german',     label:'German',               emoji:'🇩🇪', desc:'MFL — AQA/Edexcel/OCR',           ebacc:true,  mfl:true, mflLang:'de', group:'Languages' },
       { id:'cs',         label:'Computer Science',     emoji:'💻', desc:'Algorithms, Networks, Programming', ebacc:false },
       { id:'rs',         label:'Religious Studies',    emoji:'☯️',  desc:'Christianity, Islam, Ethics',      ebacc:false },
+      { id:'business',   label:'Business Studies',     emoji:'💼', desc:'Operations, Finance, Marketing',   ebacc:false },
       { id:'verbal',     label:'Verbal Reasoning',     emoji:'🧩', desc:'Reasoning & Vocabulary',           ebacc:false },
     ],
   },

@@ -7,6 +7,7 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { STREAM_CONFIG, getQuestions } from '../data/questions.js'
 import { UNIVERSITIES, getCoursesForUni, getTestsForCourse } from '../data/uniMapping.js'
+import { getEbaccLang, saveEbaccLang } from '../data/examBoards.js'
 import { upsertProfile } from '../lib/db.js'
 import { isSupabaseConfigured } from '../lib/supabase.js'
 import { getDueCount, getDueIds } from '../lib/srs.js'
@@ -86,6 +87,26 @@ const SUBJECT_COLORS = {
     bg:'#FDF2F8', card:'#FFFFFF', navy:'#1E293B', soft:'#FCE7F3',
     muted:'#64748B', success:'#10B981', border:'#E2E8F0',
   },
+  spanish: {
+    primary:'#DC2626', secondary:'#EF4444', accent:'#FECACA',
+    bg:'#FEF2F2', card:'#FFFFFF', navy:'#1E293B', soft:'#FEE2E2',
+    muted:'#64748B', success:'#10B981', border:'#E2E8F0',
+  },
+  french: {
+    primary:'#1D4ED8', secondary:'#3B82F6', accent:'#BFDBFE',
+    bg:'#EFF6FF', card:'#FFFFFF', navy:'#1E293B', soft:'#DBEAFE',
+    muted:'#64748B', success:'#10B981', border:'#E2E8F0',
+  },
+  german: {
+    primary:'#B45309', secondary:'#D97706', accent:'#FDE68A',
+    bg:'#FFFBEB', card:'#FFFFFF', navy:'#1E293B', soft:'#FEF3C7',
+    muted:'#64748B', success:'#10B981', border:'#E2E8F0',
+  },
+  business: {
+    primary:'#0369A1', secondary:'#0284C7', accent:'#BAE6FD',
+    bg:'#F0F9FF', card:'#FFFFFF', navy:'#1E293B', soft:'#E0F2FE',
+    muted:'#64748B', success:'#10B981', border:'#E2E8F0',
+  },
   // ── A-Level (light — consistent with warm login theme) ────────────────────
   ucat: {
     primary:'#06B6D4', secondary:'#0EA5E9', accent:'#67E8F9',
@@ -149,6 +170,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
   const [editingDate, setEditingDate]     = useState(false)
   const [dateInput,   setDateInput]       = useState(profile?.exam_date ?? '')
   const [ebaccOnly,   setEbaccOnly]       = useState(false)
+  const [ebaccLang,   setEbaccLang]       = useState(() => getEbaccLang())
   const [finderOpen,  setFinderOpen]      = useState(false)
   const [finderUni,   setFinderUni]       = useState('')
   const [finderCourse,setFinderCourse]    = useState('')
@@ -254,13 +276,47 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
           </button>
         )}
       </div>
+
+      {/* EBacc language picker (shown when EBacc filter is active and stream is GCSE) */}
+      {stream === 'gcse' && ebaccOnly && (
+        <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:12}}>
+          <span style={{fontSize:11, fontWeight:700, color:'#64748B', alignSelf:'center', marginRight:2}}>Language:</span>
+          {cfg.subjects.filter(s => s.mfl).map(s => (
+            <button
+              key={s.id}
+              onClick={() => { const next = ebaccLang === s.id ? null : s.id; setEbaccLang(next); saveEbaccLang(next ?? '') }}
+              style={{
+                background: ebaccLang === s.id ? SUBJECT_COLORS[s.id]?.primary ?? '#0F766E' : '#F1F5F9',
+                border: `1.5px solid ${ebaccLang === s.id ? SUBJECT_COLORS[s.id]?.primary ?? '#0F766E' : '#E2E8F0'}`,
+                borderRadius:20, padding:'4px 12px', fontSize:11, fontWeight:800,
+                color: ebaccLang === s.id ? '#FFFFFF' : '#64748B',
+                cursor:'pointer', transition:'all 0.2s',
+              }}
+            >
+              {s.emoji} {s.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div style={{marginBottom:18}}>
-        <FanDeck
-          subjects={ebaccOnly ? cfg.subjects.filter(s => s.ebacc) : cfg.subjects}
-          stream={stream}
-          navigate={navigate}
-          C={C}
-        />
+        {stream === 'gcse' ? (
+          <GcseSubjectGrid
+            subjects={ebaccOnly
+              ? cfg.subjects.filter(s => s.ebacc && (!s.mfl || s.id === ebaccLang))
+              : cfg.subjects}
+            navigate={navigate}
+            stream={stream}
+            C={C}
+          />
+        ) : (
+          <FanDeck
+            subjects={cfg.subjects}
+            stream={stream}
+            navigate={navigate}
+            C={C}
+          />
+        )}
       </div>
 
       {stream === 'alevel' && (
@@ -611,6 +667,71 @@ function SubjectCard({ subject, C, dark, compact, onClick, onMock, onFlashcards 
           MOCK EXAM
         </button>
       </div>
+    </div>
+  )
+}
+
+// Builds contiguous groups by subject.group field (null = ungrouped)
+function buildSegments(subjects) {
+  const segments = []
+  let current = null
+  for (const s of subjects) {
+    const g = s.group ?? null
+    if (current && current.group === g) {
+      current.subjects.push(s)
+    } else {
+      current = { group: g, subjects: [s] }
+      segments.push(current)
+    }
+  }
+  return segments
+}
+
+function GcseSubjectGrid({ subjects, navigate, stream, C }) {
+  const [collapsed, setCollapsed] = useState({})
+  const segments = buildSegments(subjects)
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:0}}>
+      {segments.map((seg, i) => {
+        const isGroup = !!seg.group
+        const isCollapsed = collapsed[seg.group]
+        return (
+          <div key={seg.group ?? `ungrouped-${i}`}>
+            {isGroup && (
+              <button
+                onClick={() => setCollapsed(prev => ({ ...prev, [seg.group]: !prev[seg.group] }))}
+                style={{
+                  width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
+                  background:'#F8FAFC', border:'1px solid #E2E8F0',
+                  borderRadius:10, padding:'8px 14px', marginBottom:6, marginTop:i > 0 ? 8 : 0,
+                  cursor:'pointer', fontFamily:'Inter,sans-serif',
+                }}
+              >
+                <span style={{fontSize:12,fontWeight:800,color:'#475569',letterSpacing:'0.06em',textTransform:'uppercase'}}>
+                  {seg.group}
+                </span>
+                <span style={{fontSize:13,color:'#94A3B8',transition:'transform 0.2s',display:'inline-block',transform:isCollapsed?'rotate(-90deg)':'rotate(0deg)'}}>▾</span>
+              </button>
+            )}
+            {!isCollapsed && (
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom: isGroup ? 4 : 10}}>
+                {seg.subjects.map(s => (
+                  <SubjectCard
+                    key={s.id}
+                    subject={s}
+                    C={C}
+                    dark={false}
+                    onClick={() => navigate(`/${stream}/quiz/${s.id}`)}
+                    onMock={() => navigate(`/${stream}/mock/${s.id}`)}
+                    onFlashcards={() => navigate(`/${stream}/flashcards/${s.id}`)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
