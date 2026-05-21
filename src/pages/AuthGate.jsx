@@ -259,14 +259,18 @@ export default function AuthGate() {
 
   function onPointerDown(e) {
     if (screenIndex === 2) return
-    dragRef.current = { startX: e.clientX }
-    sliderRef.current.setPointerCapture(e.pointerId)
-    sliderRef.current.style.transition = 'none'
+    dragRef.current = { startX: e.clientX, pointerId: e.pointerId, captured: false }
   }
 
   function onPointerMove(e) {
     if (!dragRef.current) return
     const dx = e.clientX - dragRef.current.startX
+    if (!dragRef.current.captured && Math.abs(dx) > 8) {
+      dragRef.current.captured = true
+      sliderRef.current.setPointerCapture(dragRef.current.pointerId)
+      sliderRef.current.style.transition = 'none'
+    }
+    if (!dragRef.current.captured) return
     sliderRef.current.style.transform = `translateX(calc(-${screenIndex * 100}vw + ${dx}px))`
   }
 
