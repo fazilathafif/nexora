@@ -61,8 +61,10 @@ function isDarkCard(hex) {
 export default function FanDeck({ subjects, stream, navigate, C }) {
   const N = subjects.length
 
-  const [activeIdx, setActiveIdx] = useState(0)
-  const [showHint,  setShowHint]  = useState(true)
+  const [activeIdx,  setActiveIdx]  = useState(0)
+  const [showHint,   setShowHint]   = useState(true)
+  const [hasDragged, setHasDragged] = useState(false)
+  const [wiggle,     setWiggle]     = useState(true)
 
   const fanOffsetRef  = useRef(0)
   const velocityRef   = useRef(0)
@@ -80,6 +82,11 @@ export default function FanDeck({ subjects, stream, navigate, C }) {
 
   useEffect(() => {
     const t = setTimeout(() => setShowHint(false), 2800)
+    return () => clearTimeout(t)
+  }, [])
+
+  useEffect(() => {
+    const t = setTimeout(() => setWiggle(false), 1800)
     return () => clearTimeout(t)
   }, [])
 
@@ -152,7 +159,7 @@ export default function FanDeck({ subjects, stream, navigate, C }) {
     if (!isDraggingRef.current) return
     const now = performance.now()
     const dx  = e.clientX - startXRef.current
-    if (Math.abs(dx) > 8) wasDragRef.current = true
+    if (Math.abs(dx) > 8) { wasDragRef.current = true; if (!hasDragged) setHasDragged(true) }
 
     const dxInst = e.clientX - prevXRef.current
     const dt     = now - prevTimeRef.current
@@ -197,6 +204,22 @@ export default function FanDeck({ subjects, stream, navigate, C }) {
 
   return (
     <div style={{ userSelect:'none', marginBottom:4 }}>
+      <style>{`
+        @keyframes arrowPulse {
+          0%,100% { transform:translateY(-50%) scale(1);   box-shadow:0 2px 12px rgba(0,0,0,0.15); }
+          50%      { transform:translateY(-50%) scale(1.12); box-shadow:0 4px 20px rgba(0,0,0,0.25); }
+        }
+        @keyframes fanWiggle {
+          0%,100% { transform:translateX(0); }
+          20%     { transform:translateX(-10px); }
+          50%     { transform:translateX(10px); }
+          75%     { transform:translateX(-5px); }
+        }
+        @keyframes btnGlow {
+          0%,100% { box-shadow:0 0 0 0 transparent; }
+          50%     { box-shadow:0 0 0 5px var(--btn-glow); }
+        }
+      `}</style>
 
       {/* ── Fan arena ──────────────────────────────────────────────────────── */}
       <div
@@ -207,6 +230,7 @@ export default function FanDeck({ subjects, stream, navigate, C }) {
           maxWidth:'100%',
           cursor:'grab',
           touchAction:'none',
+          animation: wiggle ? 'fanWiggle 0.9s ease 0.5s both' : 'none',
         }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -224,10 +248,9 @@ export default function FanDeck({ subjects, stream, navigate, C }) {
           const cardBorder = `2px solid ${sc.primary}${dark ? '30' : '50'}`
           const subtleText = dark ? 'rgba(255,255,255,0.32)' : 'rgba(0,0,0,0.42)'
 
-          // Subtitle: exam type for A-Level, desc for GCSE
           const subtitle = m.type || s.desc || ''
-          // Bottom detail: unis for A-Level, empty for GCSE (desc already used above)
           const detail   = m.unis || ''
+          const isActive = i === activeIdx
 
           return (
             <div
@@ -248,7 +271,7 @@ export default function FanDeck({ subjects, stream, navigate, C }) {
                 alignItems:'center', justifyContent:'center',
                 padding:'22px 16px',
                 willChange:'transform',
-                cursor: i === activeIdx ? 'default' : 'pointer',
+                cursor: isActive ? 'default' : 'pointer',
               }}
             >
               <div style={{fontSize:40, marginBottom:10}}>{s.emoji}</div>
@@ -283,21 +306,93 @@ export default function FanDeck({ subjects, stream, navigate, C }) {
                   {detail}
                 </div>
               )}
+
+              {/* "Tap to select" nudge on adjacent cards */}
+              {!isActive && (
+                <div style={{
+                  position:'absolute', bottom:14,
+                  fontSize:9, fontWeight:800, letterSpacing:'0.08em',
+                  color:`${sc.primary}80`, textTransform:'uppercase',
+                }}>
+                  tap to select
+                </div>
+              )}
+
+              {/* Arrow hint on active card pointing down to buttons */}
+              {isActive && (
+                <div style={{
+                  position:'absolute', bottom:12,
+                  fontSize:9, fontWeight:800, letterSpacing:'0.06em',
+                  color:`${sc.primary}60`, textTransform:'uppercase',
+                  animation:'fadeUp 0.3s ease 0.15s both',
+                }}>
+                  ↓ practice below
+                </div>
+              )}
             </div>
           )
         })}
+
+        {/* ── Left chevron ── */}
+        {activeIdx > 0 && (
+          <button
+            onPointerDown={e => e.stopPropagation()}
+            onClick={() => { wasDragRef.current = false; jumpTo(activeIdx - 1) }}
+            style={{
+              position:'absolute', left:8, top:'42%',
+              transform:'translateY(-50%)',
+              zIndex:60, width:36, height:36, borderRadius:'50%',
+              background:'rgba(255,255,255,0.92)', backdropFilter:'blur(8px)',
+              border:'1px solid rgba(0,0,0,0.08)',
+              boxShadow:'0 2px 14px rgba(0,0,0,0.18)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              cursor:'pointer', fontSize:20, lineHeight:1, color:'#334155',
+              fontFamily:'system-ui', fontWeight:300,
+              animation: hasDragged ? 'none' : 'arrowPulse 2s ease-in-out 1s infinite',
+            }}
+          >‹</button>
+        )}
+
+        {/* ── Right chevron ── */}
+        {activeIdx < N - 1 && (
+          <button
+            onPointerDown={e => e.stopPropagation()}
+            onClick={() => { wasDragRef.current = false; jumpTo(activeIdx + 1) }}
+            style={{
+              position:'absolute', right:8, top:'42%',
+              transform:'translateY(-50%)',
+              zIndex:60, width:36, height:36, borderRadius:'50%',
+              background:'rgba(255,255,255,0.92)', backdropFilter:'blur(8px)',
+              border:'1px solid rgba(0,0,0,0.08)',
+              boxShadow:'0 2px 14px rgba(0,0,0,0.18)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              cursor:'pointer', fontSize:20, lineHeight:1, color:'#334155',
+              fontFamily:'system-ui', fontWeight:300,
+              animation: hasDragged ? 'none' : 'arrowPulse 2s ease-in-out 1.2s infinite',
+            }}
+          >›</button>
+        )}
       </div>
 
-      {/* ── Swipe hint ─────────────────────────────────────────────────────── */}
-      <div style={{
-        textAlign:'center', fontSize:10, fontWeight:700, letterSpacing:'0.06em',
-        color: hintColor,
-        marginBottom:10, marginTop:4,
-        transition:'opacity 0.6s ease',
-        opacity: showHint ? 1 : 0,
-        pointerEvents:'none',
-      }}>
-        ← SWIPE TO BROWSE →
+      {/* ── Swipe hint + card counter ───────────────────────────────────────── */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:10, marginTop:4 }}>
+        <div style={{
+          fontSize:10, fontWeight:700, letterSpacing:'0.06em',
+          color: hintColor,
+          transition:'opacity 0.6s ease',
+          opacity: showHint ? 1 : 0.18,
+          pointerEvents:'none',
+        }}>
+          ← swipe to browse →
+        </div>
+        <div style={{
+          fontSize:10, fontWeight:800, color: SC.primary,
+          background:`${SC.primary}14`, border:`1px solid ${SC.primary}28`,
+          borderRadius:20, padding:'2px 9px', letterSpacing:'0.03em',
+          flexShrink:0,
+        }}>
+          {activeIdx + 1} / {N}
+        </div>
       </div>
 
       {/* ── Dot nav ────────────────────────────────────────────────────────── */}
@@ -323,11 +418,13 @@ export default function FanDeck({ subjects, stream, navigate, C }) {
           <button
             onClick={() => navigate(`/${stream}/quiz/${subj.id}`)}
             style={{
+              '--btn-glow': `${SC.primary}55`,
               background: SC.primary, color:'white',
               border:'none', borderRadius:12, padding:'13px 6px',
               fontSize:12, fontWeight:800, cursor:'pointer',
               fontFamily:'Inter,sans-serif',
-            }}
+              animation:'btnGlow 1.2s ease 0.3s 3',
+            } }
           >Practice →</button>
           <button
             onClick={() => navigate(`/${stream}/mock/${subj.id}`)}
