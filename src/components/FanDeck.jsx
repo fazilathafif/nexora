@@ -20,16 +20,16 @@ const RUBBER_K    = 0.28  // fraction of out-of-bound displacement applied
 
 // ── Per-subject colours ───────────────────────────────────────────────────────
 const EXAM_COLORS = {
-  // A-Level (dark cards)
-  ucat:    { primary:'#06B6D4', card:'#071B2C', navy:'#E0F9FF' },
-  lnat:    { primary:'#F59E0B', card:'#1C0E00', navy:'#FEFCE8' },
-  tmua:    { primary:'#818CF8', card:'#131029', navy:'#EEF2FF' },
-  esat:    { primary:'#F97316', card:'#201000', navy:'#FFF4E8' },
-  mat:     { primary:'#6366F1', card:'#100E28', navy:'#EEF2FF' },
-  pat:     { primary:'#22D3EE', card:'#041A2A', navy:'#E0FBFF' },
-  tara:    { primary:'#EC4899', card:'#1C0A16', navy:'#FCE7F3' },
-  tsa:     { primary:'#A855F7', card:'#180A32', navy:'#F5F3FF' },
-  step:    { primary:'#10B981', card:'#041E1B', navy:'#ECFDF5' },
+  // A-Level (light pastel cards)
+  ucat:    { primary:'#0891B2', card:'#E0F9FF', navy:'#0A4550' },
+  lnat:    { primary:'#D97706', card:'#FEF3C7', navy:'#4A2506' },
+  tmua:    { primary:'#6366F1', card:'#EEF2FF', navy:'#312E81' },
+  esat:    { primary:'#EA580C', card:'#FFEDD5', navy:'#431407' },
+  mat:     { primary:'#4F46E5', card:'#EDE9FE', navy:'#2E1065' },
+  pat:     { primary:'#0E7490', card:'#CFFAFE', navy:'#164E63' },
+  tara:    { primary:'#DB2777', card:'#FCE7F3', navy:'#500724' },
+  tsa:     { primary:'#7C3AED', card:'#F3E8FF', navy:'#3B0764' },
+  step:    { primary:'#059669', card:'#D1FAE5', navy:'#064E3B' },
   // GCSE (light cards)
   maths:   { primary:'#3B82F6', card:'#EFF6FF', navy:'#1E3A5F' },
   english: { primary:'#D97706', card:'#FFFBEB', navy:'#78350F' },
@@ -204,6 +204,7 @@ export default function FanDeck({ subjects, stream, navigate, C }) {
           position:'relative',
           height: CARD_H + 80,
           overflow:'hidden',
+          maxWidth:'100%',
           cursor:'grab',
           touchAction:'none',
         }}

@@ -728,7 +728,7 @@ function GcseSubjectGrid({ subjects, navigate, stream, C }) {
 export function Shell({ C, children, noNav, heroContent }) {
   const heroH = heroContent ? 188 : 64
   return (
-    <div style={{ minHeight:'100dvh', background:'linear-gradient(160deg,#FF6B35 0%,#FF3CAC 52%,#7B2FBE 100%)', fontFamily:'Inter,sans-serif', position:'relative' }}>
+    <div style={{ minHeight:'100dvh', background:'linear-gradient(160deg,#FF6B35 0%,#FF3CAC 52%,#7B2FBE 100%)', fontFamily:'Inter,sans-serif', position:'relative', overflowX:'hidden' }}>
       <style>{`*{box-sizing:border-box}button{font-family:inherit}
         @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
