@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { upsertProfile } from '../lib/db.js'
+import { STREAM_CONFIG } from '../data/questions.js'
 
 // Bokeh — same warm palette as AuthGate for brand continuity
 const BOKEH = [
@@ -85,13 +86,13 @@ export default function LandingPage({ user, profile, refreshProfile }) {
               <div style={{ width:52, height:52, borderRadius:16, background:'linear-gradient(135deg,#0D9488,#06B6D4)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, flexShrink:0 }}>🧱</div>
               <div style={{ textAlign:'left' }}>
                 <div style={{ fontSize:18, fontWeight:900, color:'#1E293B', letterSpacing:'-0.3px' }}>GCSE Track</div>
-                <div style={{ fontSize:12, color:'#64748B', marginTop:2 }}>Years 8–10 · Maths · English · Science · Verbal</div>
+                <div style={{ fontSize:12, color:'#64748B', marginTop:2 }}>{STREAM_CONFIG.gcse.years} · {STREAM_CONFIG.gcse.subjects.length} subjects</div>
               </div>
               <div style={{ marginLeft:'auto', fontSize:20, color:'#0D9488' }}>→</div>
             </div>
-            <div style={{ display:'flex', gap:6, marginTop:12 }}>
-              {['📐 Maths','📚 English','🔬 Science','🧩 Verbal'].map(s => (
-                <span key={s} style={{ background:'#0D948812', border:'1px solid #0D948830', borderRadius:20, padding:'3px 10px', fontSize:10, fontWeight:700, color:'#0D9488' }}>{s}</span>
+            <div style={{ display:'flex', gap:6, marginTop:12, flexWrap:'wrap' }}>
+              {STREAM_CONFIG.gcse.subjects.map(s => (
+                <span key={s.id} style={{ background:'#0D948812', border:'1px solid #0D948830', borderRadius:20, padding:'3px 10px', fontSize:10, fontWeight:700, color:'#0D9488' }}>{s.emoji} {s.label}</span>
               ))}
             </div>
           </button>
@@ -107,13 +108,13 @@ export default function LandingPage({ user, profile, refreshProfile }) {
               <div style={{ width:52, height:52, borderRadius:16, background:'linear-gradient(135deg,#7C3AED,#C026D3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, flexShrink:0 }}>🎯</div>
               <div style={{ textAlign:'left' }}>
                 <div style={{ fontSize:18, fontWeight:900, color:'#F0F4FF', letterSpacing:'-0.3px' }}>A-Level Track</div>
-                <div style={{ fontSize:12, color:'#A78BFA', marginTop:2 }}>Years 11–12 · University Entrance Exams</div>
+                <div style={{ fontSize:12, color:'#A78BFA', marginTop:2 }}>{STREAM_CONFIG.alevel.years} · University Entrance Exams</div>
               </div>
               <div style={{ marginLeft:'auto', fontSize:20, color:'#A78BFA' }}>→</div>
             </div>
-            <div style={{ display:'flex', gap:6, marginTop:12 }}>
-              {['🏥 UCAT','⚖️ LNAT','∑ TMUA','⚗️ ESAT','🧠 TSA','📏 STEP'].map(s => (
-                <span key={s} style={{ background:'rgba(167,139,250,0.15)', border:'1px solid rgba(167,139,250,0.3)', borderRadius:20, padding:'3px 10px', fontSize:10, fontWeight:700, color:'#C4B5FD' }}>{s}</span>
+            <div style={{ display:'flex', gap:6, marginTop:12, flexWrap:'wrap' }}>
+              {STREAM_CONFIG.alevel.subjects.filter(s => !s.deprecated).map(s => (
+                <span key={s.id} style={{ background:'rgba(167,139,250,0.15)', border:'1px solid rgba(167,139,250,0.3)', borderRadius:20, padding:'3px 10px', fontSize:10, fontWeight:700, color:'#C4B5FD' }}>{s.emoji} {s.label}</span>
               ))}
             </div>
           </button>
