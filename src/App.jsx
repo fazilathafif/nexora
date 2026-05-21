@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useAuth } from './hooks/useAuth.js'
 import { isSupabaseConfigured } from './lib/supabase.js'
 import LandingPage         from './pages/LandingPage.jsx'
+import StreamOnboarding    from './pages/StreamOnboarding.jsx'
 import HomePage            from './pages/HomePage.jsx'
 import QuizPage            from './pages/QuizPage.jsx'
 import MockPage            from './pages/MockPage.jsx'
@@ -31,6 +32,11 @@ export default function App() {
 
   // Require sign-in when Supabase is configured
   if (isSupabaseConfigured && !user) return <AuthGate />
+
+  // First-time user — no track chosen yet; show onboarding before the app
+  if (user && profile && !profile.stream) {
+    return <StreamOnboarding user={user} refreshProfile={refreshProfile} />
+  }
 
   // Show bottom nav only on stream routes
   const showNav = /^\/(gcse|alevel)(\/|$)/.test(location.pathname)
