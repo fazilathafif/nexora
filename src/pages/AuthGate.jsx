@@ -24,6 +24,7 @@ const TRACK_GROUPS = [
 ]
 
 const GRAD = 'linear-gradient(135deg,#FF6B35,#FF3CAC)'
+const AUTH_DISABLED = import.meta.env.VITE_AUTH_DISABLED === 'true'
 
 export default function AuthGate() {
   const [mode,          setMode]          = useState('signin')
@@ -156,23 +157,36 @@ export default function AuthGate() {
           {emailExpanded ? (mode === 'signup' ? 'Create account' : 'Welcome back') : 'Get started'}
         </div>
 
-        <GoogleBtn onClick={signInWithGoogle} />
-
-        {!emailExpanded ? (
-          <>
-            <Divider label="OR" />
-            <button
-              onClick={() => setEmailExpanded(true)}
-              style={{ width:'100%', background:'transparent', border:'1.5px solid #CBD5E1', borderRadius:16, padding:'15px', fontWeight:700, fontSize:14, color:'#475569', cursor:'pointer', fontFamily:'Inter,sans-serif', transition:'border-color 0.2s' }}
-              onMouseEnter={e => e.currentTarget.style.borderColor='#FF6B35'}
-              onMouseLeave={e => e.currentTarget.style.borderColor='#CBD5E1'}
-            >
-              Sign in with email
-            </button>
-          </>
+        {AUTH_DISABLED ? (
+          <div style={{
+            background:'#FEF3C7', border:'1px solid #F59E0B50',
+            borderRadius:12, padding:'10px 14px', marginBottom:16,
+            fontSize:12, color:'#92400E', fontWeight:600, lineHeight:1.5,
+          }}>
+            🔒 New sign-ups are currently paused · Existing members sign in below
+          </div>
         ) : (
+          <>
+            <GoogleBtn onClick={signInWithGoogle} />
+            {!emailExpanded && (
+              <>
+                <Divider label="OR" />
+                <button
+                  onClick={() => setEmailExpanded(true)}
+                  style={{ width:'100%', background:'transparent', border:'1.5px solid #CBD5E1', borderRadius:16, padding:'15px', fontWeight:700, fontSize:14, color:'#475569', cursor:'pointer', fontFamily:'Inter,sans-serif', transition:'border-color 0.2s' }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor='#FF6B35'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor='#CBD5E1'}
+                >
+                  Sign in with email
+                </button>
+              </>
+            )}
+          </>
+        )}
+
+        {(emailExpanded || AUTH_DISABLED) && (
           <form onSubmit={handleSubmit}>
-            <Divider label="OR WITH EMAIL" />
+            {!AUTH_DISABLED && <Divider label="OR WITH EMAIL" />}
             <Field label="EMAIL" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
             <div style={{ marginBottom:14 }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:5 }}>
@@ -196,12 +210,14 @@ export default function AuthGate() {
             <button type="submit" disabled={loading} style={{ ...btnS(GRAD), opacity: loading ? 0.65 : 1 }}>
               {loading ? 'Please wait…' : mode === 'signup' ? 'Create Account' : 'Sign In →'}
             </button>
-            <div style={toggleRow}>
-              {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
-              <button type="button" onClick={() => switchMode(mode === 'signin' ? 'signup' : 'signin')} style={link}>
-                {mode === 'signin' ? 'Sign Up' : 'Sign In'}
-              </button>
-            </div>
+            {!AUTH_DISABLED && (
+              <div style={toggleRow}>
+                {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
+                <button type="button" onClick={() => switchMode(mode === 'signin' ? 'signup' : 'signin')} style={link}>
+                  {mode === 'signin' ? 'Sign Up' : 'Sign In'}
+                </button>
+              </div>
+            )}
           </form>
         )}
       </>
