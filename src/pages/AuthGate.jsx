@@ -13,7 +13,16 @@ const BOKEH = [
   { w:180, h:180, top:'68%',  right:'8%',  r:'255,140,60',  o:0.25, blur:55  },
 ]
 
-const CHIPS = ['📐 GCSE Maths', '🏥 UCAT', '⚖️ LNAT', '∑ TMUA', '⚗️ ESAT', '📚 English']
+const TRACK_GROUPS = [
+  {
+    label: 'GCSE',
+    chips: ['📐 Maths', '📝 English', '🔬 Science', '🌍 Geography'],
+  },
+  {
+    label: 'A-Level Entrance',
+    chips: ['🏥 UCAT', '⚖️ LNAT', '∑ TMUA', '⚗️ ESAT', '📋 TSA', '📊 STEP'],
+  },
+]
 
 export default function AuthGate() {
   const [mode,          setMode]          = useState('signin')
@@ -219,7 +228,7 @@ export default function AuthGate() {
       {/* ── Logo / hero ────────────────────────────────────────────────────── */}
       <div style={{
         position:'absolute', top:0, left:0, right:0,
-        bottom: compact ? '66%' : '50%',
+        bottom: compact ? '66%' : '46%',
         display:'flex', flexDirection:'column',
         alignItems:'center', justifyContent:'flex-end',
         padding:'0 24px 28px',
@@ -237,13 +246,22 @@ export default function AuthGate() {
           </p>
         </div>
 
-        {/* Subject chips — hide when form is expanded to save space */}
+        {/* Track groups — hidden while form is expanded */}
         {!compact && (
-          <div className="animate-fade-up" style={{ display:'flex', flexWrap:'wrap', gap:6, marginTop:20, justifyContent:'center' }}>
-            {CHIPS.map(label => (
-              <span key={label} style={{ background:'rgba(255,255,255,0.18)', backdropFilter:'blur(6px)', border:'1px solid rgba(255,255,255,0.34)', borderRadius:20, padding:'5px 11px', fontSize:11, fontWeight:700, color:'white' }}>
-                {label}
-              </span>
+          <div className="animate-fade-up" style={{ display:'flex', flexDirection:'column', gap:10, marginTop:20, width:'100%' }}>
+            {TRACK_GROUPS.map(group => (
+              <div key={group.label}>
+                <div style={{ fontSize:9, fontWeight:800, color:'rgba(255,255,255,0.55)', letterSpacing:'0.14em', textTransform:'uppercase', marginBottom:6 }}>
+                  {group.label}
+                </div>
+                <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
+                  {group.chips.map(chip => (
+                    <span key={chip} style={{ background:'rgba(255,255,255,0.15)', backdropFilter:'blur(6px)', border:'1px solid rgba(255,255,255,0.28)', borderRadius:20, padding:'4px 10px', fontSize:11, fontWeight:700, color:'white' }}>
+                      {chip}
+                    </span>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}
