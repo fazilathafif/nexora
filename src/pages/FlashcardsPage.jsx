@@ -201,7 +201,13 @@ export default function FlashcardsPage() {
 
       {/* Header */}
       <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14}}>
-        <div style={{fontWeight:900, color:C.navy, fontSize:22, fontFamily:"'Playfair Display', Georgia, serif", letterSpacing:'-0.4px'}}>Flashcards</div>
+        <div style={{display:'flex', alignItems:'center', gap:10}}>
+          <button
+            onClick={() => navigate(`/${stream}`)}
+            style={{background:'none', border:'none', cursor:'pointer', fontSize:20, color:C.muted, padding:'0 2px', lineHeight:1}}
+          >←</button>
+          <div style={{fontWeight:900, color:C.navy, fontSize:22, fontFamily:"'Playfair Display', Georgia, serif", letterSpacing:'-0.4px'}}>Flashcards</div>
+        </div>
         <div style={{display:'flex', gap:6, alignItems:'center'}}>
           <button
             onClick={() => navigate(`/${stream}/match/${subject}`)}
