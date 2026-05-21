@@ -16,7 +16,7 @@ const BOKEH = [
 const TRACK_GROUPS = [
   {
     label: 'GCSE',
-    chips: ['📐 Maths', '📝 English', '🔬 Science', '🌍 Geography'],
+    chips: ['📐 Maths', '📝 English', '🔬 Science', '🏛️ History', '🌍 Geography', '💻 CS', '☯️ RS'],
   },
   {
     label: 'A-Level Entrance',

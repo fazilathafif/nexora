@@ -50,9 +50,34 @@ const SUBJECT_COLORS = {
     bg:'#FFFBEB', card:'#FFFFFF', navy:'#1E293B', soft:'#FEF3C7',
     muted:'#64748B', success:'#10B981', border:'#E2E8F0',
   },
+  englishlit: {
+    primary:'#BE185D', secondary:'#EC4899', accent:'#FBCFE8',
+    bg:'#FDF2F8', card:'#FFFFFF', navy:'#1E293B', soft:'#FCE7F3',
+    muted:'#64748B', success:'#10B981', border:'#E2E8F0',
+  },
   science: {
     primary:'#0F766E', secondary:'#06B6D4', accent:'#A7F3D0',
     bg:'#F0FDFA', card:'#FFFFFF', navy:'#1E293B', soft:'#CCFBF1',
+    muted:'#64748B', success:'#10B981', border:'#E2E8F0',
+  },
+  history: {
+    primary:'#B45309', secondary:'#D97706', accent:'#FDE68A',
+    bg:'#FFFBEB', card:'#FFFFFF', navy:'#1E293B', soft:'#FEF3C7',
+    muted:'#64748B', success:'#10B981', border:'#E2E8F0',
+  },
+  geography: {
+    primary:'#15803D', secondary:'#16A34A', accent:'#BBF7D0',
+    bg:'#F0FDF4', card:'#FFFFFF', navy:'#1E293B', soft:'#DCFCE7',
+    muted:'#64748B', success:'#10B981', border:'#E2E8F0',
+  },
+  cs: {
+    primary:'#4F46E5', secondary:'#6366F1', accent:'#C7D2FE',
+    bg:'#EEF2FF', card:'#FFFFFF', navy:'#1E293B', soft:'#E0E7FF',
+    muted:'#64748B', success:'#10B981', border:'#E2E8F0',
+  },
+  rs: {
+    primary:'#7C3AED', secondary:'#A855F7', accent:'#E9D5FF',
+    bg:'#FAF5FF', card:'#FFFFFF', navy:'#1E293B', soft:'#F3E8FF',
     muted:'#64748B', success:'#10B981', border:'#E2E8F0',
   },
   verbal: {
@@ -104,9 +129,10 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
   const cfg        = STREAM_CONFIG[stream]
   const C          = getColors(stream)
   const dark       = stream === 'alevel'
-  const [showAuth, setShowAuth]       = useState(false)
-  const [editingDate, setEditingDate] = useState(false)
-  const [dateInput,   setDateInput]   = useState(profile?.exam_date ?? '')
+  const [showAuth, setShowAuth]           = useState(false)
+  const [editingDate, setEditingDate]     = useState(false)
+  const [dateInput,   setDateInput]       = useState(profile?.exam_date ?? '')
+  const [ebaccOnly,   setEbaccOnly]       = useState(false)
 
   if (!cfg) { navigate('/'); return null }
 
@@ -190,9 +216,32 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
       <WelcomeModal user={user} C={C} dark={dark} />
 
       {/* ── Subject / exam picker (PRIMARY — top of page) ─────────────────── */}
-      <SectionLabel C={C}>{stream === 'alevel' ? 'Choose Your Exam' : 'Choose Subject'}</SectionLabel>
+      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10}}>
+        <SectionLabel C={C} style={{margin:0}}>{stream === 'alevel' ? 'Choose Your Exam' : 'Choose Subject'}</SectionLabel>
+        {stream === 'gcse' && (
+          <button
+            onClick={() => setEbaccOnly(e => !e)}
+            style={{
+              display:'flex', alignItems:'center', gap:5,
+              background: ebaccOnly ? '#F59E0B' : '#F1F5F9',
+              border: ebaccOnly ? '1.5px solid #D97706' : '1.5px solid #E2E8F0',
+              borderRadius:20, padding:'5px 12px',
+              fontSize:11, fontWeight:800, color: ebaccOnly ? '#FFFFFF' : '#64748B',
+              cursor:'pointer', transition:'all 0.2s',
+              WebkitTapHighlightColor:'transparent',
+            }}
+          >
+            ⭐ EBacc{ebaccOnly ? ' ✕' : ''}
+          </button>
+        )}
+      </div>
       <div style={{marginBottom:18}}>
-        <FanDeck subjects={cfg.subjects} stream={stream} navigate={navigate} C={C} />
+        <FanDeck
+          subjects={ebaccOnly ? cfg.subjects.filter(s => s.ebacc) : cfg.subjects}
+          stream={stream}
+          navigate={navigate}
+          C={C}
+        />
       </div>
 
       {stream === 'alevel' && (

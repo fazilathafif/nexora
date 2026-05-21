@@ -6,10 +6,15 @@
  * difficulty: 1 (easy) | 2 (medium) | 3 (hard)
  */
 
-import { MATHS_BATCH }   from './batch_maths.js'
-import { SCIENCE_BATCH } from './batch_science.js'
-import { ENGLISH_BATCH } from './batch_english.js'
-import { VERBAL_BATCH }  from './batch_verbal.js'
+import { MATHS_BATCH }      from './batch_maths.js'
+import { SCIENCE_BATCH }    from './batch_science.js'
+import { ENGLISH_BATCH }    from './batch_english.js'
+import { VERBAL_BATCH }     from './batch_verbal.js'
+import { GEOGRAPHY_BATCH }  from './batch_geography.js'
+import { HISTORY_BATCH }    from './batch_history.js'
+import { ENGLISHLIT_BATCH } from './batch_englishlit.js'
+import { CS_BATCH }         from './batch_cs.js'
+import { RS_BATCH }         from './batch_rs.js'
 import { UCAT_BATCH }    from './batch_ucat.js'
 import { LNAT_BATCH }    from './batch_lnat.js'
 import { TMUA_BATCH }    from './batch_tmua.js'
@@ -298,6 +303,12 @@ export const GCSE = {
     { id:'vrb_062', q:'If the mean of five numbers is 14, and four of the numbers are 10, 12, 16, and 18, what is the fifth number?', opts:['12','14','18','14'], ans:1, topic:'Numerical Reasoning', hint:'Total = 14 × 5 = 70. Sum of four numbers = 10+12+16+18 = 56. Fifth = 70–56 = 14', difficulty:2, tags:['numerical','mean','statistics'] },
     ...VERBAL_BATCH,
   ],
+
+  geography:  [ ...GEOGRAPHY_BATCH  ],
+  history:    [ ...HISTORY_BATCH    ],
+  englishlit: [ ...ENGLISHLIT_BATCH ],
+  cs:         [ ...CS_BATCH         ],
+  rs:         [ ...RS_BATCH         ],
 }
 
 // ── A-LEVEL STREAM ────────────────────────────────────────────────────────────
@@ -607,10 +618,15 @@ export const STREAM_CONFIG = {
     label: 'GCSE Track',
     years: 'Years 8–10',
     subjects: [
-      { id:'maths',   label:'Maths',   emoji:'📐', desc:'Algebra, Geometry, Stats' },
-      { id:'english', label:'English', emoji:'📚', desc:'Comprehension, Grammar' },
-      { id:'science', label:'Science', emoji:'🔬', desc:'Physics, Chemistry, Biology' },
-      { id:'verbal',  label:'Verbal',  emoji:'🧩', desc:'Reasoning & Vocabulary' },
+      { id:'maths',      label:'Maths',               emoji:'📐', desc:'Algebra, Geometry, Stats',         ebacc:true  },
+      { id:'english',    label:'English Language',     emoji:'📚', desc:'Comprehension, Grammar, Writing',  ebacc:true  },
+      { id:'englishlit', label:'English Literature',   emoji:'✍️',  desc:'Shakespeare, Poetry, Novels',      ebacc:false },
+      { id:'science',    label:'Science',              emoji:'🔬', desc:'Biology, Chemistry, Physics',      ebacc:true  },
+      { id:'history',    label:'History',              emoji:'🏛️',  desc:'Medicine, Germany, America',       ebacc:true  },
+      { id:'geography',  label:'Geography',            emoji:'🌍', desc:'Landscapes, Hazards, Development', ebacc:true  },
+      { id:'cs',         label:'Computer Science',     emoji:'💻', desc:'Algorithms, Networks, Programming', ebacc:false },
+      { id:'rs',         label:'Religious Studies',    emoji:'☯️',  desc:'Christianity, Islam, Ethics',      ebacc:false },
+      { id:'verbal',     label:'Verbal Reasoning',     emoji:'🧩', desc:'Reasoning & Vocabulary',           ebacc:false },
     ],
   },
   alevel: {
