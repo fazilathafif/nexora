@@ -16,12 +16,12 @@ function useActiveTab(stream) {
   if (pathname === `/${stream}`) return 'home'
   if (pathname.includes('/progress'))  return 'progress'
   if (pathname.includes('/plan'))      return 'plan'
-  if (
-    pathname.includes('/quiz/') ||
+  if (pathname.includes('/quiz/') ||
     pathname.includes('/mock/') ||
     pathname.includes('/flashcards/') ||
     pathname.includes('/match/')
   ) return 'practice'
+  if (pathname.includes('/settings')) return 'me'
   return 'home'
 }
 
@@ -79,6 +79,15 @@ function PlanIcon({ color, size = 26 }) {
       <path d="M8.5 15l2 2 5-5"
         stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round"
       />
+    </svg>
+  )
+}
+
+function MeIcon({ color, size = 26 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="8" r="4" stroke={color} strokeWidth={1.9} strokeLinecap="round"/>
+      <path d="M4 20c0-3.314 3.582-6 8-6s8 2.686 8 6" stroke={color} strokeWidth={1.9} strokeLinecap="round"/>
     </svg>
   )
 }
@@ -190,6 +199,12 @@ export default function BottomNav() {
       label: 'Plan',
       Icon: PlanIcon,
       action: () => navigate(`/${stream}/plan`),
+    },
+    {
+      id: 'me',
+      label: 'Me',
+      Icon: MeIcon,
+      action: () => navigate(`/${stream}/settings`),
     },
   ]
 

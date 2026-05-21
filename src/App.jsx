@@ -16,6 +16,9 @@ import UpdatePasswordPage  from './pages/UpdatePasswordPage.jsx'
 import StudyPlanPage       from './pages/StudyPlanPage.jsx'
 import FlashcardsPage      from './pages/FlashcardsPage.jsx'
 import MatchPage           from './pages/MatchPage.jsx'
+import SettingsPage        from './pages/SettingsPage.jsx'
+import PrivacyPage         from './pages/PrivacyPage.jsx'
+import TermsPage           from './pages/TermsPage.jsx'
 import LoadingSpinner      from './components/LoadingSpinner.jsx'
 import PomodoroTimer       from './components/PomodoroTimer.jsx'
 import BottomNav           from './components/BottomNav.jsx'
@@ -26,6 +29,10 @@ export default function App() {
   const location = useLocation()
 
   if (loading) return <LoadingSpinner />
+
+  // Legal pages are publicly accessible — no auth required
+  if (location.pathname === '/privacy') return <PrivacyPage />
+  if (location.pathname === '/terms')   return <TermsPage />
 
   // Password reset flow — show update form regardless of auth state
   if (isPasswordRecovery) return <UpdatePasswordPage />
@@ -38,8 +45,8 @@ export default function App() {
     return <StreamOnboarding user={user} refreshProfile={refreshProfile} />
   }
 
-  // Show bottom nav only on stream routes
-  const showNav = /^\/(gcse|alevel)(\/|$)/.test(location.pathname)
+  // Show bottom nav only on stream routes (not settings)
+  const showNav = /^\/(gcse|alevel)(\/(?!settings)|$)/.test(location.pathname)
 
   return (
     <>
@@ -83,6 +90,9 @@ export default function App() {
         } />
         <Route path="/:stream/match/:subject" element={
           <MatchPage />
+        } />
+        <Route path="/:stream/settings" element={
+          <SettingsPage user={user} signOut={signOut} />
         } />
 
         {/* Catch-all */}
