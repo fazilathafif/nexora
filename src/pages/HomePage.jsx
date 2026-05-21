@@ -184,13 +184,11 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
   const pct       = (xp % 150) / 150 * 100
   const days      = daysUntil(profile?.exam_date)
 
-  // Compute total SRS due count across all subjects in this stream
   const dueCount  = useMemo(() => {
     const allQs = cfg.subjects.flatMap(s => getQuestions(stream, s.id))
     return getDueCount(allQs)
   }, [stream, cfg.subjects])
 
-  // First subject that actually has due questions (so Review → lands in the right place)
   const reviewSubjectId = useMemo(() => {
     for (const s of cfg.subjects) {
       const qs = getQuestions(stream, s.id)
@@ -218,47 +216,61 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
     }
   }
 
-  function switchStream() {
-    navigate('/switch')
-  }
+  function switchStream() { navigate('/switch') }
 
-  return (
-    <Shell C={C}>
-      {/* Header */}
-      <div style={row('space-between','flex-start',{marginBottom:20})}>
-        <div style={{flex:1,minWidth:0,marginRight:10}}>
-          <div style={{fontSize:22,fontWeight:900,color:C.navy,letterSpacing:'-0.5px',fontFamily:"'Playfair Display', Georgia, serif",whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
-            Nexora <span style={{color:C.primary}}>✦</span>
+  // ── Hero content (rendered inside the gradient band) ──────────────────────
+  const heroEl = (
+    <div style={{ padding:'max(18px, env(safe-area-inset-top, 18px)) 16px 0' }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div>
+          <div style={{ fontSize:24, fontWeight:900, color:'white', letterSpacing:'-0.5px', fontFamily:"'Playfair Display', Georgia, serif" }}>
+            Nexora <span style={{ opacity:0.65 }}>✦</span>
           </div>
-          <div style={row('flex-start','center',{gap:6,marginTop:4})}>
-            <Badge label={cfg.label} color={C.primary} />
-            <span style={{fontSize:11,color:C.muted}}>{cfg.years}</span>
+          <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:4 }}>
+            <span style={{ background:'rgba(255,255,255,0.22)', color:'white', border:'1px solid rgba(255,255,255,0.3)', borderRadius:20, padding:'2px 10px', fontSize:10, fontWeight:800, letterSpacing:'0.07em' }}>
+              {cfg.label.replace(' Track','').toUpperCase()}
+            </span>
+            <span style={{ fontSize:11, color:'rgba(255,255,255,0.6)' }}>{cfg.years}</span>
           </div>
         </div>
-        <div style={row('flex-end','center',{gap:6,flexShrink:0})}>
-          <Streak streak={streak} />
+        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+            <span style={{ fontSize:20 }}>🔥</span>
+            <span style={{ fontWeight:900, color:'white', fontSize:17 }}>{streak}</span>
+          </div>
           {isSupabaseConfigured && isAnon
-            ? <IconBtn onClick={() => setShowAuth(true)} color={C.primary} title="Sign In">
-                <SignInIcon color={C.primary} />
-              </IconBtn>
+            ? <HeroIconBtn onClick={() => setShowAuth(true)} title="Sign In"><SignInIcon color="white" size={18} /></HeroIconBtn>
             : isSupabaseConfigured && !isAnon
-              ? <IconBtn onClick={signOut} color={C.muted} title="Sign Out">
-                  <SignOutIcon color={C.muted} />
-                </IconBtn>
+              ? <HeroIconBtn onClick={signOut} title="Sign Out"><SignOutIcon color="white" size={18} /></HeroIconBtn>
               : null
           }
-          <IconBtn onClick={switchStream} color={C.primary} title="Switch stream">
-            <SwitchIcon color={C.primary} />
-          </IconBtn>
+          <HeroIconBtn onClick={switchStream} title="Switch stream"><SwitchIcon color="white" size={18} /></HeroIconBtn>
         </div>
       </div>
 
+      {/* XP progress bar */}
+      <div style={{ marginTop:14 }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+          <span style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.75)' }}>Level {level} Scholar · {xp} XP</span>
+          <span style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>{Math.round(150 - (xp % 150))} to Lv {level + 1}</span>
+        </div>
+        <div style={{ background:'rgba(255,255,255,0.2)', borderRadius:8, height:6, overflow:'hidden' }}>
+          <div style={{ width:`${pct}%`, background:'white', height:'100%', borderRadius:8, transition:'width 0.6s ease', boxShadow:'0 0 8px rgba(255,255,255,0.5)' }} />
+        </div>
+      </div>
+    </div>
+  )
+
+  return (
+    <Shell C={C} heroContent={heroEl}>
       {showAuth && <AuthModal C={C} dark={dark} onClose={() => setShowAuth(false)} />}
       <WelcomeModal user={user} C={C} dark={dark} />
 
-      {/* ── Subject / exam picker (PRIMARY — top of page) ─────────────────── */}
-      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10}}>
-        <SectionLabel C={C} style={{margin:0}}>{stream === 'alevel' ? 'Choose Your Exam' : 'Choose Subject'}</SectionLabel>
+      {/* ── Subject picker ──────────────────────────────────────────────── */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+        <div style={{ fontSize:20, fontWeight:900, color:'#1E293B', letterSpacing:'-0.4px' }}>
+          {stream === 'alevel' ? 'Choose Your Exam' : 'Subjects'}
+        </div>
         {stream === 'gcse' && (
           <button
             onClick={() => setEbaccOnly(e => !e)}
@@ -266,7 +278,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
               display:'flex', alignItems:'center', gap:5,
               background: ebaccOnly ? '#F59E0B' : '#F1F5F9',
               border: ebaccOnly ? '1.5px solid #D97706' : '1.5px solid #E2E8F0',
-              borderRadius:20, padding:'5px 12px',
+              borderRadius:20, padding:'6px 14px',
               fontSize:11, fontWeight:800, color: ebaccOnly ? '#FFFFFF' : '#64748B',
               cursor:'pointer', transition:'all 0.2s',
               WebkitTapHighlightColor:'transparent',
@@ -277,10 +289,9 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
         )}
       </div>
 
-      {/* EBacc language picker (shown when EBacc filter is active and stream is GCSE) */}
       {stream === 'gcse' && ebaccOnly && (
-        <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:12}}>
-          <span style={{fontSize:11, fontWeight:700, color:'#64748B', alignSelf:'center', marginRight:2}}>Language:</span>
+        <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:14 }}>
+          <span style={{ fontSize:11, fontWeight:700, color:'#64748B', alignSelf:'center', marginRight:2 }}>Language:</span>
           {cfg.subjects.filter(s => s.mfl).map(s => (
             <button
               key={s.id}
@@ -288,7 +299,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
               style={{
                 background: ebaccLang === s.id ? SUBJECT_COLORS[s.id]?.primary ?? '#0F766E' : '#F1F5F9',
                 border: `1.5px solid ${ebaccLang === s.id ? SUBJECT_COLORS[s.id]?.primary ?? '#0F766E' : '#E2E8F0'}`,
-                borderRadius:20, padding:'4px 12px', fontSize:11, fontWeight:800,
+                borderRadius:20, padding:'5px 12px', fontSize:11, fontWeight:800,
                 color: ebaccLang === s.id ? '#FFFFFF' : '#64748B',
                 cursor:'pointer', transition:'all 0.2s',
               }}
@@ -299,7 +310,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
         </div>
       )}
 
-      <div style={{marginBottom:18}}>
+      <div style={{ marginBottom:24 }}>
         {stream === 'gcse' ? (
           <GcseSubjectGrid
             subjects={ebaccOnly
@@ -310,24 +321,19 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
             C={C}
           />
         ) : (
-          <FanDeck
-            subjects={cfg.subjects}
-            stream={stream}
-            navigate={navigate}
-            C={C}
-          />
+          <FanDeck subjects={cfg.subjects} stream={stream} navigate={navigate} C={C} />
         )}
       </div>
 
       {stream === 'alevel' && (
-        <div style={{marginBottom:20,padding:'12px 14px',background:C.primary+'18',border:`1px solid ${C.primary}30`,borderRadius:12,fontSize:12,color:dark?'#A5B4FC':C.primary,lineHeight:1.5}}>
+        <div style={{ marginBottom:20, padding:'12px 14px', background:C.primary+'18', border:`1px solid ${C.primary}30`, borderRadius:12, fontSize:12, color:dark?'#A5B4FC':C.primary, lineHeight:1.5 }}>
           🎓 Questions mirror real UCAT, LNAT, TMUA, ESAT, MAT, PAT, TARA & STEP style and difficulty
         </div>
       )}
 
-      {/* ── University test finder ─────────────────────────────────────────── */}
+      {/* ── University test finder (A-Level only) ─────────────────────── */}
       {stream === 'alevel' && (
-        <div style={{marginBottom:20}}>
+        <div style={{ marginBottom:20 }}>
           <button
             onClick={() => { setFinderOpen(o => !o); setFinderUni(''); setFinderCourse('') }}
             style={{
@@ -338,20 +344,20 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
             }}
           >
             <div>
-              <div style={{fontSize:13,fontWeight:800,color:C.navy}}>🔍 Which test do I need?</div>
-              <div style={{fontSize:11,color:C.muted,marginTop:2}}>Pick your university and course</div>
+              <div style={{ fontSize:13, fontWeight:800, color:C.navy }}>🔍 Which test do I need?</div>
+              <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>Pick your university and course</div>
             </div>
-            <span style={{fontSize:16,color:C.primary,transition:'transform 0.2s',transform:finderOpen?'rotate(180deg)':'none'}}>▾</span>
+            <span style={{ fontSize:16, color:C.primary, transition:'transform 0.2s', transform:finderOpen?'rotate(180deg)':'none' }}>▾</span>
           </button>
 
           {finderOpen && (
-            <div style={{background:C.card,border:`1.5px solid ${C.primary}30`,borderRadius:14,padding:'16px',marginTop:6}}>
-              <div style={{marginBottom:12}}>
-                <label style={{display:'block',fontSize:10,fontWeight:700,color:'#94A3B8',letterSpacing:'0.1em',marginBottom:5}}>UNIVERSITY</label>
+            <div style={{ background:C.card, border:`1.5px solid ${C.primary}30`, borderRadius:14, padding:'16px', marginTop:6 }}>
+              <div style={{ marginBottom:12 }}>
+                <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#94A3B8', letterSpacing:'0.1em', marginBottom:5 }}>UNIVERSITY</label>
                 <select
                   value={finderUni}
                   onChange={e => { setFinderUni(e.target.value); setFinderCourse('') }}
-                  style={{width:'100%',padding:'10px 12px',borderRadius:10,border:`1.5px solid ${C.border}`,background:'#F8FAFC',color:C.navy,fontSize:13,fontFamily:'Inter,sans-serif',cursor:'pointer',WebkitAppearance:'none'}}
+                  style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:`1.5px solid ${C.border}`, background:'#F8FAFC', color:C.navy, fontSize:13, fontFamily:'Inter,sans-serif', cursor:'pointer', WebkitAppearance:'none' }}
                 >
                   <option value="">Select university…</option>
                   {UNIVERSITIES.map(u => <option key={u} value={u}>{u}</option>)}
@@ -359,12 +365,12 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
               </div>
 
               {finderUni && (
-                <div style={{marginBottom:14}}>
-                  <label style={{display:'block',fontSize:10,fontWeight:700,color:'#94A3B8',letterSpacing:'0.1em',marginBottom:5}}>COURSE</label>
+                <div style={{ marginBottom:14 }}>
+                  <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#94A3B8', letterSpacing:'0.1em', marginBottom:5 }}>COURSE</label>
                   <select
                     value={finderCourse}
                     onChange={e => setFinderCourse(e.target.value)}
-                    style={{width:'100%',padding:'10px 12px',borderRadius:10,border:`1.5px solid ${C.border}`,background:'#F8FAFC',color:C.navy,fontSize:13,fontFamily:'Inter,sans-serif',cursor:'pointer',WebkitAppearance:'none'}}
+                    style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:`1.5px solid ${C.border}`, background:'#F8FAFC', color:C.navy, fontSize:13, fontFamily:'Inter,sans-serif', cursor:'pointer', WebkitAppearance:'none' }}
                   >
                     <option value="">Select course…</option>
                     {getCoursesForUni(finderUni).map(c => <option key={c} value={c}>{c}</option>)}
@@ -375,20 +381,20 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
               {finderUni && finderCourse && (() => {
                 const tests = getTestsForCourse(finderUni, finderCourse)
                 return tests.length === 0 ? (
-                  <div style={{fontSize:12,color:C.muted,padding:'8px 0'}}>No required admissions tests found for this combination.</div>
+                  <div style={{ fontSize:12, color:C.muted, padding:'8px 0' }}>No required admissions tests found for this combination.</div>
                 ) : (
                   <div>
-                    <div style={{fontSize:11,fontWeight:700,color:'#94A3B8',letterSpacing:'0.08em',marginBottom:8}}>REQUIRED TEST{tests.length > 1 ? 'S' : ''}:</div>
+                    <div style={{ fontSize:11, fontWeight:700, color:'#94A3B8', letterSpacing:'0.08em', marginBottom:8 }}>REQUIRED TEST{tests.length > 1 ? 'S' : ''}:</div>
                     {tests.map(t => (
-                      <div key={t.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',background:t.conditional?'#FEF3C7':'#F0FDF4',border:`1px solid ${t.conditional?'#F59E0B':'#10B981'}40`,borderRadius:10,padding:'10px 12px',marginBottom:8}}>
+                      <div key={t.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:t.conditional?'#FEF3C7':'#F0FDF4', border:`1px solid ${t.conditional?'#F59E0B':'#10B981'}40`, borderRadius:10, padding:'10px 12px', marginBottom:8 }}>
                         <div>
-                          <div style={{fontSize:13,fontWeight:800,color:C.navy}}>{t.label}</div>
-                          {t.conditional && <div style={{fontSize:10,color:'#92400E',fontWeight:700,marginTop:2}}>⚠ Conditional on offer · taken June (after A Levels){t.note ? '' : ''}</div>}
-                          {t.note && !t.conditional && <div style={{fontSize:10,color:C.muted,marginTop:2}}>{t.note}</div>}
+                          <div style={{ fontSize:13, fontWeight:800, color:C.navy }}>{t.label}</div>
+                          {t.conditional && <div style={{ fontSize:10, color:'#92400E', fontWeight:700, marginTop:2 }}>⚠ Conditional on offer · taken June</div>}
+                          {t.note && !t.conditional && <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>{t.note}</div>}
                         </div>
                         <button
                           onClick={() => { navigate(`/${stream}/quiz/${t.id}`); setFinderOpen(false) }}
-                          style={{background:C.primary,color:'white',border:'none',borderRadius:8,padding:'6px 12px',fontSize:11,fontWeight:800,cursor:'pointer',fontFamily:'Inter,sans-serif',flexShrink:0}}
+                          style={{ background:C.primary, color:'white', border:'none', borderRadius:8, padding:'6px 12px', fontSize:11, fontWeight:800, cursor:'pointer', fontFamily:'Inter,sans-serif', flexShrink:0 }}
                         >
                           Practice →
                         </button>
@@ -402,119 +408,97 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
         </div>
       )}
 
-      {/* ── Exam date countdown ───────────────────────────────────────────── */}
+      {/* ── Exam date countdown ─────────────────────────────────────────── */}
       {editingDate ? (
-        <div style={{background:C.card,border:`1.5px solid ${C.primary}40`,borderRadius:14,padding:'12px 16px',marginBottom:16,display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
-          <span style={{fontSize:12,color:C.muted,fontWeight:700}}>📅 Exam date:</span>
+        <div style={{ background:C.card, border:`1.5px solid ${C.primary}40`, borderRadius:14, padding:'12px 16px', marginBottom:16, display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
+          <span style={{ fontSize:12, color:C.muted, fontWeight:700 }}>📅 Exam date:</span>
           <input
             type="date" value={dateInput} onChange={e => setDateInput(e.target.value)}
-            style={{flex:1,minWidth:130,padding:'6px 10px',borderRadius:8,border:`1.5px solid ${C.border}`,background:dark?'#261E4E':'#F8FAFC',color:C.navy,fontSize:13,fontFamily:'Inter,sans-serif'}}
+            style={{ flex:1, minWidth:130, padding:'6px 10px', borderRadius:8, border:`1.5px solid ${C.border}`, background:'#F8FAFC', color:C.navy, fontSize:13, fontFamily:'Inter,sans-serif' }}
           />
-          <button onClick={() => saveExamDate(dateInput)} disabled={dateSaving} style={{background:C.primary,color:'white',border:'none',borderRadius:8,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:dateSaving?'default':'pointer',opacity:dateSaving?0.7:1,fontFamily:'Inter,sans-serif'}}>{dateSaving ? 'Saving…' : 'Save'}</button>
-          <button onClick={() => { setEditingDate(false); setDateError(null) }} style={{background:'none',border:'none',color:C.muted,fontSize:12,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>Cancel</button>
-          {dateError && <span style={{width:'100%',fontSize:11,color:'#EF4444',fontWeight:600}}>{dateError}</span>}
+          <button onClick={() => saveExamDate(dateInput)} disabled={dateSaving} style={{ background:C.primary, color:'white', border:'none', borderRadius:8, padding:'6px 14px', fontSize:12, fontWeight:700, cursor:dateSaving?'default':'pointer', opacity:dateSaving?0.7:1, fontFamily:'Inter,sans-serif' }}>{dateSaving ? 'Saving…' : 'Save'}</button>
+          <button onClick={() => { setEditingDate(false); setDateError(null) }} style={{ background:'none', border:'none', color:C.muted, fontSize:12, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>Cancel</button>
+          {dateError && <span style={{ width:'100%', fontSize:11, color:'#EF4444', fontWeight:600 }}>{dateError}</span>}
         </div>
       ) : days !== null ? (
         <div style={{
           background: days <= 7 ? '#EF444418' : days <= 30 ? '#F59E0B18' : C.primary+'18',
           border: `1px solid ${days <= 7 ? '#EF4444' : days <= 30 ? '#F59E0B' : C.primary}30`,
-          borderRadius:16,padding:'14px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',
+          borderRadius:16, padding:'14px 16px', marginBottom:16, display:'flex', alignItems:'center', justifyContent:'space-between',
         }}>
           <div>
             {days > 0 ? (
               <>
-                <div style={{display:'flex',alignItems:'baseline',gap:6}}>
-                  <span style={{fontSize:48,fontWeight:900,lineHeight:1,color:days <= 7 ? '#EF4444' : days <= 30 ? '#F59E0B' : C.primary}}>
-                    {days}
-                  </span>
-                  <span style={{fontSize:15,fontWeight:700,color:days <= 7 ? '#EF4444' : days <= 30 ? '#F59E0B' : C.primary}}>
-                    day{days===1?'':'s'} to go
-                  </span>
+                <div style={{ display:'flex', alignItems:'baseline', gap:6 }}>
+                  <span style={{ fontSize:48, fontWeight:900, lineHeight:1, color:days <= 7 ? '#EF4444' : days <= 30 ? '#F59E0B' : C.primary }}>{days}</span>
+                  <span style={{ fontSize:15, fontWeight:700, color:days <= 7 ? '#EF4444' : days <= 30 ? '#F59E0B' : C.primary }}>day{days===1?'':'s'} to go</span>
                 </div>
-                <div style={{fontSize:11,color:C.muted,marginTop:2}}>Keep your streak going!</div>
+                <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>Keep your streak going!</div>
               </>
             ) : (
-              <span style={{fontSize:15,fontWeight:700,color:days === 0 ? C.primary : C.muted}}>
+              <span style={{ fontSize:15, fontWeight:700, color:days === 0 ? C.primary : C.muted }}>
                 {days === 0 ? 'Your exam is today! 🎯' : 'Exam date passed'}
               </span>
             )}
           </div>
-          <button onClick={() => { setDateInput(profile?.exam_date ?? ''); setEditingDate(true) }} style={{background:'none',border:'none',cursor:'pointer',fontSize:15,lineHeight:1}}>✏️</button>
+          <button onClick={() => { setDateInput(profile?.exam_date ?? ''); setEditingDate(true) }} style={{ background:'none', border:'none', cursor:'pointer', fontSize:15, lineHeight:1 }}>✏️</button>
         </div>
       ) : (
         <button
           onClick={() => setEditingDate(true)}
-          style={{width:'100%',background:'transparent',border:`1px dashed ${C.border}`,borderRadius:12,padding:'9px 14px',fontSize:12,color:C.muted,cursor:'pointer',marginBottom:16,textAlign:'left',fontFamily:'Inter,sans-serif'}}
+          style={{ width:'100%', background:'transparent', border:`1px dashed ${C.border}`, borderRadius:12, padding:'9px 14px', fontSize:12, color:C.muted, cursor:'pointer', marginBottom:16, textAlign:'left', fontFamily:'Inter,sans-serif' }}
         >
           📅 Set your exam date for a countdown
         </button>
       )}
 
-      {/* ── Spaced-repetition review nudge ───────────────────────────────── */}
+      {/* ── SRS review nudge ────────────────────────────────────────────── */}
       {dueCount > 0 && (
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',background:`${C.secondary ?? C.primary}18`,border:`1px solid ${C.secondary ?? C.primary}40`,borderRadius:14,padding:'11px 16px',marginBottom:14}}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:`${C.secondary ?? C.primary}18`, border:`1px solid ${C.secondary ?? C.primary}40`, borderRadius:14, padding:'11px 16px', marginBottom:14 }}>
           <div>
-            <span style={{fontSize:13,fontWeight:800,color:dark?'#A3E635':C.primary}}>{dueCount} question{dueCount>1?'s':''} due for review</span>
-            <div style={{fontSize:11,color:C.muted,marginTop:1}}>Spaced repetition — answer these first</div>
+            <span style={{ fontSize:13, fontWeight:800, color:dark?'#A3E635':C.primary }}>{dueCount} question{dueCount>1?'s':''} due for review</span>
+            <div style={{ fontSize:11, color:C.muted, marginTop:1 }}>Spaced repetition — answer these first</div>
           </div>
           <button
             onClick={() => navigate(`/${stream}/quiz/${reviewSubjectId}?review=1`)}
-            style={{background:dark?C.secondary:C.primary,color:'white',border:'none',borderRadius:10,padding:'7px 14px',fontWeight:800,cursor:'pointer',fontSize:12,fontFamily:'Inter,sans-serif',flexShrink:0}}
+            style={{ background:dark?C.secondary:C.primary, color:'white', border:'none', borderRadius:10, padding:'7px 14px', fontWeight:800, cursor:'pointer', fontSize:12, fontFamily:'Inter,sans-serif', flexShrink:0 }}
           >
             Review →
           </button>
         </div>
       )}
 
-      {/* ── XP banner ────────────────────────────────────────────────────── */}
-      <div style={{
-        background: dark
-          ? `linear-gradient(135deg,${C.primary},#1E1B4B)`
-          : `linear-gradient(135deg,${C.primary},#0F766E)`,
-        borderRadius:20, padding:'18px 20px', marginBottom:18,
-        position:'relative', overflow:'hidden',
-      }}>
-        <div style={{position:'absolute',top:-30,right:-30,width:120,height:120,borderRadius:'50%',background:'rgba(255,255,255,0.05)'}} />
-        <div style={{fontSize:12,color:'rgba(255,255,255,0.7)',marginBottom:2}}>Level {level} Scholar</div>
-        <div style={{fontSize:52,fontWeight:900,color:'white',marginBottom:8,lineHeight:1}}>{xp} XP</div>
-        <ProgressBar pct={pct} color={dark ? C.secondary : C.accent} />
-        <div style={{fontSize:11,color:'rgba(255,255,255,0.6)',marginTop:4}}>
-          {Math.round(150 - (xp % 150))} XP to Level {level + 1}
-        </div>
-      </div>
-
       {/* ── Daily mission ────────────────────────────────────────────────── */}
-      <div style={{background:C.card,borderRadius:20,padding:'16px 18px',marginBottom:18,display:'flex',alignItems:'center',gap:14,boxShadow:dark?'0 4px 20px rgba(0,0,0,0.35)':'0 4px 20px rgba(0,0,0,0.07)'}}>
-        <div style={{width:44,height:44,borderRadius:'50%',background:C.primary+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>⚡</div>
-        <div>
-          <div style={{fontWeight:800,color:C.navy,fontSize:14}}>Daily Mission</div>
-          <div style={{fontSize:12,color:C.muted,marginTop:2}}>Complete 2 more sessions to hit today's goal</div>
-          <div style={{display:'flex',gap:4,marginTop:6}}>
+      <div style={{ background:'white', border:'1px solid #F1F5F9', borderRadius:20, padding:'16px 18px', marginBottom:14, display:'flex', alignItems:'center', gap:14, boxShadow:'0 2px 12px rgba(0,0,0,0.05)' }}>
+        <div style={{ width:44, height:44, borderRadius:'50%', background:C.primary+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>⚡</div>
+        <div style={{ flex:1 }}>
+          <div style={{ fontWeight:800, color:'#1E293B', fontSize:14 }}>Daily Mission</div>
+          <div style={{ fontSize:12, color:'#64748B', marginTop:2 }}>Complete 2 more sessions to hit today's goal</div>
+          <div style={{ display:'flex', gap:4, marginTop:7 }}>
             {[1,2,3,4,5].map(i => (
-              <div key={i} style={{width:20,height:6,borderRadius:3,background: i<=3 ? C.primary : C.border,transition:'background 0.3s'}} />
+              <div key={i} style={{ flex:1, height:5, borderRadius:3, background: i<=3 ? C.primary : '#E2E8F0', transition:'background 0.3s' }} />
             ))}
           </div>
         </div>
       </div>
 
-      {/* ── Focus session launcher ───────────────────────────────────────── */}
+      {/* ── Focus session ───────────────────────────────────────────────── */}
       <button
         onClick={startPomodoro}
         style={{
           width:'100%', display:'flex', alignItems:'center', gap:12,
-          background: 'white',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.07)',
-          border: 'none',
+          background:'white', border:'1px solid #F1F5F9',
+          boxShadow:'0 2px 12px rgba(0,0,0,0.05)',
           borderRadius:18, padding:'14px 16px', cursor:'pointer',
-          fontFamily:'Inter,sans-serif', marginBottom:8, textAlign:'left',
+          fontFamily:'Inter,sans-serif', textAlign:'left',
         }}
       >
-        <span style={{fontSize:22}}>🍅</span>
+        <span style={{ fontSize:22 }}>🍅</span>
         <div>
-          <div style={{fontSize:13, fontWeight:800, color:C.navy}}>Start 25-min Focus Session</div>
-          <div style={{fontSize:11, color:C.muted, marginTop:1}}>Pomodoro timer · 5-min break after</div>
+          <div style={{ fontSize:13, fontWeight:800, color:'#1E293B' }}>Start 25-min Focus Session</div>
+          <div style={{ fontSize:11, color:'#64748B', marginTop:1 }}>Pomodoro timer · 5-min break after</div>
         </div>
-        <span style={{marginLeft:'auto', fontSize:12, fontWeight:700, color:C.primary}}>Start →</span>
+        <span style={{ marginLeft:'auto', fontSize:12, fontWeight:700, color:C.primary }}>Start →</span>
       </button>
     </Shell>
   )
@@ -635,41 +619,42 @@ function ExamRowCard({ subject, C, dark, onClick, onMock, onFlashcards }) {
 
 function SubjectCard({ subject, C, dark, onClick, onMock, onFlashcards }) {
   const SC = getColors(dark ? 'alevel' : 'gcse', subject.id)
+  const [pressed, setPressed] = useState(false)
   return (
-    <div style={{width:148, flexShrink:0, display:'flex', flexDirection:'column'}}>
+    <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
       <button
         onClick={onClick}
+        onPointerDown={() => setPressed(true)}
+        onPointerUp={() => setPressed(false)}
+        onPointerLeave={() => setPressed(false)}
         style={{
-          background:C.card, border:`1.5px solid ${SC.primary}40`, borderRadius:16,
-          padding:'16px 12px', cursor:'pointer', display:'flex', flexDirection:'column',
-          alignItems:'center', gap:8, transition:'all 0.2s', flex:1,
-          WebkitTapHighlightColor:'transparent',
+          background: `linear-gradient(145deg, ${SC.primary}, ${SC.secondary ?? SC.primary}cc)`,
+          border:'none', borderRadius:20, padding:'18px 14px 16px',
+          cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'flex-start', gap:8,
+          boxShadow: pressed ? `0 2px 8px ${SC.primary}40` : `0 6px 20px ${SC.primary}38`,
+          transform: pressed ? 'scale(0.96)' : 'scale(1)',
+          transition:'transform 0.12s ease, box-shadow 0.12s ease',
+          WebkitTapHighlightColor:'transparent', width:'100%',
         }}
-        onMouseEnter={e=>{e.currentTarget.style.borderColor=SC.primary;e.currentTarget.style.background=SC.primary+'18'}}
-        onMouseLeave={e=>{e.currentTarget.style.borderColor=SC.primary+'40';e.currentTarget.style.background=C.card}}
       >
-        <span style={{fontSize:28}}>{subject.emoji}</span>
-        <span style={{fontSize:12,fontWeight:800,color:SC.primary,textAlign:'center',lineHeight:1.2}}>{subject.label}</span>
-        <span style={{fontSize:9,color:C.muted,textAlign:'center',lineHeight:1.3}}>{subject.desc}</span>
+        <span style={{ fontSize:34, lineHeight:1 }}>{subject.emoji}</span>
+        <div>
+          <div style={{ fontSize:13, fontWeight:900, color:'white', lineHeight:1.2, letterSpacing:'-0.2px' }}>{subject.label}</div>
+          {subject.desc && <div style={{ fontSize:9, color:'rgba(255,255,255,0.68)', lineHeight:1.35, marginTop:3 }}>{subject.desc}</div>}
+        </div>
       </button>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4,marginTop:4}}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:5 }}>
         <button
           onClick={onFlashcards}
-          title="Flashcards"
-          style={{background:'transparent',border:`1px solid ${SC.primary}40`,borderRadius:8,padding:'5px 0',fontSize:9,fontWeight:700,color:SC.primary,cursor:'pointer',fontFamily:'Inter,sans-serif',letterSpacing:'0.04em',WebkitTapHighlightColor:'transparent'}}
-          onMouseEnter={e=>{e.currentTarget.style.borderColor=SC.primary;e.currentTarget.style.background=SC.primary+'15'}}
-          onMouseLeave={e=>{e.currentTarget.style.borderColor=SC.primary+'40';e.currentTarget.style.background='transparent'}}
+          style={{ background:`${SC.primary}10`, border:`1.5px solid ${SC.primary}28`, borderRadius:10, padding:'7px 0', fontSize:10, fontWeight:700, color:SC.primary, cursor:'pointer', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}
         >
-          CARDS 🃏
+          Cards 🃏
         </button>
         <button
           onClick={onMock}
-          title="Mock exam"
-          style={{background:'transparent',border:`1px solid ${SC.primary}40`,borderRadius:8,padding:'5px 0',fontSize:9,fontWeight:700,color:SC.primary,cursor:'pointer',fontFamily:'Inter,sans-serif',letterSpacing:'0.04em',WebkitTapHighlightColor:'transparent'}}
-          onMouseEnter={e=>{e.currentTarget.style.borderColor=SC.primary;e.currentTarget.style.background=SC.primary+'15'}}
-          onMouseLeave={e=>{e.currentTarget.style.borderColor=SC.primary+'40';e.currentTarget.style.background='transparent'}}
+          style={{ background:`${SC.primary}10`, border:`1.5px solid ${SC.primary}28`, borderRadius:10, padding:'7px 0', fontSize:10, fontWeight:700, color:SC.primary, cursor:'pointer', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}
         >
-          MOCK
+          Mock
         </button>
       </div>
     </div>
@@ -697,34 +682,29 @@ function GcseSubjectGrid({ subjects, navigate, stream, C }) {
   const segments = buildSegments(subjects)
 
   return (
-    <div style={{display:'flex', flexDirection:'column', gap:4}}>
+    <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
       {segments.map((seg, i) => {
         const isGroup    = !!seg.group
         const isCollapsed = collapsed[seg.group]
         return (
-          <div key={seg.group ?? `ungrouped-${i}`} style={{marginBottom: isGroup ? 2 : 0}}>
+          <div key={seg.group ?? `ungrouped-${i}`}>
             {isGroup && (
               <button
                 onClick={() => setCollapsed(prev => ({ ...prev, [seg.group]: !prev[seg.group] }))}
                 style={{
                   width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
-                  background:'#F8FAFC', border:'1px solid #E2E8F0',
-                  borderRadius:10, padding:'8px 14px', marginBottom:6, marginTop: i > 0 ? 8 : 0,
+                  background:'none', border:'none', borderBottom:'1px solid #F1F5F9',
+                  padding:'0 0 10px', marginBottom:12,
                   cursor:'pointer', fontFamily:'Inter,sans-serif',
                   WebkitTapHighlightColor:'transparent',
                 }}
               >
-                <span style={{fontSize:12,fontWeight:800,color:'#475569',letterSpacing:'0.06em',textTransform:'uppercase'}}>
-                  {seg.group}
-                </span>
-                <span style={{fontSize:13,color:'#94A3B8',transition:'transform 0.2s',display:'inline-block',transform:isCollapsed?'rotate(-90deg)':'rotate(0deg)'}}>▾</span>
+                <span style={{ fontSize:13, fontWeight:800, color:'#334155', letterSpacing:'0.03em' }}>{seg.group}</span>
+                <span style={{ fontSize:13, color:'#94A3B8', transition:'transform 0.2s', display:'inline-block', transform:isCollapsed?'rotate(-90deg)':'rotate(0deg)' }}>▾</span>
               </button>
             )}
             {!isCollapsed && (
-              <div
-                className="scroll-x"
-                style={{gap:10, paddingBottom:6, marginLeft:-16, marginRight:-16, paddingLeft:16, paddingRight:16}}
-              >
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 {seg.subjects.map(s => (
                   <SubjectCard
                     key={s.id}
@@ -745,7 +725,8 @@ function GcseSubjectGrid({ subjects, navigate, stream, C }) {
   )
 }
 
-export function Shell({ C, children, noNav }) {
+export function Shell({ C, children, noNav, heroContent }) {
+  const heroH = heroContent ? 188 : 64
   return (
     <div style={{ minHeight:'100dvh', background:'linear-gradient(160deg,#FF6B35 0%,#FF3CAC 52%,#7B2FBE 100%)', fontFamily:'Inter,sans-serif', position:'relative' }}>
       <style>{`*{box-sizing:border-box}button{font-family:inherit}
@@ -775,13 +756,15 @@ export function Shell({ C, children, noNav }) {
       <ScrollBar C={C} />
 
       {/* Gradient hero band */}
-      <div style={{ height:64, position:'relative', zIndex:1 }} />
+      <div style={{ height:heroH, position:'relative', zIndex:1, overflow:'hidden' }}>
+        {heroContent}
+      </div>
 
       {/* White content panel */}
-      <div style={{ position:'relative', zIndex:1, background:'white', borderRadius:'28px 28px 0 0', minHeight:'calc(100dvh - 64px)', boxShadow:'0 -8px 40px rgba(0,0,0,0.16)' }}>
+      <div style={{ position:'relative', zIndex:1, background:'white', borderRadius:'28px 28px 0 0', minHeight:`calc(100dvh - ${heroH - 24}px)`, boxShadow:'0 -8px 40px rgba(0,0,0,0.16)' }}>
         <div style={{ width:36, height:4, background:'#E2E8F0', borderRadius:2, margin:'12px auto 0' }} />
         <div style={{
-          width:'100%', maxWidth:520, margin:'0 auto',
+          width:'100%',
           padding:`16px 16px calc(${noNav ? 24 : NAV_HEIGHT + 24}px + env(safe-area-inset-bottom, 0px))`,
           animation:'fadeUp 0.35s ease',
         }}>
@@ -859,6 +842,25 @@ export function IconBtn({ onClick, color, title, children }) {
         padding:0,
         transform: pressed ? 'scale(0.88)' : 'scale(1)',
         transition:'transform 0.1s ease, background 0.1s',
+        WebkitTapHighlightColor:'transparent',
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
+function HeroIconBtn({ onClick, title, children }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      style={{
+        width:36, height:36, flexShrink:0,
+        display:'flex', alignItems:'center', justifyContent:'center',
+        background:'rgba(255,255,255,0.18)', backdropFilter:'blur(6px)',
+        border:'1px solid rgba(255,255,255,0.3)',
+        borderRadius:10, cursor:'pointer', padding:0,
         WebkitTapHighlightColor:'transparent',
       }}
     >
