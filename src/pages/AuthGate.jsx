@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase.js'
 
 // Bokeh circles — warm depth-of-field feel
@@ -24,7 +24,218 @@ const TRACK_GROUPS = [
   },
 ]
 
+const FEATURES = [
+  { icon:'✨', title:'AI Explanations', desc:'Instant, personalised explanations for every question' },
+  { icon:'🔁', title:'Spaced Repetition', desc:'Smart algorithm shows the right questions at the right time' },
+  { icon:'📊', title:'Progress Tracking', desc:'Topic-by-topic accuracy and exam readiness scores' },
+]
+
+const BG   = 'linear-gradient(160deg,#FF6B35 0%,#FF3CAC 52%,#7B2FBE 100%)'
+const GRAD = 'linear-gradient(135deg,#FF6B35,#FF3CAC)'
+
+// ── Shared sub-components ─────────────────────────────────────────────────────
+
+function BokehLayer() {
+  return BOKEH.map((b, i) => (
+    <div key={i} style={{
+      position:'absolute', width:b.w, height:b.h, borderRadius:'50%',
+      background:`rgba(${b.r},${b.o})`, filter:`blur(${b.blur}px)`,
+      top:b.top, left:b.left, right:b.right, pointerEvents:'none',
+    }} />
+  ))
+}
+
+function Dots({ total, current }) {
+  return (
+    <div style={{ display:'flex', gap:6, alignItems:'center', justifyContent:'center' }}>
+      {Array.from({ length: total }).map((_, i) => (
+        <div key={i} style={{
+          height:7, width: i === current ? 22 : 7, borderRadius:999,
+          background: i === current ? 'white' : 'rgba(255,255,255,0.38)',
+          transition:'all 0.3s ease',
+        }} />
+      ))}
+    </div>
+  )
+}
+
+function MarqueeRow({ chips, direction }) {
+  const doubled = [...chips, ...chips]
+  const anim = direction === 'right'
+    ? 'marqueeRight 20s linear infinite'
+    : 'marqueeLeft 20s linear infinite'
+  return (
+    <div style={{ overflow:'hidden', width:'100%' }}>
+      <div style={{ display:'flex', gap:8, animation:anim, willChange:'transform' }}>
+        {doubled.map((chip, i) => (
+          <span key={i} style={{
+            flexShrink:0,
+            background:'rgba(255,255,255,0.15)', backdropFilter:'blur(6px)',
+            border:'1px solid rgba(255,255,255,0.28)',
+            borderRadius:20, padding:'5px 12px',
+            fontSize:12, fontWeight:700, color:'white', whiteSpace:'nowrap',
+          }}>
+            {chip}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function CtaPanel({ children }) {
+  return (
+    <div style={{
+      position:'absolute', bottom:0, left:0, right:0,
+      background:'white', borderRadius:'28px 28px 0 0',
+      padding:`24px 24px calc(32px + env(safe-area-inset-bottom, 0px))`,
+      boxShadow:'0 -16px 56px rgba(0,0,0,0.22)',
+    }}>
+      {children}
+    </div>
+  )
+}
+
+// ── Screen 0: Welcome ─────────────────────────────────────────────────────────
+
+function WelcomeScreen({ goTo }) {
+  return (
+    <div style={{ width:'100vw', height:'100dvh', position:'relative', overflow:'hidden', background:BG, flexShrink:0 }}>
+      <BokehLayer />
+
+      {/* Skip */}
+      <button
+        onClick={() => goTo(2)}
+        style={{
+          position:'absolute', top:'max(20px, env(safe-area-inset-top, 20px))', right:20, zIndex:10,
+          background:'rgba(255,255,255,0.2)', backdropFilter:'blur(6px)',
+          border:'1px solid rgba(255,255,255,0.35)', borderRadius:12,
+          padding:'7px 16px', fontSize:12, fontWeight:700,
+          color:'white', cursor:'pointer', fontFamily:'Inter,sans-serif',
+        }}
+      >
+        Skip
+      </button>
+
+      {/* Hero */}
+      <div style={{
+        position:'absolute', top:0, left:0, right:0, bottom:'52%',
+        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-end',
+        padding:'0 24px 28px', pointerEvents:'none',
+      }}>
+        <span style={{ fontSize:40, display:'block', marginBottom:8, animation:'float 3s ease-in-out infinite', color:'white', textShadow:'0 2px 16px rgba(0,0,0,0.2)' }}>✦</span>
+        <h1 style={{
+          fontSize:64, fontWeight:900, color:'white', letterSpacing:'-3px', margin:'0 0 12px',
+          fontFamily:"'Playfair Display', Georgia, serif",
+          textShadow:'0 4px 28px rgba(0,0,0,0.22)',
+        }}>Nexora</h1>
+        <p style={{ color:'rgba(255,255,255,0.9)', fontSize:16, fontWeight:700, margin:0, letterSpacing:'0.04em', textAlign:'center' }}>
+          Ace your UK entrance exams
+        </p>
+      </div>
+
+      {/* Marquee rows */}
+      <div style={{
+        position:'absolute', bottom:'52%', left:0, right:0,
+        display:'flex', flexDirection:'column', gap:10, paddingTop:20,
+        pointerEvents:'none',
+      }}>
+        <MarqueeRow chips={TRACK_GROUPS[0].chips} direction="left" />
+        <MarqueeRow chips={TRACK_GROUPS[1].chips} direction="right" />
+      </div>
+
+      <CtaPanel>
+        <div style={{ display:'flex', justifyContent:'center', marginBottom:18 }}>
+          <Dots total={3} current={0} />
+        </div>
+        <button onClick={() => goTo(1)} style={btnS(GRAD)}>
+          Get Started →
+        </button>
+        <div style={{ textAlign:'center', marginTop:12 }}>
+          <button
+            onClick={() => goTo(2)}
+            style={{ background:'none', border:'none', cursor:'pointer', color:'#94A3B8', fontSize:13, fontWeight:600, fontFamily:'Inter,sans-serif' }}
+          >
+            Already have an account? Sign In
+          </button>
+        </div>
+      </CtaPanel>
+    </div>
+  )
+}
+
+// ── Screen 1: Features ────────────────────────────────────────────────────────
+
+function FeaturesScreen({ goTo }) {
+  return (
+    <div style={{ width:'100vw', height:'100dvh', position:'relative', overflow:'hidden', background:BG, flexShrink:0 }}>
+      <BokehLayer />
+
+      {/* Header */}
+      <div style={{
+        position:'absolute', top:0, left:0, right:0, bottom:'62%',
+        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-end',
+        padding:'0 24px 24px', pointerEvents:'none',
+      }}>
+        <div style={{ fontSize:9, fontWeight:800, color:'rgba(255,255,255,0.65)', letterSpacing:'0.18em', marginBottom:12 }}>
+          WHAT'S INSIDE
+        </div>
+        <h2 style={{
+          fontSize:36, fontWeight:900, color:'white', letterSpacing:'-1px', margin:0, textAlign:'center',
+          fontFamily:"'Playfair Display', Georgia, serif",
+          textShadow:'0 3px 20px rgba(0,0,0,0.2)',
+        }}>
+          Everything you need to pass
+        </h2>
+      </div>
+
+      {/* Feature cards */}
+      <div style={{
+        position:'absolute', bottom:'44%', left:0, right:0,
+        display:'flex', flexDirection:'column', gap:10, padding:'0 20px',
+      }}>
+        {FEATURES.map((f, i) => (
+          <div key={i} style={{
+            background:'rgba(255,255,255,0.18)',
+            backdropFilter:'blur(14px)', WebkitBackdropFilter:'blur(14px)',
+            border:'1px solid rgba(255,255,255,0.32)', borderRadius:20,
+            padding:'16px 20px', display:'flex', alignItems:'center', gap:16,
+          }}>
+            <span style={{ fontSize:28, flexShrink:0 }}>{f.icon}</span>
+            <div>
+              <div style={{ fontSize:15, fontWeight:800, color:'white', marginBottom:3 }}>{f.title}</div>
+              <div style={{ fontSize:12, color:'rgba(255,255,255,0.78)', lineHeight:1.45 }}>{f.desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <CtaPanel>
+        <div style={{ display:'flex', justifyContent:'center', marginBottom:18 }}>
+          <Dots total={3} current={1} />
+        </div>
+        <button onClick={() => goTo(2)} style={btnS(GRAD)}>
+          Continue →
+        </button>
+        <div style={{ textAlign:'center', marginTop:12 }}>
+          <button
+            onClick={() => goTo(0)}
+            style={{ background:'none', border:'none', cursor:'pointer', color:'#94A3B8', fontSize:13, fontWeight:600, fontFamily:'Inter,sans-serif' }}
+          >
+            ← Back
+          </button>
+        </div>
+      </CtaPanel>
+    </div>
+  )
+}
+
+// ── Main AuthGate ─────────────────────────────────────────────────────────────
+
 export default function AuthGate() {
+  const [screenIndex, setScreenIndex] = useState(
+    () => localStorage.getItem('nexora_onboarded') ? 2 : 0
+  )
   const [mode,          setMode]          = useState('signin')
   const [email,         setEmail]         = useState('')
   const [password,      setPassword]      = useState('')
@@ -33,6 +244,48 @@ export default function AuthGate() {
   const [done,          setDone]          = useState(false)
   const [resetSent,     setResetSent]     = useState(false)
   const [emailExpanded, setEmailExpanded] = useState(false)
+
+  const sliderRef = useRef(null)
+  const dragRef   = useRef(null)
+
+  function goTo(n) {
+    if (n >= 2) localStorage.setItem('nexora_onboarded', '1')
+    if (sliderRef.current) {
+      sliderRef.current.style.transition = 'transform 0.38s cubic-bezier(0.25,0.46,0.45,0.94)'
+      sliderRef.current.style.transform  = `translateX(-${n * 100}vw)`
+    }
+    setScreenIndex(n)
+  }
+
+  function onPointerDown(e) {
+    if (screenIndex === 2) return
+    dragRef.current = { startX: e.clientX }
+    sliderRef.current.setPointerCapture(e.pointerId)
+    sliderRef.current.style.transition = 'none'
+  }
+
+  function onPointerMove(e) {
+    if (!dragRef.current) return
+    const dx = e.clientX - dragRef.current.startX
+    sliderRef.current.style.transform = `translateX(calc(-${screenIndex * 100}vw + ${dx}px))`
+  }
+
+  function onPointerUp(e) {
+    if (!dragRef.current) return
+    const dx = e.clientX - dragRef.current.startX
+    dragRef.current = null
+    sliderRef.current.style.transition = 'transform 0.38s cubic-bezier(0.25,0.46,0.45,0.94)'
+    if (Math.abs(dx) > 60) {
+      const next = dx < 0
+        ? Math.min(screenIndex + 1, 2)
+        : Math.max(screenIndex - 1, 0)
+      if (next >= 2) localStorage.setItem('nexora_onboarded', '1')
+      sliderRef.current.style.transform = `translateX(-${next * 100}vw)`
+      setScreenIndex(next)
+    } else {
+      sliderRef.current.style.transform = `translateX(-${screenIndex * 100}vw)`
+    }
+  }
 
   async function signInWithGoogle() {
     await supabase.auth.signInWithOAuth({
@@ -99,7 +352,6 @@ export default function AuthGate() {
     }
   }
 
-  // Whether the logo area should compress to make room for the expanded form
   const compact = emailExpanded || mode === 'forgot'
 
   function sheetBody() {
@@ -111,7 +363,7 @@ export default function AuthGate() {
           Confirmation link sent to <strong style={{ color:'#FF6B35' }}>{email}</strong>.<br/>
           Click it then come back to sign in.
         </div>
-        <button onClick={() => { switchMode('signin'); setEmailExpanded(false) }} style={btn(GRAD)}>
+        <button onClick={() => { switchMode('signin'); setEmailExpanded(false) }} style={btnS(GRAD)}>
           Back to Sign In
         </button>
       </div>
@@ -124,7 +376,7 @@ export default function AuthGate() {
         <div style={{ fontSize:13, color:'#64748B', lineHeight:1.65 }}>
           Check <strong style={{ color:'#FF6B35' }}>{email}</strong> for the link.
         </div>
-        <button onClick={() => { switchMode('signin'); setEmailExpanded(false) }} style={btn(GRAD)}>
+        <button onClick={() => { switchMode('signin'); setEmailExpanded(false) }} style={btnS(GRAD)}>
           Back to Sign In
         </button>
       </div>
@@ -138,7 +390,7 @@ export default function AuthGate() {
         </div>
         <Field label="EMAIL" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
         {error && <ErrBox>{error}</ErrBox>}
-        <button type="submit" disabled={loading} style={{ ...btn(GRAD), opacity: loading ? 0.65 : 1 }}>
+        <button type="submit" disabled={loading} style={{ ...btnS(GRAD), opacity: loading ? 0.65 : 1 }}>
           {loading ? 'Sending…' : 'Send Reset Link'}
         </button>
         <div style={toggleRow}>
@@ -155,7 +407,6 @@ export default function AuthGate() {
           {emailExpanded ? (mode === 'signup' ? 'Create account' : 'Welcome back') : 'Get started'}
         </div>
 
-        {/* Google */}
         <GoogleBtn onClick={signInWithGoogle} />
 
         {!emailExpanded ? (
@@ -193,7 +444,7 @@ export default function AuthGate() {
               />
             </div>
             {error && <ErrBox>{error}</ErrBox>}
-            <button type="submit" disabled={loading} style={{ ...btn(GRAD), opacity: loading ? 0.65 : 1 }}>
+            <button type="submit" disabled={loading} style={{ ...btnS(GRAD), opacity: loading ? 0.65 : 1 }}>
               {loading ? 'Please wait…' : mode === 'signup' ? 'Create Account' : 'Sign In →'}
             </button>
             <div style={toggleRow}>
@@ -209,83 +460,97 @@ export default function AuthGate() {
   }
 
   return (
-    <div style={{ position:'fixed', inset:0, background:'linear-gradient(160deg,#FF6B35 0%,#FF3CAC 52%,#7B2FBE 100%)', overflow:'hidden', fontFamily:'Inter,sans-serif' }}>
+    <div style={{ position:'fixed', inset:0, overflow:'hidden', fontFamily:'Inter,sans-serif' }}>
       <style>{css}</style>
 
-      {/* ── Bokeh circles ─────────────────────────────────────────────────── */}
-      {BOKEH.map((b, i) => (
-        <div key={i} style={{
-          position:'absolute',
-          width:b.w, height:b.h,
-          borderRadius:'50%',
-          background:`rgba(${b.r},${b.o})`,
-          filter:`blur(${b.blur}px)`,
-          top:b.top, left:b.left, right:b.right,
-          pointerEvents:'none',
-        }} />
-      ))}
+      <div
+        ref={sliderRef}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        style={{
+          display:'flex', width:'300vw', height:'100dvh',
+          transform:`translateX(-${screenIndex * 100}vw)`,
+          transition:'transform 0.38s cubic-bezier(0.25,0.46,0.45,0.94)',
+          willChange:'transform',
+        }}
+      >
+        {/* Screen 0 */}
+        <WelcomeScreen goTo={goTo} />
 
-      {/* ── Logo / hero ────────────────────────────────────────────────────── */}
-      <div style={{
-        position:'absolute', top:0, left:0, right:0,
-        bottom: compact ? '66%' : '46%',
-        display:'flex', flexDirection:'column',
-        alignItems:'center', justifyContent:'flex-end',
-        padding:'0 24px 28px',
-        transition:'bottom 0.38s cubic-bezier(0.25,0.46,0.45,0.94)',
-        pointerEvents:'none',
-      }}>
-        <div className="animate-fade-up" style={{ textAlign:'center' }}>
-          <span style={{ fontSize:36, display:'block', marginBottom:4, animation:'float 3s ease-in-out infinite', color:'white', textShadow:'0 2px 16px rgba(0,0,0,0.2)' }}>✦</span>
-          <div style={{ position:'relative', display:'inline-block', marginBottom:10 }}>
-            <h1 style={titleS}>Nexora</h1>
-            <span style={{ position:'absolute', top:6, right:-40, background:'rgba(255,255,255,0.25)', backdropFilter:'blur(4px)', color:'white', fontSize:9, fontWeight:800, letterSpacing:'0.08em', padding:'2px 7px', borderRadius:6, border:'1px solid rgba(255,255,255,0.4)' }}>BETA</span>
-          </div>
-          <p style={{ color:'rgba(255,255,255,0.82)', fontSize:11, fontWeight:700, margin:0, letterSpacing:'0.16em' }}>
-            ACE YOUR ENTRANCE EXAMS
-          </p>
-        </div>
+        {/* Screen 1 */}
+        <FeaturesScreen goTo={goTo} />
 
-        {/* Track groups — hidden while form is expanded */}
-        {!compact && (
-          <div className="animate-fade-up" style={{ display:'flex', flexDirection:'column', gap:10, marginTop:20, width:'100%' }}>
-            {TRACK_GROUPS.map(group => (
-              <div key={group.label}>
-                <div style={{ fontSize:9, fontWeight:800, color:'rgba(255,255,255,0.55)', letterSpacing:'0.14em', textTransform:'uppercase', marginBottom:6 }}>
-                  {group.label}
-                </div>
-                <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
-                  {group.chips.map(chip => (
-                    <span key={chip} style={{ background:'rgba(255,255,255,0.15)', backdropFilter:'blur(6px)', border:'1px solid rgba(255,255,255,0.28)', borderRadius:20, padding:'4px 10px', fontSize:11, fontWeight:700, color:'white' }}>
-                      {chip}
-                    </span>
-                  ))}
-                </div>
+        {/* Screen 2 — existing auth form, unchanged */}
+        <div style={{ width:'100vw', height:'100dvh', position:'relative', flexShrink:0, background:BG, overflow:'hidden' }}>
+          {BOKEH.map((b, i) => (
+            <div key={i} style={{
+              position:'absolute', width:b.w, height:b.h, borderRadius:'50%',
+              background:`rgba(${b.r},${b.o})`, filter:`blur(${b.blur}px)`,
+              top:b.top, left:b.left, right:b.right, pointerEvents:'none',
+            }} />
+          ))}
+
+          {/* Logo / hero */}
+          <div style={{
+            position:'absolute', top:0, left:0, right:0,
+            bottom: compact ? '66%' : '46%',
+            display:'flex', flexDirection:'column',
+            alignItems:'center', justifyContent:'flex-end',
+            padding:'0 24px 28px',
+            transition:'bottom 0.38s cubic-bezier(0.25,0.46,0.45,0.94)',
+            pointerEvents:'none',
+          }}>
+            <div className="animate-fade-up" style={{ textAlign:'center' }}>
+              <span style={{ fontSize:36, display:'block', marginBottom:4, animation:'float 3s ease-in-out infinite', color:'white', textShadow:'0 2px 16px rgba(0,0,0,0.2)' }}>✦</span>
+              <div style={{ position:'relative', display:'inline-block', marginBottom:10 }}>
+                <h1 style={titleS}>Nexora</h1>
+                <span style={{ position:'absolute', top:6, right:-40, background:'rgba(255,255,255,0.25)', backdropFilter:'blur(4px)', color:'white', fontSize:9, fontWeight:800, letterSpacing:'0.08em', padding:'2px 7px', borderRadius:6, border:'1px solid rgba(255,255,255,0.4)' }}>BETA</span>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+              <p style={{ color:'rgba(255,255,255,0.82)', fontSize:11, fontWeight:700, margin:0, letterSpacing:'0.16em' }}>
+                ACE YOUR ENTRANCE EXAMS
+              </p>
+            </div>
 
-      {/* ── Bottom sheet ───────────────────────────────────────────────────── */}
-      <div style={{
-        position:'absolute', bottom:0, left:0, right:0,
-        background:'#FFFFFF',
-        borderRadius:'28px 28px 0 0',
-        padding:`24px 24px calc(40px + env(safe-area-inset-bottom, 0px))`,
-        boxShadow:'0 -16px 56px rgba(0,0,0,0.22)',
-        maxHeight:'78dvh',
-        overflowY:'auto',
-      }}>
-        {/* Drag pill */}
-        <div style={{ width:36, height:4, borderRadius:2, background:'#CBD5E1', margin:'0 auto 22px' }} />
-        {sheetBody()}
+            {!compact && (
+              <div className="animate-fade-up" style={{ display:'flex', flexDirection:'column', gap:10, marginTop:20, width:'100%' }}>
+                {TRACK_GROUPS.map(group => (
+                  <div key={group.label}>
+                    <div style={{ fontSize:9, fontWeight:800, color:'rgba(255,255,255,0.55)', letterSpacing:'0.14em', textTransform:'uppercase', marginBottom:6 }}>
+                      {group.label}
+                    </div>
+                    <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
+                      {group.chips.map(chip => (
+                        <span key={chip} style={{ background:'rgba(255,255,255,0.15)', backdropFilter:'blur(6px)', border:'1px solid rgba(255,255,255,0.28)', borderRadius:20, padding:'4px 10px', fontSize:11, fontWeight:700, color:'white' }}>
+                          {chip}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Bottom sheet */}
+          <div style={{
+            position:'absolute', bottom:0, left:0, right:0,
+            background:'#FFFFFF', borderRadius:'28px 28px 0 0',
+            padding:`24px 24px calc(40px + env(safe-area-inset-bottom, 0px))`,
+            boxShadow:'0 -16px 56px rgba(0,0,0,0.22)',
+            maxHeight:'78dvh', overflowY:'auto',
+          }}>
+            <div style={{ width:36, height:4, borderRadius:2, background:'#CBD5E1', margin:'0 auto 22px' }} />
+            {sheetBody()}
+          </div>
+        </div>
       </div>
     </div>
   )
 }
 
-// ── Sub-components ────────────────────────────────────────────────────────────
+// ── Auth sub-components ───────────────────────────────────────────────────────
 
 function GoogleBtn({ onClick }) {
   return (
@@ -345,13 +610,10 @@ function GoogleIcon() {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const GRAD = 'linear-gradient(135deg,#FF6B35,#FF3CAC)'
-
 const titleS = {
   fontSize:54, fontWeight:900, letterSpacing:'-2px', margin:'0 0 2px',
   fontFamily:"'Playfair Display', Georgia, serif",
-  color:'white',
-  textShadow:'0 4px 28px rgba(0,0,0,0.22)',
+  color:'white', textShadow:'0 4px 28px rgba(0,0,0,0.22)',
 }
 
 const heading = {
@@ -381,7 +643,7 @@ const link = {
   fontFamily:'Inter,sans-serif', padding:0,
 }
 
-function btn(bg) {
+function btnS(bg) {
   return {
     display:'block', width:'100%', background:bg, color:'white', border:'none',
     borderRadius:16, padding:'15px', fontWeight:800, cursor:'pointer',
@@ -392,7 +654,12 @@ function btn(bg) {
 }
 
 const css = `
-  @keyframes float   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-  @keyframes fadeUp  { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
-  .animate-fade-up   { animation: fadeUp 0.5s ease both; }
+  @keyframes float        { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  @keyframes fadeUp       { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes marqueeLeft  { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+  @keyframes marqueeRight { from{transform:translateX(-50%)} to{transform:translateX(0)} }
+  .animate-fade-up        { animation: fadeUp 0.5s ease both; }
+  @media (prefers-reduced-motion: reduce) {
+    [style*="marqueeLeft"], [style*="marqueeRight"] { animation-play-state: paused !important; }
+  }
 `

@@ -273,10 +273,12 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
         </div>
       )}
 
-      {/* Loading indicator */}
+      {/* Loading skeleton */}
       {loading && (
-        <div style={{display:'flex',justifyContent:'center',padding:'32px 0'}}>
-          <div style={{width:24,height:24,border:`3px solid ${C.border}`,borderTopColor:C.primary,borderRadius:'50%',animation:'spin 0.8s linear infinite'}} />
+        <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:16}}>
+          {[80,60,90,50].map((w, i) => (
+            <div key={i} style={{height:16,borderRadius:8,background:C.border,width:`${w}%`,animation:'pulse 1.5s ease infinite',animationDelay:`${i * 0.12}s`}} />
+          ))}
         </div>
       )}
 

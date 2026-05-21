@@ -246,14 +246,17 @@ export default function BottomNav() {
               }} />
 
               {/* Icon wrapper — fills most of the bar */}
-              <div style={{
-                width: 46, height: 36,
-                borderRadius: 12,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: active ? `${C.primary}18` : 'transparent',
-                transition: 'background 0.2s ease',
-                flexShrink: 0,
-              }}>
+              <div
+                key={active ? 'active' : 'inactive'}
+                className={active ? 'tab-icon-active' : ''}
+                style={{
+                  width: 46, height: 36,
+                  borderRadius: 12,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: active ? `${C.primary}18` : 'transparent',
+                  transition: 'background 0.2s ease',
+                  flexShrink: 0,
+                }}>
                 <tab.Icon
                   color={iconColor}
                   size={26}

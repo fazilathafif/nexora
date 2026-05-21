@@ -72,8 +72,8 @@ export default function LandingPage({ user, profile, refreshProfile }) {
       </div>
 
       {/* Stream cards */}
-      <div className="animate-fade-up" style={{ flex:1, display:'flex', flexDirection:'column', justifyContent:'flex-end', padding:'0 20px', zIndex:1 }}>
-        <div style={{ display:'flex', flexDirection:'column', gap:14, paddingBottom:32 }}>
+      <div className="animate-fade-up" style={{ flex:1, display:'flex', flexDirection:'column', justifyContent:'flex-end', padding:'0 16px', zIndex:1 }}>
+        <div style={{ display:'flex', flexDirection:'column', gap:14, paddingBottom:'max(32px, calc(24px + env(safe-area-inset-bottom, 0px)))' }}>
 
           {/* GCSE */}
           <button
@@ -132,10 +132,11 @@ export default function LandingPage({ user, profile, refreshProfile }) {
 }
 
 const cardStyle = {
-  width:'100%', background:'white', borderRadius:24, padding:'18px 20px',
+  width:'100%', background:'white', borderRadius:24, padding:'22px 24px',
   border:'none', cursor:'pointer', textAlign:'left', fontFamily:'Inter,sans-serif',
   boxShadow:'0 12px 40px rgba(0,0,0,0.18)',
   transition:'transform 0.2s ease, box-shadow 0.2s ease',
+  WebkitTapHighlightColor:'transparent',
 }
 
 const css = `

@@ -633,25 +633,30 @@ function ExamRowCard({ subject, C, dark, onClick, onMock, onFlashcards }) {
   )
 }
 
-function SubjectCard({ subject, C, dark, compact, onClick, onMock, onFlashcards }) {
+function SubjectCard({ subject, C, dark, onClick, onMock, onFlashcards }) {
   const SC = getColors(dark ? 'alevel' : 'gcse', subject.id)
   return (
-    <div style={{position:'relative',display:'flex',flexDirection:'column'}}>
+    <div style={{width:148, flexShrink:0, display:'flex', flexDirection:'column'}}>
       <button
         onClick={onClick}
-        style={{background:C.card,border:`1.5px solid ${SC.primary}40`,borderRadius:14,padding:compact?'12px 8px':'16px 10px',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:6,transition:'all 0.2s',flex:1}}
+        style={{
+          background:C.card, border:`1.5px solid ${SC.primary}40`, borderRadius:16,
+          padding:'16px 12px', cursor:'pointer', display:'flex', flexDirection:'column',
+          alignItems:'center', gap:8, transition:'all 0.2s', flex:1,
+          WebkitTapHighlightColor:'transparent',
+        }}
         onMouseEnter={e=>{e.currentTarget.style.borderColor=SC.primary;e.currentTarget.style.background=SC.primary+'18'}}
         onMouseLeave={e=>{e.currentTarget.style.borderColor=SC.primary+'40';e.currentTarget.style.background=C.card}}
       >
-        <span style={{fontSize:compact?20:26}}>{subject.emoji}</span>
-        <span style={{fontSize:12,fontWeight:800,color:SC.primary,textAlign:'center'}}>{subject.label}</span>
+        <span style={{fontSize:28}}>{subject.emoji}</span>
+        <span style={{fontSize:12,fontWeight:800,color:SC.primary,textAlign:'center',lineHeight:1.2}}>{subject.label}</span>
         <span style={{fontSize:9,color:C.muted,textAlign:'center',lineHeight:1.3}}>{subject.desc}</span>
       </button>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4,marginTop:4}}>
         <button
           onClick={onFlashcards}
           title="Flashcards"
-          style={{background:'transparent',border:`1px solid ${SC.primary}40`,borderRadius:8,padding:'4px 0',fontSize:9,fontWeight:700,color:SC.primary,cursor:'pointer',fontFamily:'Inter,sans-serif',letterSpacing:'0.04em'}}
+          style={{background:'transparent',border:`1px solid ${SC.primary}40`,borderRadius:8,padding:'5px 0',fontSize:9,fontWeight:700,color:SC.primary,cursor:'pointer',fontFamily:'Inter,sans-serif',letterSpacing:'0.04em',WebkitTapHighlightColor:'transparent'}}
           onMouseEnter={e=>{e.currentTarget.style.borderColor=SC.primary;e.currentTarget.style.background=SC.primary+'15'}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor=SC.primary+'40';e.currentTarget.style.background='transparent'}}
         >
@@ -660,11 +665,11 @@ function SubjectCard({ subject, C, dark, compact, onClick, onMock, onFlashcards 
         <button
           onClick={onMock}
           title="Mock exam"
-          style={{background:'transparent',border:`1px solid ${SC.primary}40`,borderRadius:8,padding:'4px 0',fontSize:9,fontWeight:700,color:SC.primary,cursor:'pointer',fontFamily:'Inter,sans-serif',letterSpacing:'0.04em'}}
+          style={{background:'transparent',border:`1px solid ${SC.primary}40`,borderRadius:8,padding:'5px 0',fontSize:9,fontWeight:700,color:SC.primary,cursor:'pointer',fontFamily:'Inter,sans-serif',letterSpacing:'0.04em',WebkitTapHighlightColor:'transparent'}}
           onMouseEnter={e=>{e.currentTarget.style.borderColor=SC.primary;e.currentTarget.style.background=SC.primary+'15'}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor=SC.primary+'40';e.currentTarget.style.background='transparent'}}
         >
-          MOCK EXAM
+          MOCK
         </button>
       </div>
     </div>
@@ -692,20 +697,21 @@ function GcseSubjectGrid({ subjects, navigate, stream, C }) {
   const segments = buildSegments(subjects)
 
   return (
-    <div style={{display:'flex',flexDirection:'column',gap:0}}>
+    <div style={{display:'flex', flexDirection:'column', gap:4}}>
       {segments.map((seg, i) => {
-        const isGroup = !!seg.group
+        const isGroup    = !!seg.group
         const isCollapsed = collapsed[seg.group]
         return (
-          <div key={seg.group ?? `ungrouped-${i}`}>
+          <div key={seg.group ?? `ungrouped-${i}`} style={{marginBottom: isGroup ? 2 : 0}}>
             {isGroup && (
               <button
                 onClick={() => setCollapsed(prev => ({ ...prev, [seg.group]: !prev[seg.group] }))}
                 style={{
                   width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
                   background:'#F8FAFC', border:'1px solid #E2E8F0',
-                  borderRadius:10, padding:'8px 14px', marginBottom:6, marginTop:i > 0 ? 8 : 0,
+                  borderRadius:10, padding:'8px 14px', marginBottom:6, marginTop: i > 0 ? 8 : 0,
                   cursor:'pointer', fontFamily:'Inter,sans-serif',
+                  WebkitTapHighlightColor:'transparent',
                 }}
               >
                 <span style={{fontSize:12,fontWeight:800,color:'#475569',letterSpacing:'0.06em',textTransform:'uppercase'}}>
@@ -715,7 +721,10 @@ function GcseSubjectGrid({ subjects, navigate, stream, C }) {
               </button>
             )}
             {!isCollapsed && (
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom: isGroup ? 4 : 10}}>
+              <div
+                className="scroll-x"
+                style={{gap:10, paddingBottom:6, marginLeft:-16, marginRight:-16, paddingLeft:16, paddingRight:16}}
+              >
                 {seg.subjects.map(s => (
                   <SubjectCard
                     key={s.id}
