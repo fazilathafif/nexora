@@ -21,6 +21,9 @@ import { TMUA_BATCH }    from './batch_tmua.js'
 import { ESAT_BATCH }    from './batch_esat.js'
 import { TSA_BATCH }     from './batch_tsa.js'
 import { STEP_BATCH }    from './batch_step.js'
+import { TARA_BATCH }    from './batch_tara.js'
+import { MAT_BATCH }     from './batch_mat.js'
+import { PAT_BATCH }     from './batch_pat.js'
 
 // ── GCSE STREAM ───────────────────────────────────────────────────────────────
 
@@ -600,6 +603,18 @@ export const ALEVEL = {
     { id:'step_042', q:'The divisibility test: prove 6 | n(n+1)(n+2) for all positive integers n. This follows because:', opts:["n(n+1)(n+2) is always odd","Among any 3 consecutive integers, at least one is divisible by 2 and at least one by 3","n is always divisible by 6","All three numbers share a common factor"], ans:1, topic:'Proof – Number Theory', hint:'3 consecutive integers contain one multiple of 2 and one multiple of 3, hence their product is divisible by 6', difficulty:2, tags:['step','proof','number-theory','divisibility'] },
     ...STEP_BATCH,
   ],
+
+  tara: [
+    ...TARA_BATCH,
+  ],
+
+  mat: [
+    ...MAT_BATCH,
+  ],
+
+  pat: [
+    ...PAT_BATCH,
+  ],
 }
 
 // ── Helper: get questions for a subject ──────────────────────────────────────
@@ -635,10 +650,13 @@ export const STREAM_CONFIG = {
     subjects: [
       { id:'ucat',  label:'UCAT',       emoji:'🏥', desc:'Medicine & Dentistry' },
       { id:'lnat',  label:'LNAT',       emoji:'⚖️',  desc:'Law — Critical Thinking' },
-      { id:'tmua',  label:'TMUA / MAT', emoji:'∑',   desc:'Maths & CS' },
+      { id:'tmua',  label:'TMUA',       emoji:'∑',   desc:'Maths & CS (Cambridge, Warwick, Bath)' },
       { id:'esat',  label:'ESAT',       emoji:'⚗️',  desc:'Engineering & Sciences' },
-      { id:'tsa',   label:'TSA',        emoji:'🧠', desc:'PPE, Economics, Philosophy' },
-      { id:'step',  label:'STEP',       emoji:'📏', desc:'Cambridge Mathematics' },
+      { id:'mat',   label:'MAT',        emoji:'📐', desc:'Maths (Oxford & Imperial)' },
+      { id:'pat',   label:'PAT',        emoji:'⚛️',  desc:'Physics Aptitude (Oxford)' },
+      { id:'tara',  label:'TARA',       emoji:'🧠', desc:'Critical Thinking (Oxford PPE, UCL)' },
+      { id:'step',  label:'STEP 2 & 3', emoji:'📏', desc:'Cambridge Maths — conditional on offer' },
+      { id:'tsa',   label:'TSA',        emoji:'📋', desc:'PPE, Economics, Philosophy', deprecated: true, deprecationNote: 'TSA has been replaced by TARA from 2026 entry onwards. This content is kept for reference only and is no longer relevant for current applicants.' },
     ],
   },
 }
@@ -647,7 +665,7 @@ export const STREAM_CONFIG = {
 
 export const TIMER_CONFIG = {
   gcse:   90,
-  alevel: { ucat: 90, lnat: 180, tmua: 135, esat: 120, tsa: 150, step: 0 },
+  alevel: { ucat: 90, lnat: 180, tmua: 135, esat: 120, mat: 135, pat: 120, tara: 108, tsa: 150, step: 0 },
 }
 
 // ── Mock exam config ──────────────────────────────────────────────────────────
@@ -659,6 +677,9 @@ export const MOCK_CONFIG = {
     lnat:  { duration: 5700,  label: 'LNAT Full Paper (95 min)' },
     tmua:  { duration: 7200,  label: 'TMUA Full Paper (120 min)' },
     esat:  { duration: 7200,  label: 'ESAT Full Paper (120 min)' },
+    mat:   { duration: 9000,  label: 'MAT Full Paper (150 min)' },
+    pat:   { duration: 7200,  label: 'PAT Full Paper (120 min)' },
+    tara:  { duration: 5400,  label: 'TARA Full Paper (90 min)' },
     tsa:   { duration: 5400,  label: 'TSA Full Paper (90 min)' },
     step:  { duration: 10800, label: 'STEP Full Paper (3 hrs)' },
   },

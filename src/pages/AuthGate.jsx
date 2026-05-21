@@ -20,7 +20,7 @@ const TRACK_GROUPS = [
   },
   {
     label: 'A-Level Entrance',
-    chips: ['🏥 UCAT', '⚖️ LNAT', '∑ TMUA', '⚗️ ESAT', '📋 TSA', '📊 STEP'],
+    chips: ['🏥 UCAT', '⚖️ LNAT', '∑ TMUA', '⚗️ ESAT', '🧠 TARA', '📐 MAT', '⚛️ PAT', '📊 STEP'],
   },
 ]
 

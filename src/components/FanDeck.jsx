@@ -25,6 +25,9 @@ const EXAM_COLORS = {
   lnat:    { primary:'#F59E0B', card:'#1C0E00', navy:'#FEFCE8' },
   tmua:    { primary:'#818CF8', card:'#131029', navy:'#EEF2FF' },
   esat:    { primary:'#F97316', card:'#201000', navy:'#FFF4E8' },
+  mat:     { primary:'#6366F1', card:'#100E28', navy:'#EEF2FF' },
+  pat:     { primary:'#22D3EE', card:'#041A2A', navy:'#E0FBFF' },
+  tara:    { primary:'#EC4899', card:'#1C0A16', navy:'#FCE7F3' },
   tsa:     { primary:'#A855F7', card:'#180A32', navy:'#F5F3FF' },
   step:    { primary:'#10B981', card:'#041E1B', navy:'#ECFDF5' },
   // GCSE (light cards)
@@ -38,10 +41,13 @@ const EXAM_COLORS = {
 const EXAM_META = {
   ucat: { type:'Medicine & Dentistry',       unis:'Oxford · Imperial · UCL · Sheffield' },
   lnat: { type:'Law',                        unis:'Oxford · Cambridge · LSE · UCL' },
-  tmua: { type:'Maths & Computer Science',   unis:'Cambridge · UCL · Durham · Warwick' },
+  tmua: { type:'Maths & Computer Science',   unis:'Cambridge · UCL · Durham · Warwick · Bath' },
   esat: { type:'Engineering & Sciences',     unis:'Cambridge · Imperial · Oxford' },
-  tsa:  { type:'PPE, Economics & Philosophy',unis:'Oxford · UCL · Cambridge (select)' },
-  step: { type:'Cambridge Mathematics',      unis:'Cambridge conditional offer' },
+  mat:  { type:'Mathematics (Oxford & Imperial)', unis:'Oxford · Imperial' },
+  pat:  { type:'Physics Aptitude Test',      unis:'Oxford (Physics, Engineering, Materials)' },
+  tara: { type:'Critical Thinking & Problem Solving', unis:'Oxford (PPE, E&M, History) · UCL' },
+  tsa:  { type:'PPE, Economics & Philosophy',unis:'Legacy — replaced by TARA from 2026' },
+  step: { type:'Cambridge Mathematics',      unis:'Cambridge — conditional on offer (June)' },
 }
 
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)) }
@@ -245,6 +251,15 @@ export default function FanDeck({ subjects, stream, navigate, C }) {
               }}
             >
               <div style={{fontSize:40, marginBottom:10}}>{s.emoji}</div>
+              {s.deprecated && (
+                <div style={{
+                  background:'#F59E0B', color:'#1C0E00',
+                  fontSize:8, fontWeight:900, letterSpacing:'0.12em',
+                  padding:'2px 8px', borderRadius:6, marginBottom:6,
+                }}>
+                  LEGACY
+                </div>
+              )}
               <div style={{
                 fontSize:15, fontWeight:900, color:sc.navy,
                 textAlign:'center', letterSpacing:'-0.3px', marginBottom:4,

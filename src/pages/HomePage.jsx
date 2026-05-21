@@ -6,6 +6,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { STREAM_CONFIG, getQuestions } from '../data/questions.js'
+import { UNIVERSITIES, getCoursesForUni, getTestsForCourse } from '../data/uniMapping.js'
 import { upsertProfile } from '../lib/db.js'
 import { isSupabaseConfigured } from '../lib/supabase.js'
 import { getDueCount, getDueIds } from '../lib/srs.js'
@@ -116,6 +117,21 @@ const SUBJECT_COLORS = {
     bg:'#ECFDF5', card:'#FFFFFF', navy:'#1E293B', soft:'#D1FAE5',
     muted:'#64748B', success:'#10B981', border:'#E2E8F0',
   },
+  mat: {
+    primary:'#6366F1', secondary:'#818CF8', accent:'#C7D2FE',
+    bg:'#EEF2FF', card:'#FFFFFF', navy:'#1E293B', soft:'#E0E7FF',
+    muted:'#64748B', success:'#10B981', border:'#E2E8F0',
+  },
+  pat: {
+    primary:'#22D3EE', secondary:'#06B6D4', accent:'#A5F3FC',
+    bg:'#F0FDFF', card:'#FFFFFF', navy:'#1E293B', soft:'#CFFAFE',
+    muted:'#64748B', success:'#10B981', border:'#E2E8F0',
+  },
+  tara: {
+    primary:'#EC4899', secondary:'#F472B6', accent:'#FBCFE8',
+    bg:'#FDF2F8', card:'#FFFFFF', navy:'#1E293B', soft:'#FCE7F3',
+    muted:'#64748B', success:'#10B981', border:'#E2E8F0',
+  },
 }
 
 export function getColors(stream, subject) {
@@ -133,6 +149,9 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
   const [editingDate, setEditingDate]     = useState(false)
   const [dateInput,   setDateInput]       = useState(profile?.exam_date ?? '')
   const [ebaccOnly,   setEbaccOnly]       = useState(false)
+  const [finderOpen,  setFinderOpen]      = useState(false)
+  const [finderUni,   setFinderUni]       = useState('')
+  const [finderCourse,setFinderCourse]    = useState('')
 
   if (!cfg) { navigate('/'); return null }
 
@@ -246,7 +265,84 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
 
       {stream === 'alevel' && (
         <div style={{marginBottom:20,padding:'12px 14px',background:C.primary+'18',border:`1px solid ${C.primary}30`,borderRadius:12,fontSize:12,color:dark?'#A5B4FC':C.primary,lineHeight:1.5}}>
-          🎓 Questions mirror real UCAT, LNAT, TMUA, ESAT, TSA & STEP style and difficulty
+          🎓 Questions mirror real UCAT, LNAT, TMUA, ESAT, MAT, PAT, TARA & STEP style and difficulty
+        </div>
+      )}
+
+      {/* ── University test finder ─────────────────────────────────────────── */}
+      {stream === 'alevel' && (
+        <div style={{marginBottom:20}}>
+          <button
+            onClick={() => { setFinderOpen(o => !o); setFinderUni(''); setFinderCourse('') }}
+            style={{
+              width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
+              background:C.card, border:`1.5px solid ${C.primary}40`,
+              borderRadius:14, padding:'13px 16px', cursor:'pointer',
+              fontFamily:'Inter,sans-serif', textAlign:'left',
+            }}
+          >
+            <div>
+              <div style={{fontSize:13,fontWeight:800,color:C.navy}}>🔍 Which test do I need?</div>
+              <div style={{fontSize:11,color:C.muted,marginTop:2}}>Pick your university and course</div>
+            </div>
+            <span style={{fontSize:16,color:C.primary,transition:'transform 0.2s',transform:finderOpen?'rotate(180deg)':'none'}}>▾</span>
+          </button>
+
+          {finderOpen && (
+            <div style={{background:C.card,border:`1.5px solid ${C.primary}30`,borderRadius:14,padding:'16px',marginTop:6}}>
+              <div style={{marginBottom:12}}>
+                <label style={{display:'block',fontSize:10,fontWeight:700,color:'#94A3B8',letterSpacing:'0.1em',marginBottom:5}}>UNIVERSITY</label>
+                <select
+                  value={finderUni}
+                  onChange={e => { setFinderUni(e.target.value); setFinderCourse('') }}
+                  style={{width:'100%',padding:'10px 12px',borderRadius:10,border:`1.5px solid ${C.border}`,background:'#F8FAFC',color:C.navy,fontSize:13,fontFamily:'Inter,sans-serif',cursor:'pointer',WebkitAppearance:'none'}}
+                >
+                  <option value="">Select university…</option>
+                  {UNIVERSITIES.map(u => <option key={u} value={u}>{u}</option>)}
+                </select>
+              </div>
+
+              {finderUni && (
+                <div style={{marginBottom:14}}>
+                  <label style={{display:'block',fontSize:10,fontWeight:700,color:'#94A3B8',letterSpacing:'0.1em',marginBottom:5}}>COURSE</label>
+                  <select
+                    value={finderCourse}
+                    onChange={e => setFinderCourse(e.target.value)}
+                    style={{width:'100%',padding:'10px 12px',borderRadius:10,border:`1.5px solid ${C.border}`,background:'#F8FAFC',color:C.navy,fontSize:13,fontFamily:'Inter,sans-serif',cursor:'pointer',WebkitAppearance:'none'}}
+                  >
+                    <option value="">Select course…</option>
+                    {getCoursesForUni(finderUni).map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              )}
+
+              {finderUni && finderCourse && (() => {
+                const tests = getTestsForCourse(finderUni, finderCourse)
+                return tests.length === 0 ? (
+                  <div style={{fontSize:12,color:C.muted,padding:'8px 0'}}>No required admissions tests found for this combination.</div>
+                ) : (
+                  <div>
+                    <div style={{fontSize:11,fontWeight:700,color:'#94A3B8',letterSpacing:'0.08em',marginBottom:8}}>REQUIRED TEST{tests.length > 1 ? 'S' : ''}:</div>
+                    {tests.map(t => (
+                      <div key={t.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',background:t.conditional?'#FEF3C7':'#F0FDF4',border:`1px solid ${t.conditional?'#F59E0B':'#10B981'}40`,borderRadius:10,padding:'10px 12px',marginBottom:8}}>
+                        <div>
+                          <div style={{fontSize:13,fontWeight:800,color:C.navy}}>{t.label}</div>
+                          {t.conditional && <div style={{fontSize:10,color:'#92400E',fontWeight:700,marginTop:2}}>⚠ Conditional on offer · taken June (after A Levels){t.note ? '' : ''}</div>}
+                          {t.note && !t.conditional && <div style={{fontSize:10,color:C.muted,marginTop:2}}>{t.note}</div>}
+                        </div>
+                        <button
+                          onClick={() => { navigate(`/${stream}/quiz/${t.id}`); setFinderOpen(false) }}
+                          style={{background:C.primary,color:'white',border:'none',borderRadius:8,padding:'6px 12px',fontSize:11,fontWeight:800,cursor:'pointer',fontFamily:'Inter,sans-serif',flexShrink:0}}
+                        >
+                          Practice →
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
+            </div>
+          )}
         </div>
       )}
 
@@ -371,12 +467,15 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
 // ── Shared small components ───────────────────────────────────────────────────
 
 const EXAM_META = {
-  ucat:  { type:'Medicine & Dentistry',     unis:'Oxford · Imperial · UCL · Sheffield · Leeds' },
-  lnat:  { type:'Law',                      unis:'Oxford · Cambridge · LSE · UCL · Bristol' },
-  tmua:  { type:'Maths & Computer Science', unis:'Cambridge · UCL · Durham · Warwick' },
-  esat:  { type:'Engineering & Sciences',   unis:'Cambridge · Imperial · Oxford (Physics)' },
-  tsa:   { type:'PPE, Economics, Philosophy',unis:'Oxford · UCL · Cambridge (select)' },
-  step:  { type:'Cambridge Mathematics',    unis:'Cambridge conditional offer requirement' },
+  ucat:  { type:'Medicine & Dentistry',              unis:'Oxford · Imperial · UCL · Sheffield · Leeds' },
+  lnat:  { type:'Law',                               unis:'Oxford · Cambridge · LSE · UCL · Bristol' },
+  tmua:  { type:'Maths & Computer Science',          unis:'Cambridge · UCL · Durham · Warwick · Bath' },
+  esat:  { type:'Engineering & Sciences',            unis:'Cambridge · Imperial · Oxford' },
+  mat:   { type:'Mathematics (Oxford & Imperial)',   unis:'Oxford · Imperial College London' },
+  pat:   { type:'Physics Aptitude Test',             unis:'Oxford (Physics, Engineering, Materials)' },
+  tara:  { type:'Critical Thinking & Problem Solving',unis:'Oxford (PPE, E&M, History) · UCL' },
+  tsa:   { type:'PPE, Economics, Philosophy',        unis:'Legacy — replaced by TARA from 2026' },
+  step:  { type:'Cambridge Mathematics',             unis:'Cambridge — conditional on offer (taken June)' },
 }
 
 function ExamRowCard({ subject, C, dark, onClick, onMock, onFlashcards }) {
@@ -386,11 +485,23 @@ function ExamRowCard({ subject, C, dark, onClick, onMock, onFlashcards }) {
     <div style={{
       background:C.card,
       border:`1.5px solid ${SC.primary}25`,
-      borderLeft:`4px solid ${SC.primary}`,
+      borderLeft:`4px solid ${subject.deprecated ? '#F59E0B' : SC.primary}`,
       borderRadius:16,
       padding:'18px 18px 14px',
       marginBottom:12,
+      opacity: subject.deprecated ? 0.8 : 1,
     }}>
+      {subject.deprecated && (
+        <div style={{
+          display:'flex', alignItems:'center', gap:8,
+          background:'#FEF3C7', border:'1px solid #F59E0B50',
+          borderRadius:8, padding:'6px 10px', marginBottom:12,
+          fontSize:11, color:'#92400E', lineHeight:1.5,
+        }}>
+          <span style={{fontWeight:900, color:'#D97706'}}>⚠ LEGACY:</span>
+          <span>{subject.deprecationNote}</span>
+        </div>
+      )}
       <div style={{display:'flex',alignItems:'flex-start',gap:14,marginBottom:16}}>
         <div style={{
           width:52,height:52,borderRadius:14,flexShrink:0,
@@ -398,8 +509,19 @@ function ExamRowCard({ subject, C, dark, onClick, onMock, onFlashcards }) {
           display:'flex',alignItems:'center',justifyContent:'center',
           fontSize:26,
           border:`1px solid ${SC.primary}30`,
+          position:'relative',
         }}>
           {subject.emoji}
+          {subject.deprecated && (
+            <div style={{
+              position:'absolute', top:-5, right:-5,
+              background:'#F59E0B', color:'#1C0E00',
+              fontSize:7, fontWeight:900, letterSpacing:'0.08em',
+              padding:'1px 4px', borderRadius:4,
+            }}>
+              LEGACY
+            </div>
+          )}
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontSize:17,fontWeight:900,color:C.navy,marginBottom:3,letterSpacing:'-0.3px'}}>
