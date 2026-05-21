@@ -34,6 +34,7 @@ export default function AuthGate() {
   const [done,          setDone]          = useState(false)
   const [resetSent,     setResetSent]     = useState(false)
   const [emailExpanded, setEmailExpanded] = useState(false)
+  const [expandedGroups, setExpandedGroups] = useState({})
 
   async function signInWithGoogle() {
     await supabase.auth.signInWithOAuth({
@@ -241,21 +242,53 @@ export default function AuthGate() {
         </div>
 
         {!compact && (
-          <div className="animate-fade-up" style={{ display:'flex', flexDirection:'column', gap:10, marginTop:20, width:'100%' }}>
-            {TRACK_GROUPS.map(group => (
-              <div key={group.label}>
-                <div style={{ fontSize:9, fontWeight:800, color:'rgba(255,255,255,0.55)', letterSpacing:'0.14em', textTransform:'uppercase', marginBottom:6 }}>
-                  {group.label}
-                </div>
-                <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
-                  {group.chips.map(chip => (
-                    <span key={chip} style={{ background:'rgba(255,255,255,0.15)', backdropFilter:'blur(6px)', border:'1px solid rgba(255,255,255,0.28)', borderRadius:20, padding:'4px 10px', fontSize:11, fontWeight:700, color:'white' }}>
-                      {chip}
+          <div className="animate-fade-up" style={{ display:'flex', flexDirection:'column', gap:8, marginTop:20, width:'100%' }}>
+            {TRACK_GROUPS.map(group => {
+              const open = !!expandedGroups[group.label]
+              return (
+                <div key={group.label}>
+                  <button
+                    onClick={() => setExpandedGroups(g => ({ ...g, [group.label]: !g[group.label] }))}
+                    style={{
+                      display:'flex', alignItems:'center', justifyContent:'space-between',
+                      width:'100%', background:'rgba(255,255,255,0.14)', backdropFilter:'blur(8px)',
+                      border:'1px solid rgba(255,255,255,0.28)',
+                      borderRadius: open ? '14px 14px 0 0' : 14,
+                      padding:'9px 13px', cursor:'pointer', pointerEvents:'auto',
+                      fontFamily:'Inter,sans-serif',
+                      transition:'border-radius 0.22s ease, background 0.15s ease',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.22)'}
+                    onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.14)'}
+                  >
+                    <span style={{ fontSize:10, fontWeight:800, color:'rgba(255,255,255,0.9)', letterSpacing:'0.14em', textTransform:'uppercase' }}>
+                      {group.label}
                     </span>
-                  ))}
+                    <span style={{
+                      fontSize:13, color:'rgba(255,255,255,0.7)',
+                      transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition:'transform 0.25s ease', display:'block', lineHeight:1,
+                    }}>▾</span>
+                  </button>
+                  {open && (
+                    <div style={{
+                      background:'rgba(255,255,255,0.08)', backdropFilter:'blur(6px)',
+                      borderRadius:'0 0 14px 14px',
+                      border:'1px solid rgba(255,255,255,0.2)', borderTop:'none',
+                      padding:'10px 10px 12px',
+                    }}>
+                      <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
+                        {group.chips.map(chip => (
+                          <span key={chip} style={{ background:'rgba(255,255,255,0.15)', backdropFilter:'blur(6px)', border:'1px solid rgba(255,255,255,0.28)', borderRadius:20, padding:'4px 10px', fontSize:11, fontWeight:700, color:'white' }}>
+                            {chip}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
