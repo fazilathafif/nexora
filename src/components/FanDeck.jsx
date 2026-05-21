@@ -7,10 +7,10 @@
 import { useState, useRef, useEffect } from 'react'
 
 // ── Card geometry ─────────────────────────────────────────────────────────────
-const CARD_W      = 226   // 181 × 1.25
-const CARD_H      = 320   // 256 × 1.25
-const PIVOT_EXT   = 106   // 85 × 1.25 — keeps fan spread proportional
-const SPREAD      = 18    // degrees between adjacent cards
+const CARD_W      = 172
+const CARD_H      = 242
+const PIVOT_EXT   = 82
+const SPREAD      = 16    // degrees between adjacent cards
 
 // ── Physics ───────────────────────────────────────────────────────────────────
 const SENSITIVITY = 0.26  // degrees per horizontal pixel of drag
@@ -225,7 +225,7 @@ export default function FanDeck({ subjects, stream, navigate, C }) {
       <div
         style={{
           position:'relative',
-          height: CARD_H + 80,
+          height: CARD_H + 60,
           overflow:'hidden',
           maxWidth:'100%',
           cursor:'grab',
@@ -259,7 +259,7 @@ export default function FanDeck({ subjects, stream, navigate, C }) {
               onClick={() => jumpTo(i)}
               style={{
                 position:'absolute',
-                left:'50%', top:28,
+                left:'50%', top:20,
                 width: CARD_W, height: CARD_H,
                 marginLeft: -CARD_W / 2,
                 transformOrigin: `center calc(100% + ${PIVOT_EXT}px)`,
@@ -269,39 +269,39 @@ export default function FanDeck({ subjects, stream, navigate, C }) {
                 boxShadow: cardShadow,
                 display:'flex', flexDirection:'column',
                 alignItems:'center', justifyContent:'center',
-                padding:'22px 16px',
+                padding:'14px 12px',
                 willChange:'transform',
                 cursor: isActive ? 'default' : 'pointer',
               }}
             >
-              <div style={{fontSize:40, marginBottom:10}}>{s.emoji}</div>
+              <div style={{fontSize:34, marginBottom:8}}>{s.emoji}</div>
               {s.deprecated && (
                 <div style={{
                   background:'#F59E0B', color:'#1C0E00',
                   fontSize:8, fontWeight:900, letterSpacing:'0.12em',
-                  padding:'2px 8px', borderRadius:6, marginBottom:6,
+                  padding:'2px 8px', borderRadius:6, marginBottom:5,
                 }}>
                   LEGACY
                 </div>
               )}
               <div style={{
-                fontSize:15, fontWeight:900, color:sc.navy,
-                textAlign:'center', letterSpacing:'-0.3px', marginBottom:4,
+                fontSize:18, fontWeight:900, color:sc.navy,
+                textAlign:'center', letterSpacing:'-0.3px', marginBottom:3,
               }}>
                 {s.label}
               </div>
               <div style={{
-                fontSize:10, fontWeight:700, color:sc.primary,
-                textAlign:'center', marginBottom: detail ? 10 : 0,
+                fontSize:13, fontWeight:700, color:sc.primary,
+                textAlign:'center', marginBottom: detail ? 8 : 0,
               }}>
                 {subtitle}
               </div>
               {detail && (
                 <div style={{
-                  fontSize:9, color: subtleText,
-                  textAlign:'center', lineHeight:1.65,
+                  fontSize:11, color: subtleText,
+                  textAlign:'center', lineHeight:1.55,
                   borderTop:`1px solid ${sc.primary}18`,
-                  paddingTop:8, width:'100%',
+                  paddingTop:6, width:'100%',
                 }}>
                   {detail}
                 </div>
@@ -310,7 +310,7 @@ export default function FanDeck({ subjects, stream, navigate, C }) {
               {/* "Tap to select" nudge on adjacent cards */}
               {!isActive && (
                 <div style={{
-                  position:'absolute', bottom:14,
+                  position:'absolute', bottom:10,
                   fontSize:9, fontWeight:800, letterSpacing:'0.08em',
                   color:`${sc.primary}80`, textTransform:'uppercase',
                 }}>
@@ -321,7 +321,7 @@ export default function FanDeck({ subjects, stream, navigate, C }) {
               {/* Arrow hint on active card pointing down to buttons */}
               {isActive && (
                 <div style={{
-                  position:'absolute', bottom:12,
+                  position:'absolute', bottom:10,
                   fontSize:9, fontWeight:800, letterSpacing:'0.06em',
                   color:`${sc.primary}60`, textTransform:'uppercase',
                   animation:'fadeUp 0.3s ease 0.15s both',
