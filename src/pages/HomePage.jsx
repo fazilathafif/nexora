@@ -756,7 +756,7 @@ export function Shell({ C, children, noNav, heroContent }) {
       <ScrollBar C={C} />
 
       {/* Gradient hero band */}
-      <div style={{ height:heroH, position:'relative', zIndex:1, overflow:'hidden' }}>
+      <div style={{ minHeight:heroH, position:'relative', zIndex:1 }}>
         {heroContent}
       </div>
 
