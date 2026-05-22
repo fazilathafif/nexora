@@ -35,7 +35,7 @@ export default function ProgressPage({ user, profile }) {
   const level  = Math.floor(xp / 150) + 1
 
   useEffect(() => {
-    if (!user) return
+    if (!user) { setLoading(false); return }
     Promise.all([
       getWeeklyActivity(user.id),
       getTopicStats(user.id, stream),
@@ -52,8 +52,7 @@ export default function ProgressPage({ user, profile }) {
         topic,
         pct: Math.round((v.correct / v.total) * 100),
       })))
-      setLoading(false)
-    })
+    }).catch(() => {}).finally(() => setLoading(false))
   }, [user, stream])
 
   // Build 7-day heatmap (fill gaps with 0)

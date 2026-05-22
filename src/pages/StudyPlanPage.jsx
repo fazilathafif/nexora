@@ -200,17 +200,19 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
 
       {/* Exam date hero */}
       <div style={{
-        background: days == null ? C.card
+        background: days == null
+          ? `linear-gradient(135deg,${C.primary}12,${C.primary}06)`
           : days <= 7  ? 'linear-gradient(135deg,#EF4444,#DC2626)'
           : days <= 21 ? 'linear-gradient(135deg,#F59E0B,#D97706)'
           : `linear-gradient(135deg,${C.primary},${dark?'#312E81':'#0F766E'})`,
+        border: days == null ? `1.5px dashed ${C.primary}50` : 'none',
         borderRadius:20, padding:'20px', marginBottom:16, position:'relative', overflow:'hidden',
       }}>
         <div style={{position:'absolute',top:-20,right:-20,width:100,height:100,borderRadius:'50%',background:'rgba(255,255,255,0.08)'}} />
         {days == null ? (
           <div>
-            <div style={{fontSize:14,fontWeight:700,color:C.muted,marginBottom:8}}>📅 No exam date set</div>
-            <div style={{fontSize:13,color:C.muted,marginBottom:12}}>Set your exam date to unlock a personalised week-by-week schedule.</div>
+            <div style={{fontSize:14,fontWeight:700,color:C.primary,marginBottom:8}}>📅 No exam date set</div>
+            <div style={{fontSize:13,color:C.navy,opacity:0.7,marginBottom:12}}>Set your exam date to unlock a personalised week-by-week schedule.</div>
             {!editingDate ? (
               <button
                 onClick={() => setEditingDate(true)}
