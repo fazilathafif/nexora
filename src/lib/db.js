@@ -102,9 +102,14 @@ export async function getProfile(userId) {
 
 export async function upsertProfile(userId, updates) {
   if (!isSupabaseConfigured) return guestUpsertProfile(updates)
+  // Generate a referral code for brand-new profiles
+  const patch = { ...updates }
+  if (!patch.referral_code) {
+    patch.referral_code = Math.random().toString(36).slice(2, 10).toUpperCase()
+  }
   return supabase
     .from('profiles')
-    .upsert({ id: userId, ...updates, updated_at: new Date().toISOString() })
+    .upsert({ id: userId, ...patch, updated_at: new Date().toISOString() })
     .select()
     .single()
 }
@@ -173,6 +178,40 @@ export async function getWeeklyActivity(userId) {
 export async function getTopicStats(userId, stream) {
   if (!isSupabaseConfigured) return guestGetTopicStats(stream)
   return supabase.from('answers').select('topic, is_correct').eq('user_id', userId).eq('stream', stream)
+}
+
+// ── AI usage ─────────────────────────────────────────────────────────────────
+
+export async function getAiUsageToday(userId) {
+  if (!isSupabaseConfigured) {
+    try { return { data: Number(localStorage.getItem('nx_ai_usage') ?? 0), error: null } } catch { return { data: 0, error: null } }
+  }
+  const today = new Date().toISOString().split('T')[0]
+  const { data, error } = await supabase
+    .from('ai_usage').select('count').eq('user_id', userId).eq('date', today).single()
+  return { data: data?.count ?? 0, error }
+}
+
+export async function incrementAiUsage(userId) {
+  if (!isSupabaseConfigured) {
+    try {
+      const n = Number(localStorage.getItem('nx_ai_usage') ?? 0) + 1
+      localStorage.setItem('nx_ai_usage', String(n))
+    } catch {}
+    return { data: null, error: null }
+  }
+  const today = new Date().toISOString().split('T')[0]
+  return supabase.rpc('increment_ai_usage', { p_user_id: userId, p_date: today })
+}
+
+// ── Referral helpers ──────────────────────────────────────────────────────────
+
+export async function getReferralStats(userId) {
+  if (!isSupabaseConfigured) return { data: { total: 0, converted: 0 }, error: null }
+  const { data, error } = await supabase.from('referrals').select('status').eq('referrer_id', userId)
+  const total     = data?.length ?? 0
+  const converted = data?.filter(r => r.status === 'converted').length ?? 0
+  return { data: { total, converted }, error }
 }
 
 // ── Sysadmin ──────────────────────────────────────────────────────────────────

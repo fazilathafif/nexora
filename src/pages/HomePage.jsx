@@ -12,6 +12,7 @@ import { upsertProfile } from '../lib/db.js'
 import { isSupabaseConfigured } from '../lib/supabase.js'
 import { getDueCount, getDueIds } from '../lib/srs.js'
 import { NAV_HEIGHT } from '../styles/tokens.js'
+import { useSubscription } from '../hooks/useSubscription.js'
 import AuthModal from '../components/AuthModal.jsx'
 import WelcomeModal from '../components/WelcomeModal.jsx'
 import FanDeck from '../components/FanDeck.jsx'
@@ -166,6 +167,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
   const cfg        = STREAM_CONFIG[stream]
   const C          = getColors(stream)
   const dark       = stream === 'alevel'
+  const sub        = useSubscription(profile)
   const [showAuth, setShowAuth]           = useState(false)
   const [editingDate, setEditingDate]     = useState(false)
   const [dateInput,   setDateInput]       = useState(profile?.exam_date ?? '')
@@ -265,6 +267,38 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
     <Shell C={C} heroContent={heroEl}>
       {showAuth && <AuthModal C={C} dark={dark} onClose={() => setShowAuth(false)} />}
       <WelcomeModal user={user} C={C} dark={dark} />
+
+      {/* ── Trial banner ────────────────────────────────────────────────── */}
+      {sub.isTrial && sub.daysLeft !== null && (
+        <div style={{
+          display:'flex', alignItems:'center', justifyContent:'space-between',
+          background:'linear-gradient(135deg,#7C3AED18,#FF6B3518)',
+          border:'1.5px solid #7C3AED30',
+          borderRadius:14, padding:'11px 14px', marginBottom:16,
+        }}>
+          <div>
+            <span style={{ fontSize:13, fontWeight:800, color:'#7C3AED' }}>
+              ✦ Free Trial
+            </span>
+            <span style={{ fontSize:12, color:'#64748B', marginLeft:8 }}>
+              {sub.daysLeft > 0
+                ? `${sub.daysLeft} day${sub.daysLeft !== 1 ? 's' : ''} remaining`
+                : 'expires today'}
+            </span>
+          </div>
+          <button
+            onClick={() => navigate(`/${stream}/settings`)}
+            style={{
+              background:'linear-gradient(135deg,#7C3AED,#FF6B35)',
+              color:'white', border:'none', borderRadius:10,
+              padding:'6px 14px', fontSize:11, fontWeight:800,
+              cursor:'pointer', fontFamily:'Inter,sans-serif', flexShrink:0,
+            }}
+          >
+            Upgrade →
+          </button>
+        </div>
+      )}
 
       {/* ── Subject picker ──────────────────────────────────────────────── */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
