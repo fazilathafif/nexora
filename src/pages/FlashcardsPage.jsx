@@ -59,6 +59,7 @@ export default function FlashcardsPage() {
   const allQs     = getQuestions(stream, subject)
   const deckRef   = useRef(null)
   const { isDesktop } = useBreakpoint()
+  const ratingQualityRef = useRef(null)  // set before programmatic dismiss to route quality
 
   const topics = useMemo(
     () => ['All', ...Array.from(new Set(allQs.map(q => q.topic)))],
@@ -123,13 +124,20 @@ export default function FlashcardsPage() {
     setCounts(prev => ({ ...prev, [RATINGS[quality].key]: prev[RATINGS[quality].key] + 1 }))
   }
 
-  // Called by FlashcardDeck when a card is swiped away
+  // Called by FlashcardDeck when a card is swiped or programmatically dismissed
   function handleDeckDismiss(id, dir) {
     setCardsAnswered(n => n + 1)
-    const knew  = dir === 'right'
+
+    // Button rating overrides swipe direction quality
+    const quality = ratingQualityRef.current !== null
+      ? ratingQualityRef.current
+      : (dir === 'right' ? 2 : 0)
+    ratingQualityRef.current = null
+
+    const knew = quality >= 2
     scheduleReview(id, knew)
 
-    if (knew) {
+    if (quality === 3) {
       const newCount = incrementEasyCount(id)
       if (newCount >= HEAVEN_THRESHOLD) {
         setCounts(prev => ({ ...prev, mastered: prev.mastered + 1 }))
@@ -137,10 +145,21 @@ export default function FlashcardsPage() {
         setTimeout(() => setHeaven(false), 700)
         return
       }
+      setCounts(prev => ({ ...prev, easy: prev.easy + 1 }))
+    } else if (quality === 2) {
       setCounts(prev => ({ ...prev, good: prev.good + 1 }))
+    } else if (quality === 1) {
+      setCounts(prev => ({ ...prev, hard: prev.hard + 1 }))
     } else {
       setCounts(prev => ({ ...prev, again: prev.again + 1 }))
     }
+  }
+
+  // Explicit 4-level rating button — sets quality then triggers card fly-out
+  function handleRatingButton(quality) {
+    ratingQualityRef.current = quality
+    const dir = quality >= 2 ? 'right' : 'left'
+    deckRef.current?.dismiss(dir)
   }
 
   function handleDeckComplete() {
@@ -247,15 +266,19 @@ export default function FlashcardsPage() {
         }}/>
       </div>
 
-      {/* Topic filter pills */}
-      <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:18}}>
+      {/* Topic filter — horizontal scroll on mobile, wraps on desktop */}
+      <div style={{
+        display:'flex', gap:6, overflowX:'auto', paddingBottom:4, marginBottom:18,
+        scrollbarWidth:'none', WebkitOverflowScrolling:'touch',
+      }}>
         {topics.map(t => (
           <button key={t} onClick={() => selectTopic(t)} style={{
             background: topicFilter === t ? C.primary : 'transparent',
             border: `1.5px solid ${topicFilter === t ? C.primary : C.border}`,
-            borderRadius:20, padding:'8px 16px', fontSize:13, fontWeight:700,
+            borderRadius:20, padding:'7px 14px', fontSize:12, fontWeight:700, flexShrink:0,
             color: topicFilter === t ? 'white' : C.muted,
             cursor:'pointer', fontFamily:'Inter,sans-serif', transition:'all 0.2s',
+            whiteSpace:'nowrap',
           }}>{t}</button>
         ))}
       </div>
@@ -295,17 +318,39 @@ export default function FlashcardsPage() {
             fontSize:10, fontWeight:700, letterSpacing:'0.05em',
             marginTop:12, animation:'hintFade 1s ease 2s forwards', pointerEvents:'none',
           }}>
-            <span style={{color:'#EF4444'}}>{isDesktop ? '← Again' : '← Again'}</span>
-            <span style={{color:C.muted, opacity:0.6}}>{isDesktop ? 'arrow keys to rate' : 'swipe to rate'}</span>
-            <span style={{color:'#10B981'}}>{isDesktop ? 'Good →' : 'Good →'}</span>
+            <span style={{color:'#EF4444'}}>← Again</span>
+            <span style={{color:C.muted, opacity:0.6}}>swipe or tap to rate</span>
+            <span style={{color:'#10B981'}}>Good →</span>
           </div>
         )}
       </div>
 
-      {/* Rating prompt */}
+      {/* Rating buttons — appear when card is flipped */}
       {flipped ? (
-        <div style={{textAlign:'center', fontSize:11, color:C.muted, padding:'4px 0'}}>
-          {isDesktop ? 'Arrow Left = again · Arrow Right = good' : 'Swipe right if you knew it · swipe left if you didn\'t'}
+        <div style={{marginBottom:12}}>
+          <div style={{textAlign:'center', fontSize:11, color:C.muted, marginBottom:10, fontWeight:600, letterSpacing:'0.04em'}}>
+            How well did you know it?
+          </div>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8}}>
+            {RATINGS.map(r => (
+              <button
+                key={r.key}
+                onClick={() => handleRatingButton(r.quality)}
+                style={{
+                  background:r.bg, border:`1.5px solid ${r.border}`,
+                  borderRadius:14, padding:'12px 4px',
+                  display:'flex', flexDirection:'column', alignItems:'center', gap:5,
+                  cursor:'pointer', fontFamily:'Inter,sans-serif',
+                  transition:'transform 0.12s ease, box-shadow 0.12s ease',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform='scale(1.04)'; e.currentTarget.style.boxShadow=`0 4px 14px ${r.color}30` }}
+                onMouseLeave={e => { e.currentTarget.style.transform='scale(1)'; e.currentTarget.style.boxShadow='none' }}
+              >
+                <span style={{fontSize:18, fontWeight:900, color:r.color}}>{r.emoji}</span>
+                <span style={{fontSize:11, fontWeight:800, color:r.color}}>{r.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       ) : (
         <div style={{textAlign:'center', fontSize:12, color:C.muted, padding:'6px 0'}}>

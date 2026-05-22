@@ -27,28 +27,28 @@ export default function WelcomeModal({ user, C, dark }) {
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: dark ? '#1A1A2E' : '#FFFFFF',
-          border: `1.5px solid ${C.border}`,
+          background: '#FFFFFF',
+          border: '1.5px solid #E2E8F0',
           borderRadius:24, padding:'32px 26px', width:'100%', maxWidth:380,
-          boxShadow:'0 24px 80px rgba(0,0,0,0.5)',
+          boxShadow:'0 24px 80px rgba(0,0,0,0.22)',
           fontFamily:'Inter,sans-serif',
         }}
       >
         {/* Badge */}
-        <div style={{display:'inline-flex',alignItems:'center',gap:6,background:C.primary+'20',border:`1px solid ${C.primary}40`,borderRadius:20,padding:'4px 12px',marginBottom:16}}>
+        <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#FF6B3518',border:'1px solid #FF6B3540',borderRadius:20,padding:'4px 12px',marginBottom:16}}>
           <span style={{fontSize:12}}>🚀</span>
-          <span style={{fontSize:10,fontWeight:800,color:C.primary,letterSpacing:'0.1em'}}>BETA VERSION</span>
+          <span style={{fontSize:10,fontWeight:800,color:'#FF6B35',letterSpacing:'0.1em'}}>BETA VERSION</span>
         </div>
 
-        {/* Heading — large enough to fill the card width */}
-        <div style={{fontSize:30,fontWeight:900,color:C.navy,marginBottom:14,lineHeight:1.1,letterSpacing:'-0.5px'}}>
-          Welcome to Nexora <span style={{color:C.primary}}>✦</span>
+        {/* Heading */}
+        <div style={{fontSize:30,fontWeight:900,color:'#1E293B',marginBottom:14,lineHeight:1.1,letterSpacing:'-0.5px'}}>
+          Welcome to Nexora <span style={{color:'#FF6B35'}}>✦</span>
         </div>
 
-        {/* Body — 1–2 sentences */}
-        <p style={{fontSize:14,color:C.muted,lineHeight:1.7,margin:'0 0 24px'}}>
+        {/* Body */}
+        <p style={{fontSize:14,color:'#64748B',lineHeight:1.7,margin:'0 0 24px'}}>
           You're one of our first users — thank you for being here.{' '}
-          <strong style={{color:C.navy}}>Share your feedback</strong> and help shape what we build next.
+          <strong style={{color:'#1E293B'}}>Share your feedback</strong> and help shape what we build next.
         </p>
 
         {/* Actions */}
@@ -56,7 +56,7 @@ export default function WelcomeModal({ user, C, dark }) {
           <button
             onClick={sendFeedback}
             style={{
-              flex:1, background:C.primary, color:'white', border:'none',
+              flex:1, background:'linear-gradient(135deg,#FF6B35,#FF3CAC)', color:'white', border:'none',
               borderRadius:12, padding:'13px', fontSize:14, fontWeight:800,
               cursor:'pointer', fontFamily:'Inter,sans-serif',
             }}
@@ -66,9 +66,9 @@ export default function WelcomeModal({ user, C, dark }) {
           <button
             onClick={() => setVisible(false)}
             style={{
-              flex:1, background:'transparent', border:`1.5px solid ${C.border}`,
+              flex:1, background:'transparent', border:'1.5px solid #E2E8F0',
               borderRadius:12, padding:'13px', fontSize:14, fontWeight:700,
-              color:C.muted, cursor:'pointer', fontFamily:'Inter,sans-serif',
+              color:'#64748B', cursor:'pointer', fontFamily:'Inter,sans-serif',
             }}
           >
             Start Learning →

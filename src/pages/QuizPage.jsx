@@ -525,7 +525,6 @@ export default function QuizPage({ user, profile, refreshProfile }) {
           style={{width:'100%',background:`linear-gradient(135deg,${C.primary},${dark?'#1E1B4B':'#0F766E'})`,color:'white',border:'none',borderRadius:16,padding:'15px',fontSize:15,fontWeight:800,cursor:'pointer',boxShadow:`0 4px 16px ${C.primary}40`,touchAction:'manipulation'}}
         >
           {qIndex + 1 < total ? 'Next →' : 'See Results 🎉'}
-          {isDesktop && <span style={{marginLeft:10,fontSize:11,opacity:0.55,fontWeight:600}}>Enter ↵</span>}
         </button>
       )}
 
