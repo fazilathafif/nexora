@@ -14,6 +14,7 @@ import { getColors, Shell, Badge }     from './HomePage.jsx'
 import { getRandomBreak }              from '../data/breaks.js'
 import { NAV_HEIGHT }                  from '../styles/tokens.js'
 import { useBreakpoint }               from '../hooks/useBreakpoint.js'
+import { saveNote, getNotes, NOTES_MAX } from '../lib/notes.js'
 
 function CopyButton({ text }) {
   const [copied, setCopied] = useState(false)
@@ -33,6 +34,25 @@ function CopyButton({ text }) {
       cursor: 'pointer', transition: 'all 0.2s',
     }}>
       {copied ? '✓ Copied' : 'Copy'}
+    </button>
+  )
+}
+
+function SaveNoteButton({ onSave, saved, notesCount }) {
+  if (saved) return (
+    <span style={{fontSize:11, fontWeight:700, color:'#10B981', letterSpacing:'-0.01em'}}>✓ Saved</span>
+  )
+  if (notesCount >= NOTES_MAX) return (
+    <span style={{fontSize:11, fontWeight:600, color:'#94A3B8'}}>Notes full</span>
+  )
+  return (
+    <button onClick={onSave} style={{
+      background:'transparent', border:'1px solid #7C3AED40',
+      borderRadius:8, padding:'3px 10px',
+      fontSize:11, fontWeight:700, color:'#7C3AED',
+      cursor:'pointer', fontFamily:'Inter,sans-serif', transition:'all 0.15s',
+    }}>
+      ✦ Save
     </button>
   )
 }
@@ -70,6 +90,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
   const [aiText,        setAiText]        = useState(null)   // null | 'loading' | string
   const [aiOpen,        setAiOpen]        = useState(false)
   const [aiElaboration, setAiElaboration] = useState(null)   // null | 'loading' | string
+  const [aiNoteSaved,   setAiNoteSaved]   = useState(false)
   const aiPanelRef                        = useRef(null)
   const [breakCard,     setBreakCard]     = useState(null)  // null | { type, emoji, text, nextIndex }
 
@@ -100,7 +121,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
   useEffect(() => { currentQRef.current = questions[qIndex] }, [qIndex]) // eslint-disable-line
 
   // Reset AI panel when question changes
-  useEffect(() => { setAiText(null); setAiOpen(false); setAiElaboration(null) }, [qIndex])
+  useEffect(() => { setAiText(null); setAiOpen(false); setAiElaboration(null); setAiNoteSaved(false) }, [qIndex])
 
   // Synchronously clear answer state before the new question paints —
   // guards against any render frame where qIndex advanced but chosen didn't reset yet
@@ -306,6 +327,14 @@ export default function QuizPage({ user, profile, refreshProfile }) {
 
   const progressPct = (qIndex / total) * 100
   const timerColor  = danger ? '#EF4444' : warning ? '#F59E0B' : C.primary
+  const notesCount  = getNotes().length
+
+  function handleSaveNote() {
+    const fullText = aiText + (aiElaboration && aiElaboration !== 'loading' && aiElaboration !== ''
+      ? '\n\n---\n\n**Deeper Dive:**\n\n' + aiElaboration : '')
+    const ok = saveNote({ subject, topic: currentQ.topic, question: currentQ.q, explanation: fullText, stream })
+    if (ok) setAiNoteSaved(true)
+  }
 
   function handleExit() {
     if (qIndex === 0 && chosen === null) { navigate(`/${stream}`); return }
@@ -430,6 +459,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
               <span style={{fontSize:10,fontWeight:800,color:'#7C3AED',letterSpacing:'0.1em'}}>AI TUTOR</span>
             </div>
             <div style={{display:'flex',gap:8,alignItems:'center'}}>
+              <SaveNoteButton onSave={handleSaveNote} saved={aiNoteSaved} notesCount={notesCount} />
               <CopyButton text={aiText} />
               <button onClick={() => setAiOpen(false)} style={{background:'none',border:'none',fontSize:18,color:C.muted,cursor:'pointer',padding:'0 2px'}}>✕</button>
             </div>
@@ -523,6 +553,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
                   <span style={{fontSize:10,fontWeight:800,color:'#7C3AED',letterSpacing:'0.1em'}}>AI TUTOR</span>
                 </div>
                 <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                  <SaveNoteButton onSave={handleSaveNote} saved={aiNoteSaved} notesCount={notesCount} />
                   <CopyButton text={aiText} />
                   <button onClick={() => setAiOpen(false)} style={{background:'none',border:'none',fontSize:16,color:C.muted,cursor:'pointer',padding:'0 2px'}}>✕</button>
                 </div>
