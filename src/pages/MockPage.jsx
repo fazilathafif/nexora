@@ -10,6 +10,7 @@ import { useProgress }               from '../hooks/useProgress.js'
 import { scheduleReview }            from '../lib/srs.js'
 import { getColors, Shell, Badge }   from './HomePage.jsx'
 import { NAV_HEIGHT }                from '../styles/tokens.js'
+import { useBreakpoint }             from '../hooks/useBreakpoint.js'
 
 function fmt(secs) {
   const h = Math.floor(secs / 3600)
@@ -25,6 +26,7 @@ export default function MockPage({ user, profile, refreshProfile }) {
   const navigate             = useNavigate()
   const C                    = getColors(stream, subject)
   const dark                 = stream === 'alevel'
+  const { isDesktop }        = useBreakpoint()
 
   const cfg = stream === 'gcse'
     ? MOCK_CONFIG.gcse
@@ -114,218 +116,346 @@ export default function MockPage({ user, profile, refreshProfile }) {
     )
   }
 
-  return (
-    <Shell C={C}>
+  // ── Shared: top bar ────────────────────────────────────────────────────────
+  const topBar = (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+      <button
+        onClick={() => setShowExit(true)}
+        style={{
+          width:36, height:36, borderRadius:10,
+          border:`1px solid ${C.border}`, background:'transparent',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          fontSize:16, color:C.muted, cursor:'pointer', flexShrink:0,
+        }}
+      >✕</button>
 
-      {/* ── Top bar ─────────────────────────────────────────────────────────── */}
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+      <button
+        onClick={() => setShowNav(true)}
+        style={{
+          background: C.card,
+          border: `1.5px solid ${C.primary}35`,
+          borderRadius: 20,
+          padding: '7px 18px',
+          display: 'flex', alignItems: 'center', gap: 6,
+          cursor: 'pointer', fontFamily: 'Inter,sans-serif',
+          boxShadow: '0 1px 6px rgba(0,0,0,0.07)',
+        }}
+      >
+        <span style={{fontSize:15, fontWeight:900, color:C.navy}}>Q {qIndex + 1}</span>
+        <span style={{fontSize:12, color:C.muted, fontWeight:600}}>/ {questions.length}</span>
+        <span style={{fontSize:9, color:C.primary, marginLeft:2, opacity:0.7}}>▾</span>
+      </button>
 
-        {/* Exit */}
-        <button
-          onClick={() => setShowExit(true)}
-          style={{
-            width:36, height:36, borderRadius:10,
-            border:`1px solid ${C.border}`, background:'transparent',
-            display:'flex', alignItems:'center', justifyContent:'center',
-            fontSize:16, color:C.muted, cursor:'pointer', flexShrink:0,
-          }}
-        >✕</button>
-
-        {/* Q pill — tappable navigator trigger */}
-        <button
-          onClick={() => setShowNav(true)}
-          style={{
-            background: C.card,
-            border: `1.5px solid ${C.primary}35`,
-            borderRadius: 20,
-            padding: '7px 18px',
-            display: 'flex', alignItems: 'center', gap: 6,
-            cursor: 'pointer', fontFamily: 'Inter,sans-serif',
-            boxShadow: '0 1px 6px rgba(0,0,0,0.07)',
-          }}
-        >
-          <span style={{fontSize:15, fontWeight:900, color:C.navy}}>Q {qIndex + 1}</span>
-          <span style={{fontSize:12, color:C.muted, fontWeight:600}}>/ {questions.length}</span>
-          <span style={{fontSize:9, color:C.primary, marginLeft:2, opacity:0.7}}>▾</span>
-        </button>
-
-        {/* Timer */}
-        {cfg.duration > 0 ? (
-          <div style={{textAlign:'right', minWidth:56}}>
-            <div style={{fontSize:19, fontWeight:900, color:timerColor, fontVariantNumeric:'tabular-nums', lineHeight:1}}>
-              {fmt(remaining)}
-            </div>
-            <div style={{fontSize:9, color:C.muted, marginTop:1}}>remaining</div>
+      {cfg.duration > 0 ? (
+        <div style={{textAlign:'right', minWidth:56}}>
+          <div style={{fontSize:19, fontWeight:900, color:timerColor, fontVariantNumeric:'tabular-nums', lineHeight:1}}>
+            {fmt(remaining)}
           </div>
-        ) : (
-          <div style={{width:36}} />
-        )}
-      </div>
-
-      {/* Timer bar */}
-      {cfg.duration > 0 && (
-        <div style={{background:C.border, borderRadius:8, height:4, marginBottom:16, overflow:'hidden'}}>
-          <div style={{
-            width:`${timerPct}%`, background:timerColor, height:'100%',
-            borderRadius:8, transition:'width 1s linear, background 0.5s',
-          }} />
+          <div style={{fontSize:9, color:C.muted, marginTop:1}}>remaining</div>
         </div>
+      ) : (
+        <div style={{width:36}} />
       )}
+    </div>
+  )
 
-      {/* Topic + difficulty */}
-      <div style={{display:'flex', gap:6, marginBottom:14, flexWrap:'wrap'}}>
-        <Badge label={currentQ.topic} color={C.primary} />
-        <Badge label={`Difficulty ${'★'.repeat(currentQ.difficulty)}`} color={C.muted} />
-      </div>
+  // ── Shared: timer bar ──────────────────────────────────────────────────────
+  const timerBar = cfg.duration > 0 ? (
+    <div style={{background:C.border, borderRadius:8, height:4, marginBottom:16, overflow:'hidden'}}>
+      <div style={{
+        width:`${timerPct}%`, background:timerColor, height:'100%',
+        borderRadius:8, transition:'width 1s linear, background 0.5s',
+      }} />
+    </div>
+  ) : null
 
-      {/* Passage */}
-      {currentQ.passage && (
-        <div style={{background:C.card, border:`1px solid ${C.border}30`, borderRadius:16, padding:'14px 16px', marginBottom:12, maxHeight:190, overflowY:'auto', fontSize:13, color:C.muted, lineHeight:1.75, boxShadow: dark?'0 4px 16px rgba(0,0,0,0.3)':'0 4px 12px rgba(0,0,0,0.06)'}}>
-          <p style={{margin:'0 0 8px', fontWeight:700, color:C.primary, fontSize:10, letterSpacing:'0.12em'}}>PASSAGE — READ CAREFULLY</p>
-          <p style={{margin:0}}>{currentQ.passage}</p>
-        </div>
-      )}
+  // ── Shared: badges ─────────────────────────────────────────────────────────
+  const badges = (
+    <div style={{display:'flex', gap:6, marginBottom:14, flexWrap:'wrap'}}>
+      <Badge label={currentQ.topic} color={C.primary} />
+      <Badge label={`Difficulty ${'★'.repeat(currentQ.difficulty)}`} color={C.muted} />
+    </div>
+  )
 
-      {/* Question */}
-      <div style={{background:C.card, borderRadius:22, padding:'22px 20px', marginBottom:14, boxShadow:dark?'0 6px 28px rgba(0,0,0,0.40)':'0 6px 24px rgba(0,0,0,0.08)'}}>
-        <p style={{fontSize:16, fontWeight:700, color:C.navy, lineHeight:1.65, margin:0}}>{currentQ.q}</p>
-      </div>
-
-      {/* Answer options */}
-      <div style={{display:'grid', gap:9, marginBottom:18}}>
-        {currentQ.opts.map((opt, i) => {
-          const chosen   = answers[qIndex]
-          const selected = chosen === i
-          return (
-            <button
-              key={i} onClick={() => chooseAnswer(i)}
-              style={{
-                background: selected ? C.primary+'25' : C.card,
-                border: selected ? `2px solid ${C.primary}` : `1.5px solid ${C.border}40`,
-                borderRadius:16, padding:'14px 16px', minHeight:56,
-                textAlign:'left', cursor:'pointer',
-                fontSize:14, fontWeight:600, color:C.navy, transition:'all 0.2s',
-                boxShadow: selected ? `0 0 0 3px ${C.primary}18` : (dark ? '0 2px 10px rgba(0,0,0,0.25)' : '0 2px 8px rgba(0,0,0,0.05)'),
-              }}
-            >
-              <span style={{fontWeight:900, marginRight:10, opacity:0.4, fontSize:12}}>{['A','B','C','D'][i]}</span>
-              {opt}
-              {selected && <span style={{float:'right', color:C.primary}}>✓</span>}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Prev / Next */}
-      <div style={{display:'flex', gap:8}}>
-        {qIndex > 0 ? (
+  // ── Shared: answer options ─────────────────────────────────────────────────
+  const optionButtons = (
+    <div style={{display:'grid', gap:9, marginBottom:18}}>
+      {currentQ.opts.map((opt, i) => {
+        const chosen   = answers[qIndex]
+        const selected = chosen === i
+        return (
           <button
-            onClick={() => setQIndex(q => q - 1)}
-            style={{flex:1, background:C.card, border:`1.5px solid ${C.border}`, borderRadius:14, padding:'15px', fontSize:14, fontWeight:700, color:C.muted, cursor:'pointer'}}
-          >← Prev</button>
-        ) : <div style={{flex:1}} />}
-
-        {qIndex < questions.length - 1 ? (
-          <button
-            onClick={() => setQIndex(q => q + 1)}
-            style={{flex:2, background:`linear-gradient(135deg,${C.primary},${dark?'#1E1B4B':'#0F766E'})`, color:'white', border:'none', borderRadius:14, padding:'15px', fontSize:14, fontWeight:800, cursor:'pointer'}}
-          >Next →</button>
-        ) : (
-          <button
-            onClick={() => handleSubmit(false)}
-            style={{flex:2, background:'linear-gradient(135deg,#10B981,#059669)', color:'white', border:'none', borderRadius:14, padding:'15px', fontSize:15, fontWeight:800, cursor:'pointer'}}
-          >Submit 🎉</button>
-        )}
-      </div>
-
-      {/* ── Navigator bottom sheet ──────────────────────────────────────────── */}
-      {showNav && (
-        <>
-          {/* Backdrop */}
-          <div
-            onClick={() => setShowNav(false)}
-            style={{position:'fixed', inset:0, zIndex:110, background:'rgba(0,0,0,0.45)'}}
-          />
-
-          {/* Sheet */}
-          <div
-            className="animate-slide-up"
+            key={i} onClick={() => chooseAnswer(i)}
             style={{
-              position:'fixed', bottom:0, left:0, right:0, zIndex:120,
-              background: C.card,
-              borderRadius: '20px 20px 0 0',
-              paddingBottom: `calc(${NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px))`,
-              boxShadow: '0 -8px 40px rgba(0,0,0,0.18)',
-              maxHeight: '80dvh',
-              overflowY: 'auto',
+              background: selected ? C.primary+'25' : C.card,
+              border: selected ? `2px solid ${C.primary}` : `1.5px solid ${C.border}40`,
+              borderRadius:16, padding:'14px 16px', minHeight:56,
+              textAlign:'left', cursor:'pointer',
+              fontSize:14, fontWeight:600, color:C.navy, transition:'all 0.2s',
+              boxShadow: selected ? `0 0 0 3px ${C.primary}18` : (dark ? '0 2px 10px rgba(0,0,0,0.25)' : '0 2px 8px rgba(0,0,0,0.05)'),
             }}
           >
-            {/* Handle */}
-            <div style={{display:'flex', justifyContent:'center', padding:'12px 0 4px'}}>
-              <div style={{width:36, height:4, borderRadius:2, background:C.border}} />
-            </div>
+            <span style={{fontWeight:900, marginRight:10, opacity:0.4, fontSize:12}}>{['A','B','C','D'][i]}</span>
+            {opt}
+            {selected && <span style={{float:'right', color:C.primary}}>✓</span>}
+          </button>
+        )
+      })}
+    </div>
+  )
 
-            {/* Header row */}
-            <div style={{padding:'8px 20px 14px', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
-              <div style={{fontSize:17, fontWeight:800, color:C.navy}}>All Questions</div>
-              <div style={{fontSize:12, color:C.muted}}>
-                <span style={{color:C.success, fontWeight:800}}>{answered}</span> answered · {questions.length - answered} left
+  // ── Shared: prev / next nav ────────────────────────────────────────────────
+  const prevNext = (
+    <div style={{display:'flex', gap:8}}>
+      {qIndex > 0 ? (
+        <button
+          onClick={() => setQIndex(q => q - 1)}
+          style={{flex:1, background:C.card, border:`1.5px solid ${C.border}`, borderRadius:14, padding:'15px', fontSize:14, fontWeight:700, color:C.muted, cursor:'pointer'}}
+        >← Prev</button>
+      ) : <div style={{flex:1}} />}
+
+      {qIndex < questions.length - 1 ? (
+        <button
+          onClick={() => setQIndex(q => q + 1)}
+          style={{flex:2, background:`linear-gradient(135deg,${C.primary},${dark?'#1E1B4B':'#0F766E'})`, color:'white', border:'none', borderRadius:14, padding:'15px', fontSize:14, fontWeight:800, cursor:'pointer'}}
+        >Next →</button>
+      ) : (
+        <button
+          onClick={() => handleSubmit(false)}
+          style={{flex:2, background:'linear-gradient(135deg,#10B981,#059669)', color:'white', border:'none', borderRadius:14, padding:'15px', fontSize:15, fontWeight:800, cursor:'pointer'}}
+        >Submit 🎉</button>
+      )}
+    </div>
+  )
+
+  // ── Shared: navigator content ──────────────────────────────────────────────
+  const navContent = (
+    <>
+      <div style={{padding:'8px 20px 14px', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+        <div style={{fontSize:17, fontWeight:800, color:C.navy}}>All Questions</div>
+        <div style={{fontSize:12, color:C.muted}}>
+          <span style={{color:C.success, fontWeight:800}}>{answered}</span> answered · {questions.length - answered} left
+        </div>
+      </div>
+      <div style={{display:'flex', gap:16, padding:'0 20px 14px', fontSize:11, color:C.muted, fontWeight:600}}>
+        <span style={{display:'flex', alignItems:'center', gap:5}}>
+          <span style={{width:12, height:12, borderRadius:3, background:C.primary, display:'inline-block'}} />
+          Current
+        </span>
+        <span style={{display:'flex', alignItems:'center', gap:5}}>
+          <span style={{width:12, height:12, borderRadius:3, background:C.success+'40', border:`1.5px solid ${C.success}`, display:'inline-block'}} />
+          Answered
+        </span>
+        <span style={{display:'flex', alignItems:'center', gap:5}}>
+          <span style={{width:12, height:12, borderRadius:3, background: dark ? '#1a1530' : '#F1F5F9', border:`1px solid ${C.border}`, display:'inline-block'}} />
+          Unanswered
+        </span>
+      </div>
+      <div style={{display:'flex', flexWrap:'wrap', gap:8, padding:'0 20px 20px'}}>
+        {questions.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => jumpTo(i)}
+            style={{
+              width:44, height:44, borderRadius:10, border:'none', cursor:'pointer',
+              fontSize:13, fontWeight:800, fontFamily:'Inter,sans-serif',
+              background: i === qIndex
+                ? C.primary
+                : answers[i] !== null
+                  ? C.success+'30'
+                  : '#F1F5F9',
+              color: i === qIndex
+                ? 'white'
+                : answers[i] !== null
+                  ? C.success
+                  : C.muted,
+              outline: i === qIndex ? `2.5px solid ${C.primary}` : 'none',
+              outlineOffset: 2,
+            }}
+          >{i + 1}</button>
+        ))}
+      </div>
+      <div style={{padding:'0 20px 8px'}}>
+        <button
+          onClick={() => handleSubmit(false)}
+          style={{width:'100%', background:'linear-gradient(135deg,#10B981,#059669)', color:'white', border:'none', borderRadius:14, padding:'14px', fontSize:14, fontWeight:800, cursor:'pointer'}}
+        >
+          Submit Paper 🎉 ({answered}/{questions.length})
+        </button>
+      </div>
+    </>
+  )
+
+  return (
+    <Shell C={C} contentMax={isDesktop ? 1100 : undefined}>
+
+      {isDesktop ? (
+        /* ─────────── DESKTOP: 2-column layout ─────────── */
+        <>
+          {topBar}
+          {timerBar}
+
+          {currentQ.passage ? (
+            /* Passage present: sticky left + question right */
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:28, alignItems:'start'}}>
+
+              {/* LEFT — sticky passage */}
+              <div style={{position:'sticky', top:24}}>
+                {badges}
+                <div style={{fontSize:10, fontWeight:700, color:'#94A3B8', letterSpacing:'0.12em', marginBottom:10}}>
+                  PASSAGE — READ CAREFULLY
+                </div>
+                <div style={{
+                  background:C.card,
+                  border:`1px solid ${C.border}30`,
+                  borderRadius:16, padding:'18px 20px',
+                  fontSize:13, color:C.muted, lineHeight:1.85,
+                  maxHeight:'calc(100dvh - 220px)', overflowY:'auto',
+                  boxShadow: dark ? '0 4px 16px rgba(0,0,0,0.3)' : '0 4px 12px rgba(0,0,0,0.06)',
+                }}>
+                  {currentQ.passage}
+                </div>
+              </div>
+
+              {/* RIGHT — question + options + nav */}
+              <div>
+                <div style={{background:C.card, borderRadius:22, padding:'22px 20px', marginBottom:14, boxShadow:dark?'0 6px 28px rgba(0,0,0,0.40)':'0 6px 24px rgba(0,0,0,0.08)'}}>
+                  <p style={{fontSize:16, fontWeight:700, color:C.navy, lineHeight:1.65, margin:0}}>{currentQ.q}</p>
+                </div>
+                {optionButtons}
+                {prevNext}
               </div>
             </div>
-
-            {/* Legend */}
-            <div style={{display:'flex', gap:16, padding:'0 20px 14px', fontSize:11, color:C.muted, fontWeight:600}}>
-              <span style={{display:'flex', alignItems:'center', gap:5}}>
-                <span style={{width:12, height:12, borderRadius:3, background:C.primary, display:'inline-block'}} />
-                Current
-              </span>
-              <span style={{display:'flex', alignItems:'center', gap:5}}>
-                <span style={{width:12, height:12, borderRadius:3, background:C.success+'40', border:`1.5px solid ${C.success}`, display:'inline-block'}} />
-                Answered
-              </span>
-              <span style={{display:'flex', alignItems:'center', gap:5}}>
-                <span style={{width:12, height:12, borderRadius:3, background: dark ? '#1a1530' : '#F1F5F9', border:`1px solid ${C.border}`, display:'inline-block'}} />
-                Unanswered
-              </span>
+          ) : (
+            /* No passage: single centered column */
+            <div style={{maxWidth:640, margin:'0 auto'}}>
+              {badges}
+              <div style={{background:C.card, borderRadius:22, padding:'22px 20px', marginBottom:14, boxShadow:dark?'0 6px 28px rgba(0,0,0,0.40)':'0 6px 24px rgba(0,0,0,0.08)'}}>
+                <p style={{fontSize:16, fontWeight:700, color:C.navy, lineHeight:1.65, margin:0}}>{currentQ.q}</p>
+              </div>
+              {optionButtons}
+              {prevNext}
             </div>
+          )}
+        </>
 
-            {/* Number grid */}
-            <div style={{display:'flex', flexWrap:'wrap', gap:8, padding:'0 20px 20px'}}>
-              {questions.map((_, i) => (
+      ) : (
+        /* ─────────── MOBILE: original single-column layout ─────────── */
+        <>
+          {topBar}
+          {timerBar}
+
+          {/* Topic + difficulty */}
+          <div style={{display:'flex', gap:6, marginBottom:14, flexWrap:'wrap'}}>
+            <Badge label={currentQ.topic} color={C.primary} />
+            <Badge label={`Difficulty ${'★'.repeat(currentQ.difficulty)}`} color={C.muted} />
+          </div>
+
+          {/* Passage */}
+          {currentQ.passage && (
+            <div style={{background:C.card, border:`1px solid ${C.border}30`, borderRadius:16, padding:'14px 16px', marginBottom:12, maxHeight:190, overflowY:'auto', fontSize:13, color:C.muted, lineHeight:1.75, boxShadow: dark?'0 4px 16px rgba(0,0,0,0.3)':'0 4px 12px rgba(0,0,0,0.06)'}}>
+              <p style={{margin:'0 0 8px', fontWeight:700, color:C.primary, fontSize:10, letterSpacing:'0.12em'}}>PASSAGE — READ CAREFULLY</p>
+              <p style={{margin:0}}>{currentQ.passage}</p>
+            </div>
+          )}
+
+          {/* Question */}
+          <div style={{background:C.card, borderRadius:22, padding:'22px 20px', marginBottom:14, boxShadow:dark?'0 6px 28px rgba(0,0,0,0.40)':'0 6px 24px rgba(0,0,0,0.08)'}}>
+            <p style={{fontSize:16, fontWeight:700, color:C.navy, lineHeight:1.65, margin:0}}>{currentQ.q}</p>
+          </div>
+
+          {/* Answer options */}
+          <div style={{display:'grid', gap:9, marginBottom:18}}>
+            {currentQ.opts.map((opt, i) => {
+              const chosen   = answers[qIndex]
+              const selected = chosen === i
+              return (
                 <button
-                  key={i}
-                  onClick={() => jumpTo(i)}
+                  key={i} onClick={() => chooseAnswer(i)}
                   style={{
-                    width:44, height:44, borderRadius:10, border:'none', cursor:'pointer',
-                    fontSize:13, fontWeight:800, fontFamily:'Inter,sans-serif',
-                    background: i === qIndex
-                      ? C.primary
-                      : answers[i] !== null
-                        ? C.success+'30'
-                        : '#F1F5F9',
-                    color: i === qIndex
-                      ? 'white'
-                      : answers[i] !== null
-                        ? C.success
-                        : C.muted,
-                    outline: i === qIndex ? `2.5px solid ${C.primary}` : 'none',
-                    outlineOffset: 2,
+                    background: selected ? C.primary+'25' : C.card,
+                    border: selected ? `2px solid ${C.primary}` : `1.5px solid ${C.border}40`,
+                    borderRadius:16, padding:'14px 16px', minHeight:56,
+                    textAlign:'left', cursor:'pointer',
+                    fontSize:14, fontWeight:600, color:C.navy, transition:'all 0.2s',
+                    boxShadow: selected ? `0 0 0 3px ${C.primary}18` : (dark ? '0 2px 10px rgba(0,0,0,0.25)' : '0 2px 8px rgba(0,0,0,0.05)'),
                   }}
-                >{i + 1}</button>
-              ))}
-            </div>
+                >
+                  <span style={{fontWeight:900, marginRight:10, opacity:0.4, fontSize:12}}>{['A','B','C','D'][i]}</span>
+                  {opt}
+                  {selected && <span style={{float:'right', color:C.primary}}>✓</span>}
+                </button>
+              )
+            })}
+          </div>
 
-            {/* Submit from sheet */}
-            <div style={{padding:'0 20px 8px'}}>
+          {/* Prev / Next */}
+          <div style={{display:'flex', gap:8}}>
+            {qIndex > 0 ? (
+              <button
+                onClick={() => setQIndex(q => q - 1)}
+                style={{flex:1, background:C.card, border:`1.5px solid ${C.border}`, borderRadius:14, padding:'15px', fontSize:14, fontWeight:700, color:C.muted, cursor:'pointer'}}
+              >← Prev</button>
+            ) : <div style={{flex:1}} />}
+
+            {qIndex < questions.length - 1 ? (
+              <button
+                onClick={() => setQIndex(q => q + 1)}
+                style={{flex:2, background:`linear-gradient(135deg,${C.primary},${dark?'#1E1B4B':'#0F766E'})`, color:'white', border:'none', borderRadius:14, padding:'15px', fontSize:14, fontWeight:800, cursor:'pointer'}}
+              >Next →</button>
+            ) : (
               <button
                 onClick={() => handleSubmit(false)}
-                style={{width:'100%', background:'linear-gradient(135deg,#10B981,#059669)', color:'white', border:'none', borderRadius:14, padding:'14px', fontSize:14, fontWeight:800, cursor:'pointer'}}
-              >
-                Submit Paper 🎉 ({answered}/{questions.length})
-              </button>
-            </div>
+                style={{flex:2, background:'linear-gradient(135deg,#10B981,#059669)', color:'white', border:'none', borderRadius:14, padding:'15px', fontSize:15, fontWeight:800, cursor:'pointer'}}
+              >Submit 🎉</button>
+            )}
           </div>
         </>
+      )}
+
+      {/* ── Navigator — centered dialog on desktop, bottom sheet on mobile ── */}
+      {showNav && (
+        isDesktop ? (
+          <div
+            onClick={() => setShowNav(false)}
+            style={{position:'fixed', inset:0, zIndex:110, background:'rgba(0,0,0,0.45)', display:'flex', alignItems:'center', justifyContent:'center', padding:'24px'}}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{
+                background:C.card, borderRadius:20, width:'100%', maxWidth:520,
+                maxHeight:'80dvh', overflowY:'auto',
+                boxShadow:'0 24px 80px rgba(0,0,0,0.28)',
+              }}
+            >
+              {navContent}
+            </div>
+          </div>
+        ) : (
+          <>
+            <div
+              onClick={() => setShowNav(false)}
+              style={{position:'fixed', inset:0, zIndex:110, background:'rgba(0,0,0,0.45)'}}
+            />
+            <div
+              className="animate-slide-up"
+              style={{
+                position:'fixed', bottom:0, left:0, right:0, zIndex:120,
+                background: C.card,
+                borderRadius: '20px 20px 0 0',
+                paddingBottom: `calc(${NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px))`,
+                boxShadow: '0 -8px 40px rgba(0,0,0,0.18)',
+                maxHeight: '80dvh',
+                overflowY: 'auto',
+              }}
+            >
+              <div style={{display:'flex', justifyContent:'center', padding:'12px 0 4px'}}>
+                <div style={{width:36, height:4, borderRadius:2, background:C.border}} />
+              </div>
+              {navContent}
+            </div>
+          </>
+        )
       )}
 
       {/* ── Exit confirmation modal ─────────────────────────────────────────── */}

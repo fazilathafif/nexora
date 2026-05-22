@@ -223,17 +223,17 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
   function switchStream() { navigate('/switch') }
 
   // ── Hero content (rendered inside the gradient band) ──────────────────────
-  const { isDesktop: heroIsDesktop } = useBreakpoint()
+  const { isDesktop } = useBreakpoint()
   const heroEl = (
     <div style={{ padding:'max(18px, env(safe-area-inset-top, 18px)) 16px 0' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
-          {!heroIsDesktop && (
+          {!isDesktop && (
             <div style={{ fontSize:24, fontWeight:900, color:'white', letterSpacing:'-0.5px', fontFamily:"'Playfair Display', Georgia, serif" }}>
               Nexora <span style={{ opacity:0.65 }}>✦</span>
             </div>
           )}
-          <div style={{ display:'flex', alignItems:'center', gap:6, marginTop: heroIsDesktop ? 0 : 4 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:6, marginTop: isDesktop ? 0 : 4 }}>
             <span style={{ background:'rgba(255,255,255,0.22)', color:'white', border:'1px solid rgba(255,255,255,0.3)', borderRadius:20, padding:'2px 10px', fontSize:10, fontWeight:800, letterSpacing:'0.07em' }}>
               {cfg.label.replace(' Track','').toUpperCase()}
             </span>
@@ -268,12 +268,186 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
     </div>
   )
 
+  // ── Right-rail widgets (shared between desktop and mobile) ────────────────
+  const countdownWidget = editingDate ? (
+    <div style={{ background:'white', border:'1px solid #F1F5F9', borderRadius:16, padding:'16px', boxShadow:'0 2px 12px rgba(0,0,0,0.06)' }}>
+      <div style={{ fontSize:10, fontWeight:700, color:'#94A3B8', letterSpacing:'0.08em', marginBottom:10 }}>EXAM DATE</div>
+      <input
+        type="date" value={dateInput} onChange={e => setDateInput(e.target.value)}
+        style={{ width:'100%', padding:'8px 10px', borderRadius:8, border:`1.5px solid ${C.border}`, background:'#F8FAFC', color:C.navy, fontSize:13, fontFamily:'Inter,sans-serif', marginBottom:8 }}
+      />
+      <div style={{ display:'flex', gap:8 }}>
+        <button onClick={() => saveExamDate(dateInput)} disabled={dateSaving} style={{ flex:1, background:C.primary, color:'white', border:'none', borderRadius:8, padding:'8px', fontSize:12, fontWeight:700, cursor:dateSaving?'default':'pointer', opacity:dateSaving?0.7:1, fontFamily:'Inter,sans-serif' }}>{dateSaving ? 'Saving…' : 'Save'}</button>
+        <button onClick={() => { setEditingDate(false); setDateError(null) }} style={{ background:'none', border:`1.5px solid ${C.border}`, borderRadius:8, padding:'8px 12px', color:C.muted, fontSize:12, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>Cancel</button>
+      </div>
+      {dateError && <span style={{ fontSize:11, color:'#EF4444', fontWeight:600, marginTop:6, display:'block' }}>{dateError}</span>}
+    </div>
+  ) : days !== null ? (
+    <div style={{
+      background:'white',
+      border:`1.5px solid ${days <= 7 ? '#EF4444' : days <= 30 ? '#F59E0B' : C.primary}30`,
+      borderRadius:16, padding:'16px', boxShadow:'0 2px 12px rgba(0,0,0,0.06)',
+    }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
+        <div style={{ fontSize:10, fontWeight:700, color:'#94A3B8', letterSpacing:'0.08em' }}>EXAM COUNTDOWN</div>
+        <button onClick={() => { setDateInput(profile?.exam_date ?? ''); setEditingDate(true) }} style={{ background:'none', border:'none', cursor:'pointer', fontSize:13, lineHeight:1, padding:0 }}>✏️</button>
+      </div>
+      {days > 0 ? (
+        <div style={{ display:'flex', alignItems:'baseline', gap:6 }}>
+          <span style={{ fontSize:44, fontWeight:900, lineHeight:1, color:days <= 7 ? '#EF4444' : days <= 30 ? '#F59E0B' : C.primary }}>{days}</span>
+          <span style={{ fontSize:14, fontWeight:700, color:days <= 7 ? '#EF4444' : days <= 30 ? '#F59E0B' : C.primary }}>day{days===1?'':'s'} to go</span>
+        </div>
+      ) : (
+        <span style={{ fontSize:14, fontWeight:700, color:days === 0 ? C.primary : C.muted }}>
+          {days === 0 ? 'Your exam is today! 🎯' : 'Exam date passed'}
+        </span>
+      )}
+      {days > 0 && <div style={{ fontSize:11, color:C.muted, marginTop:4 }}>Keep your streak going!</div>}
+    </div>
+  ) : (
+    <button
+      onClick={() => setEditingDate(true)}
+      style={{ width:'100%', background:'white', border:`1px dashed ${C.border}`, borderRadius:14, padding:'14px', fontSize:12, color:C.muted, cursor:'pointer', textAlign:'left', fontFamily:'Inter,sans-serif', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}
+    >
+      📅 Set your exam date for a countdown
+    </button>
+  )
+
+  const reviewWidget = dueCount > 0 ? (
+    <div style={{ background:'white', border:'1px solid #F1F5F9', borderRadius:16, padding:'16px', boxShadow:'0 2px 12px rgba(0,0,0,0.06)' }}>
+      <div style={{ fontSize:10, fontWeight:700, color:'#94A3B8', letterSpacing:'0.08em', marginBottom:8 }}>REVIEW DUE</div>
+      <div style={{ fontSize:14, fontWeight:800, color:dark?'#A3E635':C.primary, marginBottom:4 }}>{dueCount} question{dueCount>1?'s':''}</div>
+      <div style={{ fontSize:11, color:C.muted, marginBottom:10 }}>Spaced repetition — answer these first</div>
+      <button
+        onClick={() => navigate(`/${stream}/quiz/${reviewSubjectId}?review=1`)}
+        style={{ width:'100%', background:dark?C.secondary:C.primary, color:'white', border:'none', borderRadius:10, padding:'9px', fontWeight:800, cursor:'pointer', fontSize:12, fontFamily:'Inter,sans-serif' }}
+      >
+        Review →
+      </button>
+    </div>
+  ) : null
+
+  const missionWidget = (
+    <div style={{ background:'white', border:'1px solid #F1F5F9', borderRadius:16, padding:'16px', boxShadow:'0 2px 12px rgba(0,0,0,0.06)' }}>
+      <div style={{ fontSize:10, fontWeight:700, color:'#94A3B8', letterSpacing:'0.08em', marginBottom:10 }}>DAILY MISSION</div>
+      <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+        <div style={{ width:40, height:40, borderRadius:'50%', background:C.primary+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>⚡</div>
+        <div>
+          <div style={{ fontWeight:800, color:'#1E293B', fontSize:13 }}>2 sessions left</div>
+          <div style={{ fontSize:11, color:'#64748B', marginTop:1 }}>Hit today's goal</div>
+        </div>
+      </div>
+      <div style={{ display:'flex', gap:4, marginTop:10 }}>
+        {[1,2,3,4,5].map(i => (
+          <div key={i} style={{ flex:1, height:5, borderRadius:3, background: i<=3 ? C.primary : '#E2E8F0', transition:'background 0.3s' }} />
+        ))}
+      </div>
+    </div>
+  )
+
+  const focusWidget = (
+    <button
+      onClick={startPomodoro}
+      style={{
+        width:'100%', display:'flex', alignItems:'center', gap:12,
+        background:'white', border:'1px solid #F1F5F9',
+        boxShadow:'0 2px 12px rgba(0,0,0,0.05)',
+        borderRadius:16, padding:'14px 16px', cursor:'pointer',
+        fontFamily:'Inter,sans-serif', textAlign:'left',
+      }}
+    >
+      <span style={{ fontSize:20 }}>🍅</span>
+      <div>
+        <div style={{ fontSize:13, fontWeight:800, color:'#1E293B' }}>25-min Focus Session</div>
+        <div style={{ fontSize:11, color:'#64748B', marginTop:1 }}>Pomodoro · 5-min break after</div>
+      </div>
+      <span style={{ marginLeft:'auto', fontSize:12, fontWeight:700, color:C.primary }}>Start →</span>
+    </button>
+  )
+
+  // ── University finder (shared) ────────────────────────────────────────────
+  const uniFinder = stream === 'alevel' ? (
+    <div>
+      <button
+        onClick={() => { setFinderOpen(o => !o); setFinderUni(''); setFinderCourse('') }}
+        style={{
+          width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
+          background:C.card, border:`1.5px solid ${C.primary}40`,
+          borderRadius:14, padding:'13px 16px', cursor:'pointer',
+          fontFamily:'Inter,sans-serif', textAlign:'left',
+        }}
+      >
+        <div>
+          <div style={{ fontSize:13, fontWeight:800, color:C.navy }}>🔍 Which test do I need?</div>
+          <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>Pick your university and course</div>
+        </div>
+        <span style={{ fontSize:16, color:C.primary, transition:'transform 0.2s', transform:finderOpen?'rotate(180deg)':'none' }}>▾</span>
+      </button>
+
+      {finderOpen && (
+        <div style={{ background:C.card, border:`1.5px solid ${C.primary}30`, borderRadius:14, padding:'16px', marginTop:6 }}>
+          <div style={{ marginBottom:12 }}>
+            <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#94A3B8', letterSpacing:'0.1em', marginBottom:5 }}>UNIVERSITY</label>
+            <select
+              value={finderUni}
+              onChange={e => { setFinderUni(e.target.value); setFinderCourse('') }}
+              style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:`1.5px solid ${C.border}`, background:'#F8FAFC', color:C.navy, fontSize:13, fontFamily:'Inter,sans-serif', cursor:'pointer', WebkitAppearance:'none' }}
+            >
+              <option value="">Select university…</option>
+              {UNIVERSITIES.map(u => <option key={u} value={u}>{u}</option>)}
+            </select>
+          </div>
+
+          {finderUni && (
+            <div style={{ marginBottom:14 }}>
+              <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#94A3B8', letterSpacing:'0.1em', marginBottom:5 }}>COURSE</label>
+              <select
+                value={finderCourse}
+                onChange={e => setFinderCourse(e.target.value)}
+                style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:`1.5px solid ${C.border}`, background:'#F8FAFC', color:C.navy, fontSize:13, fontFamily:'Inter,sans-serif', cursor:'pointer', WebkitAppearance:'none' }}
+              >
+                <option value="">Select course…</option>
+                {getCoursesForUni(finderUni).map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          )}
+
+          {finderUni && finderCourse && (() => {
+            const tests = getTestsForCourse(finderUni, finderCourse)
+            return tests.length === 0 ? (
+              <div style={{ fontSize:12, color:C.muted, padding:'8px 0' }}>No required admissions tests found for this combination.</div>
+            ) : (
+              <div>
+                <div style={{ fontSize:11, fontWeight:700, color:'#94A3B8', letterSpacing:'0.08em', marginBottom:8 }}>REQUIRED TEST{tests.length > 1 ? 'S' : ''}:</div>
+                {tests.map(t => (
+                  <div key={t.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:t.conditional?'#FEF3C7':'#F0FDF4', border:`1px solid ${t.conditional?'#F59E0B':'#10B981'}40`, borderRadius:10, padding:'10px 12px', marginBottom:8 }}>
+                    <div>
+                      <div style={{ fontSize:13, fontWeight:800, color:C.navy }}>{t.label}</div>
+                      {t.conditional && <div style={{ fontSize:10, color:'#92400E', fontWeight:700, marginTop:2 }}>⚠ Conditional on offer · taken June</div>}
+                      {t.note && !t.conditional && <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>{t.note}</div>}
+                    </div>
+                    <button
+                      onClick={() => { navigate(`/${stream}/quiz/${t.id}`); setFinderOpen(false) }}
+                      style={{ background:C.primary, color:'white', border:'none', borderRadius:8, padding:'6px 12px', fontSize:11, fontWeight:800, cursor:'pointer', fontFamily:'Inter,sans-serif', flexShrink:0 }}
+                    >
+                      Practice →
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
+        </div>
+      )}
+    </div>
+  ) : null
+
   return (
-    <Shell C={C} heroContent={heroEl}>
+    <Shell C={C} heroContent={heroEl} contentMax={isDesktop ? 1200 : undefined}>
       {showAuth && <AuthModal C={C} dark={dark} onClose={() => setShowAuth(false)} />}
       <WelcomeModal user={user} C={C} dark={dark} />
 
-      {/* ── Trial banner ────────────────────────────────────────────────── */}
+      {/* ── Trial banner — full width in both layouts ───────────────────── */}
       {sub.isTrial && sub.daysLeft !== null && (
         <div style={{
           display:'flex', alignItems:'center', justifyContent:'space-between',
@@ -282,9 +456,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
           borderRadius:14, padding:'11px 14px', marginBottom:16,
         }}>
           <div>
-            <span style={{ fontSize:13, fontWeight:800, color:'#7C3AED' }}>
-              ✦ Free Trial
-            </span>
+            <span style={{ fontSize:13, fontWeight:800, color:'#7C3AED' }}>✦ Free Trial</span>
             <span style={{ fontSize:12, color:'#64748B', marginLeft:8 }}>
               {sub.daysLeft > 0
                 ? `${sub.daysLeft} day${sub.daysLeft !== 1 ? 's' : ''} remaining`
@@ -305,240 +477,258 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
         </div>
       )}
 
-      {/* ── Subject picker ──────────────────────────────────────────────── */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-        <div style={{ fontSize:20, fontWeight:900, color:'#1E293B', letterSpacing:'-0.4px' }}>
-          {stream === 'alevel' ? 'Choose Your Exam' : 'Subjects'}
-        </div>
-        {stream === 'gcse' && (
-          <button
-            onClick={() => setEbaccOnly(e => !e)}
-            style={{
-              display:'flex', alignItems:'center', gap:5,
-              background: ebaccOnly ? '#F59E0B' : '#F1F5F9',
-              border: ebaccOnly ? '1.5px solid #D97706' : '1.5px solid #E2E8F0',
-              borderRadius:20, padding:'6px 14px',
-              fontSize:11, fontWeight:800, color: ebaccOnly ? '#FFFFFF' : '#64748B',
-              cursor:'pointer', transition:'all 0.2s',
-              WebkitTapHighlightColor:'transparent',
-            }}
-          >
-            ⭐ EBacc{ebaccOnly ? ' ✕' : ''}
-          </button>
-        )}
-      </div>
+      {isDesktop ? (
+        /* ─────────── DESKTOP: 3-column layout ─────────── */
+        <div style={{ display:'grid', gridTemplateColumns:'240px 1fr 260px', gap:28, alignItems:'start' }}>
 
-      {stream === 'gcse' && ebaccOnly && (
-        <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:14 }}>
-          <span style={{ fontSize:11, fontWeight:700, color:'#64748B', alignSelf:'center', marginRight:2 }}>Language:</span>
-          {cfg.subjects.filter(s => s.mfl).map(s => (
+          {/* LEFT RAIL */}
+          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            <div style={{ fontSize:20, fontWeight:900, color:'#1E293B', letterSpacing:'-0.4px' }}>
+              {stream === 'alevel' ? 'Choose Your Exam' : 'Subjects'}
+            </div>
+
+            {stream === 'gcse' && (
+              <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                <button
+                  onClick={() => setEbaccOnly(e => !e)}
+                  style={{
+                    display:'inline-flex', alignItems:'center', gap:5,
+                    background: ebaccOnly ? '#F59E0B' : '#F1F5F9',
+                    border: ebaccOnly ? '1.5px solid #D97706' : '1.5px solid #E2E8F0',
+                    borderRadius:20, padding:'6px 14px',
+                    fontSize:11, fontWeight:800, color: ebaccOnly ? '#FFFFFF' : '#64748B',
+                    cursor:'pointer', transition:'all 0.2s',
+                    WebkitTapHighlightColor:'transparent', width:'fit-content',
+                  }}
+                >
+                  ⭐ EBacc{ebaccOnly ? ' ✕' : ''}
+                </button>
+                {ebaccOnly && (
+                  <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                    <span style={{ fontSize:11, fontWeight:700, color:'#64748B', alignSelf:'center', width:'100%' }}>Language:</span>
+                    {cfg.subjects.filter(s => s.mfl).map(s => (
+                      <button
+                        key={s.id}
+                        onClick={() => { const next = ebaccLang === s.id ? null : s.id; setEbaccLang(next); saveEbaccLang(next ?? '') }}
+                        style={{
+                          background: ebaccLang === s.id ? SUBJECT_COLORS[s.id]?.primary ?? '#0F766E' : '#F1F5F9',
+                          border: `1.5px solid ${ebaccLang === s.id ? SUBJECT_COLORS[s.id]?.primary ?? '#0F766E' : '#E2E8F0'}`,
+                          borderRadius:20, padding:'5px 12px', fontSize:11, fontWeight:800,
+                          color: ebaccLang === s.id ? '#FFFFFF' : '#64748B',
+                          cursor:'pointer', transition:'all 0.2s',
+                        }}
+                      >
+                        {s.emoji} {s.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {stream === 'alevel' && (
+              <div style={{ padding:'12px 14px', background:C.primary+'18', border:`1px solid ${C.primary}30`, borderRadius:12, fontSize:12, color:C.primary, lineHeight:1.5 }}>
+                🎓 Questions mirror real UCAT, LNAT, TMUA, ESAT, MAT, PAT, TARA & STEP style and difficulty
+              </div>
+            )}
+
+            {uniFinder}
+          </div>
+
+          {/* MAIN — subject grid */}
+          <div>
+            {stream === 'gcse' ? (
+              <GcseSubjectGrid
+                subjects={ebaccOnly
+                  ? cfg.subjects.filter(s => s.ebacc && (!s.mfl || s.id === ebaccLang))
+                  : cfg.subjects}
+                navigate={navigate}
+                stream={stream}
+                C={C}
+              />
+            ) : (
+              <FanDeck subjects={cfg.subjects} stream={stream} navigate={navigate} C={C} />
+            )}
+          </div>
+
+          {/* RIGHT RAIL — sticky widgets */}
+          <div style={{ position:'sticky', top:24, display:'flex', flexDirection:'column', gap:12 }}>
+            {countdownWidget}
+            {reviewWidget}
+            {missionWidget}
+            {focusWidget}
+          </div>
+        </div>
+
+      ) : (
+        /* ─────────── MOBILE / TABLET: original single-column layout ─────────── */
+        <>
+          {/* ── Subject picker ──────────────────────────────────────────────── */}
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+            <div style={{ fontSize:20, fontWeight:900, color:'#1E293B', letterSpacing:'-0.4px' }}>
+              {stream === 'alevel' ? 'Choose Your Exam' : 'Subjects'}
+            </div>
+            {stream === 'gcse' && (
+              <button
+                onClick={() => setEbaccOnly(e => !e)}
+                style={{
+                  display:'flex', alignItems:'center', gap:5,
+                  background: ebaccOnly ? '#F59E0B' : '#F1F5F9',
+                  border: ebaccOnly ? '1.5px solid #D97706' : '1.5px solid #E2E8F0',
+                  borderRadius:20, padding:'6px 14px',
+                  fontSize:11, fontWeight:800, color: ebaccOnly ? '#FFFFFF' : '#64748B',
+                  cursor:'pointer', transition:'all 0.2s',
+                  WebkitTapHighlightColor:'transparent',
+                }}
+              >
+                ⭐ EBacc{ebaccOnly ? ' ✕' : ''}
+              </button>
+            )}
+          </div>
+
+          {stream === 'gcse' && ebaccOnly && (
+            <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:14 }}>
+              <span style={{ fontSize:11, fontWeight:700, color:'#64748B', alignSelf:'center', marginRight:2 }}>Language:</span>
+              {cfg.subjects.filter(s => s.mfl).map(s => (
+                <button
+                  key={s.id}
+                  onClick={() => { const next = ebaccLang === s.id ? null : s.id; setEbaccLang(next); saveEbaccLang(next ?? '') }}
+                  style={{
+                    background: ebaccLang === s.id ? SUBJECT_COLORS[s.id]?.primary ?? '#0F766E' : '#F1F5F9',
+                    border: `1.5px solid ${ebaccLang === s.id ? SUBJECT_COLORS[s.id]?.primary ?? '#0F766E' : '#E2E8F0'}`,
+                    borderRadius:20, padding:'5px 12px', fontSize:11, fontWeight:800,
+                    color: ebaccLang === s.id ? '#FFFFFF' : '#64748B',
+                    cursor:'pointer', transition:'all 0.2s',
+                  }}
+                >
+                  {s.emoji} {s.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div style={{ marginBottom:24 }}>
+            {stream === 'gcse' ? (
+              <GcseSubjectGrid
+                subjects={ebaccOnly
+                  ? cfg.subjects.filter(s => s.ebacc && (!s.mfl || s.id === ebaccLang))
+                  : cfg.subjects}
+                navigate={navigate}
+                stream={stream}
+                C={C}
+              />
+            ) : (
+              <FanDeck subjects={cfg.subjects} stream={stream} navigate={navigate} C={C} />
+            )}
+          </div>
+
+          {stream === 'alevel' && (
+            <div style={{ marginBottom:20, padding:'12px 14px', background:C.primary+'18', border:`1px solid ${C.primary}30`, borderRadius:12, fontSize:12, color:dark?'#A5B4FC':C.primary, lineHeight:1.5 }}>
+              🎓 Questions mirror real UCAT, LNAT, TMUA, ESAT, MAT, PAT, TARA & STEP style and difficulty
+            </div>
+          )}
+
+          {/* ── University test finder (A-Level only) ─────────────────────── */}
+          {stream === 'alevel' && (
+            <div style={{ marginBottom:20 }}>
+              {uniFinder}
+            </div>
+          )}
+
+          {/* ── Exam date countdown ─────────────────────────────────────────── */}
+          {editingDate ? (
+            <div style={{ background:C.card, border:`1.5px solid ${C.primary}40`, borderRadius:14, padding:'12px 16px', marginBottom:16, display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
+              <span style={{ fontSize:12, color:C.muted, fontWeight:700 }}>📅 Exam date:</span>
+              <input
+                type="date" value={dateInput} onChange={e => setDateInput(e.target.value)}
+                style={{ flex:1, minWidth:130, padding:'6px 10px', borderRadius:8, border:`1.5px solid ${C.border}`, background:'#F8FAFC', color:C.navy, fontSize:13, fontFamily:'Inter,sans-serif' }}
+              />
+              <button onClick={() => saveExamDate(dateInput)} disabled={dateSaving} style={{ background:C.primary, color:'white', border:'none', borderRadius:8, padding:'6px 14px', fontSize:12, fontWeight:700, cursor:dateSaving?'default':'pointer', opacity:dateSaving?0.7:1, fontFamily:'Inter,sans-serif' }}>{dateSaving ? 'Saving…' : 'Save'}</button>
+              <button onClick={() => { setEditingDate(false); setDateError(null) }} style={{ background:'none', border:'none', color:C.muted, fontSize:12, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>Cancel</button>
+              {dateError && <span style={{ width:'100%', fontSize:11, color:'#EF4444', fontWeight:600 }}>{dateError}</span>}
+            </div>
+          ) : days !== null ? (
+            <div style={{
+              background: days <= 7 ? '#EF444418' : days <= 30 ? '#F59E0B18' : C.primary+'18',
+              border: `1px solid ${days <= 7 ? '#EF4444' : days <= 30 ? '#F59E0B' : C.primary}30`,
+              borderRadius:16, padding:'14px 16px', marginBottom:16, display:'flex', alignItems:'center', justifyContent:'space-between',
+            }}>
+              <div>
+                {days > 0 ? (
+                  <>
+                    <div style={{ display:'flex', alignItems:'baseline', gap:6 }}>
+                      <span style={{ fontSize:48, fontWeight:900, lineHeight:1, color:days <= 7 ? '#EF4444' : days <= 30 ? '#F59E0B' : C.primary }}>{days}</span>
+                      <span style={{ fontSize:15, fontWeight:700, color:days <= 7 ? '#EF4444' : days <= 30 ? '#F59E0B' : C.primary }}>day{days===1?'':'s'} to go</span>
+                    </div>
+                    <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>Keep your streak going!</div>
+                  </>
+                ) : (
+                  <span style={{ fontSize:15, fontWeight:700, color:days === 0 ? C.primary : C.muted }}>
+                    {days === 0 ? 'Your exam is today! 🎯' : 'Exam date passed'}
+                  </span>
+                )}
+              </div>
+              <button onClick={() => { setDateInput(profile?.exam_date ?? ''); setEditingDate(true) }} style={{ background:'none', border:'none', cursor:'pointer', fontSize:15, lineHeight:1 }}>✏️</button>
+            </div>
+          ) : (
             <button
-              key={s.id}
-              onClick={() => { const next = ebaccLang === s.id ? null : s.id; setEbaccLang(next); saveEbaccLang(next ?? '') }}
-              style={{
-                background: ebaccLang === s.id ? SUBJECT_COLORS[s.id]?.primary ?? '#0F766E' : '#F1F5F9',
-                border: `1.5px solid ${ebaccLang === s.id ? SUBJECT_COLORS[s.id]?.primary ?? '#0F766E' : '#E2E8F0'}`,
-                borderRadius:20, padding:'5px 12px', fontSize:11, fontWeight:800,
-                color: ebaccLang === s.id ? '#FFFFFF' : '#64748B',
-                cursor:'pointer', transition:'all 0.2s',
-              }}
+              onClick={() => setEditingDate(true)}
+              style={{ width:'100%', background:'transparent', border:`1px dashed ${C.border}`, borderRadius:12, padding:'9px 14px', fontSize:12, color:C.muted, cursor:'pointer', marginBottom:16, textAlign:'left', fontFamily:'Inter,sans-serif' }}
             >
-              {s.emoji} {s.label}
+              📅 Set your exam date for a countdown
             </button>
-          ))}
-        </div>
-      )}
+          )}
 
-      <div style={{ marginBottom:24 }}>
-        {stream === 'gcse' ? (
-          <GcseSubjectGrid
-            subjects={ebaccOnly
-              ? cfg.subjects.filter(s => s.ebacc && (!s.mfl || s.id === ebaccLang))
-              : cfg.subjects}
-            navigate={navigate}
-            stream={stream}
-            C={C}
-          />
-        ) : (
-          <FanDeck subjects={cfg.subjects} stream={stream} navigate={navigate} C={C} />
-        )}
-      </div>
+          {/* ── SRS review nudge ────────────────────────────────────────────── */}
+          {dueCount > 0 && (
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:`${C.secondary ?? C.primary}18`, border:`1px solid ${C.secondary ?? C.primary}40`, borderRadius:14, padding:'11px 16px', marginBottom:14 }}>
+              <div>
+                <span style={{ fontSize:13, fontWeight:800, color:dark?'#A3E635':C.primary }}>{dueCount} question{dueCount>1?'s':''} due for review</span>
+                <div style={{ fontSize:11, color:C.muted, marginTop:1 }}>Spaced repetition — answer these first</div>
+              </div>
+              <button
+                onClick={() => navigate(`/${stream}/quiz/${reviewSubjectId}?review=1`)}
+                style={{ background:dark?C.secondary:C.primary, color:'white', border:'none', borderRadius:10, padding:'7px 14px', fontWeight:800, cursor:'pointer', fontSize:12, fontFamily:'Inter,sans-serif', flexShrink:0 }}
+              >
+                Review →
+              </button>
+            </div>
+          )}
 
-      {stream === 'alevel' && (
-        <div style={{ marginBottom:20, padding:'12px 14px', background:C.primary+'18', border:`1px solid ${C.primary}30`, borderRadius:12, fontSize:12, color:dark?'#A5B4FC':C.primary, lineHeight:1.5 }}>
-          🎓 Questions mirror real UCAT, LNAT, TMUA, ESAT, MAT, PAT, TARA & STEP style and difficulty
-        </div>
-      )}
+          {/* ── Daily mission ────────────────────────────────────────────────── */}
+          <div style={{ background:'white', border:'1px solid #F1F5F9', borderRadius:20, padding:'16px 18px', marginBottom:14, display:'flex', alignItems:'center', gap:14, boxShadow:'0 2px 12px rgba(0,0,0,0.05)' }}>
+            <div style={{ width:44, height:44, borderRadius:'50%', background:C.primary+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>⚡</div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontWeight:800, color:'#1E293B', fontSize:14 }}>Daily Mission</div>
+              <div style={{ fontSize:12, color:'#64748B', marginTop:2 }}>Complete 2 more sessions to hit today's goal</div>
+              <div style={{ display:'flex', gap:4, marginTop:7 }}>
+                {[1,2,3,4,5].map(i => (
+                  <div key={i} style={{ flex:1, height:5, borderRadius:3, background: i<=3 ? C.primary : '#E2E8F0', transition:'background 0.3s' }} />
+                ))}
+              </div>
+            </div>
+          </div>
 
-      {/* ── University test finder (A-Level only) ─────────────────────── */}
-      {stream === 'alevel' && (
-        <div style={{ marginBottom:20 }}>
+          {/* ── Focus session ───────────────────────────────────────────────── */}
           <button
-            onClick={() => { setFinderOpen(o => !o); setFinderUni(''); setFinderCourse('') }}
+            onClick={startPomodoro}
             style={{
-              width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
-              background:C.card, border:`1.5px solid ${C.primary}40`,
-              borderRadius:14, padding:'13px 16px', cursor:'pointer',
+              width:'100%', display:'flex', alignItems:'center', gap:12,
+              background:'white', border:'1px solid #F1F5F9',
+              boxShadow:'0 2px 12px rgba(0,0,0,0.05)',
+              borderRadius:18, padding:'14px 16px', cursor:'pointer',
               fontFamily:'Inter,sans-serif', textAlign:'left',
             }}
           >
+            <span style={{ fontSize:22 }}>🍅</span>
             <div>
-              <div style={{ fontSize:13, fontWeight:800, color:C.navy }}>🔍 Which test do I need?</div>
-              <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>Pick your university and course</div>
+              <div style={{ fontSize:13, fontWeight:800, color:'#1E293B' }}>Start 25-min Focus Session</div>
+              <div style={{ fontSize:11, color:'#64748B', marginTop:1 }}>Pomodoro timer · 5-min break after</div>
             </div>
-            <span style={{ fontSize:16, color:C.primary, transition:'transform 0.2s', transform:finderOpen?'rotate(180deg)':'none' }}>▾</span>
+            <span style={{ marginLeft:'auto', fontSize:12, fontWeight:700, color:C.primary }}>Start →</span>
           </button>
-
-          {finderOpen && (
-            <div style={{ background:C.card, border:`1.5px solid ${C.primary}30`, borderRadius:14, padding:'16px', marginTop:6 }}>
-              <div style={{ marginBottom:12 }}>
-                <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#94A3B8', letterSpacing:'0.1em', marginBottom:5 }}>UNIVERSITY</label>
-                <select
-                  value={finderUni}
-                  onChange={e => { setFinderUni(e.target.value); setFinderCourse('') }}
-                  style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:`1.5px solid ${C.border}`, background:'#F8FAFC', color:C.navy, fontSize:13, fontFamily:'Inter,sans-serif', cursor:'pointer', WebkitAppearance:'none' }}
-                >
-                  <option value="">Select university…</option>
-                  {UNIVERSITIES.map(u => <option key={u} value={u}>{u}</option>)}
-                </select>
-              </div>
-
-              {finderUni && (
-                <div style={{ marginBottom:14 }}>
-                  <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#94A3B8', letterSpacing:'0.1em', marginBottom:5 }}>COURSE</label>
-                  <select
-                    value={finderCourse}
-                    onChange={e => setFinderCourse(e.target.value)}
-                    style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:`1.5px solid ${C.border}`, background:'#F8FAFC', color:C.navy, fontSize:13, fontFamily:'Inter,sans-serif', cursor:'pointer', WebkitAppearance:'none' }}
-                  >
-                    <option value="">Select course…</option>
-                    {getCoursesForUni(finderUni).map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-              )}
-
-              {finderUni && finderCourse && (() => {
-                const tests = getTestsForCourse(finderUni, finderCourse)
-                return tests.length === 0 ? (
-                  <div style={{ fontSize:12, color:C.muted, padding:'8px 0' }}>No required admissions tests found for this combination.</div>
-                ) : (
-                  <div>
-                    <div style={{ fontSize:11, fontWeight:700, color:'#94A3B8', letterSpacing:'0.08em', marginBottom:8 }}>REQUIRED TEST{tests.length > 1 ? 'S' : ''}:</div>
-                    {tests.map(t => (
-                      <div key={t.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:t.conditional?'#FEF3C7':'#F0FDF4', border:`1px solid ${t.conditional?'#F59E0B':'#10B981'}40`, borderRadius:10, padding:'10px 12px', marginBottom:8 }}>
-                        <div>
-                          <div style={{ fontSize:13, fontWeight:800, color:C.navy }}>{t.label}</div>
-                          {t.conditional && <div style={{ fontSize:10, color:'#92400E', fontWeight:700, marginTop:2 }}>⚠ Conditional on offer · taken June</div>}
-                          {t.note && !t.conditional && <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>{t.note}</div>}
-                        </div>
-                        <button
-                          onClick={() => { navigate(`/${stream}/quiz/${t.id}`); setFinderOpen(false) }}
-                          style={{ background:C.primary, color:'white', border:'none', borderRadius:8, padding:'6px 12px', fontSize:11, fontWeight:800, cursor:'pointer', fontFamily:'Inter,sans-serif', flexShrink:0 }}
-                        >
-                          Practice →
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )
-              })()}
-            </div>
-          )}
-        </div>
+        </>
       )}
-
-      {/* ── Exam date countdown ─────────────────────────────────────────── */}
-      {editingDate ? (
-        <div style={{ background:C.card, border:`1.5px solid ${C.primary}40`, borderRadius:14, padding:'12px 16px', marginBottom:16, display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
-          <span style={{ fontSize:12, color:C.muted, fontWeight:700 }}>📅 Exam date:</span>
-          <input
-            type="date" value={dateInput} onChange={e => setDateInput(e.target.value)}
-            style={{ flex:1, minWidth:130, padding:'6px 10px', borderRadius:8, border:`1.5px solid ${C.border}`, background:'#F8FAFC', color:C.navy, fontSize:13, fontFamily:'Inter,sans-serif' }}
-          />
-          <button onClick={() => saveExamDate(dateInput)} disabled={dateSaving} style={{ background:C.primary, color:'white', border:'none', borderRadius:8, padding:'6px 14px', fontSize:12, fontWeight:700, cursor:dateSaving?'default':'pointer', opacity:dateSaving?0.7:1, fontFamily:'Inter,sans-serif' }}>{dateSaving ? 'Saving…' : 'Save'}</button>
-          <button onClick={() => { setEditingDate(false); setDateError(null) }} style={{ background:'none', border:'none', color:C.muted, fontSize:12, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>Cancel</button>
-          {dateError && <span style={{ width:'100%', fontSize:11, color:'#EF4444', fontWeight:600 }}>{dateError}</span>}
-        </div>
-      ) : days !== null ? (
-        <div style={{
-          background: days <= 7 ? '#EF444418' : days <= 30 ? '#F59E0B18' : C.primary+'18',
-          border: `1px solid ${days <= 7 ? '#EF4444' : days <= 30 ? '#F59E0B' : C.primary}30`,
-          borderRadius:16, padding:'14px 16px', marginBottom:16, display:'flex', alignItems:'center', justifyContent:'space-between',
-        }}>
-          <div>
-            {days > 0 ? (
-              <>
-                <div style={{ display:'flex', alignItems:'baseline', gap:6 }}>
-                  <span style={{ fontSize:48, fontWeight:900, lineHeight:1, color:days <= 7 ? '#EF4444' : days <= 30 ? '#F59E0B' : C.primary }}>{days}</span>
-                  <span style={{ fontSize:15, fontWeight:700, color:days <= 7 ? '#EF4444' : days <= 30 ? '#F59E0B' : C.primary }}>day{days===1?'':'s'} to go</span>
-                </div>
-                <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>Keep your streak going!</div>
-              </>
-            ) : (
-              <span style={{ fontSize:15, fontWeight:700, color:days === 0 ? C.primary : C.muted }}>
-                {days === 0 ? 'Your exam is today! 🎯' : 'Exam date passed'}
-              </span>
-            )}
-          </div>
-          <button onClick={() => { setDateInput(profile?.exam_date ?? ''); setEditingDate(true) }} style={{ background:'none', border:'none', cursor:'pointer', fontSize:15, lineHeight:1 }}>✏️</button>
-        </div>
-      ) : (
-        <button
-          onClick={() => setEditingDate(true)}
-          style={{ width:'100%', background:'transparent', border:`1px dashed ${C.border}`, borderRadius:12, padding:'9px 14px', fontSize:12, color:C.muted, cursor:'pointer', marginBottom:16, textAlign:'left', fontFamily:'Inter,sans-serif' }}
-        >
-          📅 Set your exam date for a countdown
-        </button>
-      )}
-
-      {/* ── SRS review nudge ────────────────────────────────────────────── */}
-      {dueCount > 0 && (
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:`${C.secondary ?? C.primary}18`, border:`1px solid ${C.secondary ?? C.primary}40`, borderRadius:14, padding:'11px 16px', marginBottom:14 }}>
-          <div>
-            <span style={{ fontSize:13, fontWeight:800, color:dark?'#A3E635':C.primary }}>{dueCount} question{dueCount>1?'s':''} due for review</span>
-            <div style={{ fontSize:11, color:C.muted, marginTop:1 }}>Spaced repetition — answer these first</div>
-          </div>
-          <button
-            onClick={() => navigate(`/${stream}/quiz/${reviewSubjectId}?review=1`)}
-            style={{ background:dark?C.secondary:C.primary, color:'white', border:'none', borderRadius:10, padding:'7px 14px', fontWeight:800, cursor:'pointer', fontSize:12, fontFamily:'Inter,sans-serif', flexShrink:0 }}
-          >
-            Review →
-          </button>
-        </div>
-      )}
-
-      {/* ── Daily mission ────────────────────────────────────────────────── */}
-      <div style={{ background:'white', border:'1px solid #F1F5F9', borderRadius:20, padding:'16px 18px', marginBottom:14, display:'flex', alignItems:'center', gap:14, boxShadow:'0 2px 12px rgba(0,0,0,0.05)' }}>
-        <div style={{ width:44, height:44, borderRadius:'50%', background:C.primary+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>⚡</div>
-        <div style={{ flex:1 }}>
-          <div style={{ fontWeight:800, color:'#1E293B', fontSize:14 }}>Daily Mission</div>
-          <div style={{ fontSize:12, color:'#64748B', marginTop:2 }}>Complete 2 more sessions to hit today's goal</div>
-          <div style={{ display:'flex', gap:4, marginTop:7 }}>
-            {[1,2,3,4,5].map(i => (
-              <div key={i} style={{ flex:1, height:5, borderRadius:3, background: i<=3 ? C.primary : '#E2E8F0', transition:'background 0.3s' }} />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Focus session ───────────────────────────────────────────────── */}
-      <button
-        onClick={startPomodoro}
-        style={{
-          width:'100%', display:'flex', alignItems:'center', gap:12,
-          background:'white', border:'1px solid #F1F5F9',
-          boxShadow:'0 2px 12px rgba(0,0,0,0.05)',
-          borderRadius:18, padding:'14px 16px', cursor:'pointer',
-          fontFamily:'Inter,sans-serif', textAlign:'left',
-        }}
-      >
-        <span style={{ fontSize:22 }}>🍅</span>
-        <div>
-          <div style={{ fontSize:13, fontWeight:800, color:'#1E293B' }}>Start 25-min Focus Session</div>
-          <div style={{ fontSize:11, color:'#64748B', marginTop:1 }}>Pomodoro timer · 5-min break after</div>
-        </div>
-        <span style={{ marginLeft:'auto', fontSize:12, fontWeight:700, color:C.primary }}>Start →</span>
-      </button>
     </Shell>
   )
 }
@@ -766,7 +956,7 @@ function GcseSubjectGrid({ subjects, navigate, stream, C }) {
   )
 }
 
-export function Shell({ C, children, noNav, heroContent }) {
+export function Shell({ C, children, noNav, heroContent, contentMax }) {
   const { isDesktop, isTablet } = useBreakpoint()
   const heroH = heroContent ? 188 : 64
 
@@ -795,7 +985,7 @@ export function Shell({ C, children, noNav, heroContent }) {
           {/* White panel */}
           <div style={{ background:'white', borderRadius:'28px 28px 0 0', minHeight:`calc(100dvh - ${heroH - 24}px)`, boxShadow:'0 -8px 40px rgba(0,0,0,0.16)' }}>
             <div style={{ width:36, height:4, background:'#E2E8F0', borderRadius:2, margin:'12px auto 0' }} />
-            <div style={{ maxWidth:CONTENT_MAX, margin:'0 auto', padding:'16px 32px 40px', animation:'fadeUp 0.35s ease' }}>
+            <div style={{ maxWidth: contentMax ?? CONTENT_MAX, margin:'0 auto', padding:'16px 32px 40px', animation:'fadeUp 0.35s ease' }}>
               {children}
             </div>
           </div>

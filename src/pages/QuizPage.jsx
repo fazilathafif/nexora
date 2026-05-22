@@ -314,67 +314,60 @@ export default function QuizPage({ user, profile, refreshProfile }) {
     }
   }
 
-  return (
-    <Shell C={C}>
-      {/* Progress row */}
-      <div style={{marginBottom:14}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:12,color:C.muted,marginBottom:6}}>
-          <button
-            onClick={handleExit}
-            style={{background:'transparent',border:`1.5px solid ${C.border}`,borderRadius:12,padding:'6px 14px',fontSize:12,fontWeight:700,color:C.muted,cursor:'pointer',fontFamily:'Inter,sans-serif',boxShadow:'none'}}
-          >
-            ← Exit
-          </button>
-          <span style={{fontWeight:700}}>Q{qIndex + 1} / {total}</span>
-          <span style={{color:C.primary,fontWeight:700}}>Score: {score}</span>
-        </div>
-        <div style={{background:C.border,borderRadius:8,height:5}}>
-          <div style={{width:`${progressPct}%`,background:`linear-gradient(90deg,${C.primary},${C.secondary ?? C.primary})`,height:'100%',borderRadius:8,transition:'width 0.4s ease'}} />
-        </div>
+  // ── Shared: progress row ───────────────────────────────────────────────────
+  const progressRow = (
+    <div style={{marginBottom:14}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:12,color:C.muted,marginBottom:6}}>
+        <button
+          onClick={handleExit}
+          style={{background:'transparent',border:`1.5px solid ${C.border}`,borderRadius:12,padding:'6px 14px',fontSize:12,fontWeight:700,color:C.muted,cursor:'pointer',fontFamily:'Inter,sans-serif',boxShadow:'none'}}
+        >
+          ← Exit
+        </button>
+        <span style={{fontWeight:700}}>Q{qIndex + 1} / {total}</span>
+        <span style={{color:C.primary,fontWeight:700}}>Score: {score}</span>
       </div>
-
-      {/* Countdown timer bar (hidden for untimed exams like STEP) */}
-      {timerSeconds > 0 && (
-        <div style={{marginBottom:16}}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
-            <span style={{fontSize:11,color:C.muted,fontWeight:600,letterSpacing:'0.05em'}}>⏱ TIME</span>
-            <span style={{fontSize:13,fontWeight:800,color:timerColor,transition:'color 0.5s',fontVariantNumeric:'tabular-nums'}}>
-              {chosen === -1 ? "Time's up!" : `${remaining}s`}
-            </span>
-          </div>
-          <div style={{background:C.border,borderRadius:8,height:6}}>
-            <div style={{
-              width:`${timerPct}%`,
-              background:timerColor,
-              height:'100%',
-              borderRadius:8,
-              transition:'width 1s linear, background 0.5s',
-            }} />
-          </div>
-        </div>
-      )}
-
-      {/* Badges */}
-      <div style={{display:'flex',gap:6,marginBottom:14,flexWrap:'wrap'}}>
-        {(reviewMode || topicFilter) && (
-          <Badge label={reviewMode ? 'Review Mode' : `Drilling: ${topicFilter}`} color={reviewMode ? '#F59E0B' : '#EF4444'} />
-        )}
-        <Badge label={currentQ.topic} color={C.primary} />
-        <Badge label={`Difficulty ${'★'.repeat(currentQ.difficulty)}`} color={C.muted} />
+      <div style={{background:C.border,borderRadius:8,height:5}}>
+        <div style={{width:`${progressPct}%`,background:`linear-gradient(90deg,${C.primary},${C.secondary ?? C.primary})`,height:'100%',borderRadius:8,transition:'width 0.4s ease'}} />
       </div>
+    </div>
+  )
 
-      {/* LNAT passage (shown when present) */}
-      {currentQ.passage && (
-        <div style={{background:C.card,border:`1px solid ${C.border}30`,borderRadius:16,padding:'14px 16px',marginBottom:12,maxHeight:190,overflowY:'auto',fontSize:13,color:C.muted,lineHeight:1.75,boxShadow:dark?'0 4px 16px rgba(0,0,0,0.3)':'0 4px 12px rgba(0,0,0,0.06)'}}>
-          <p style={{margin:'0 0 8px',fontWeight:700,color:C.primary,fontSize:10,letterSpacing:'0.12em'}}>PASSAGE — READ CAREFULLY</p>
-          <p style={{margin:0}}>{currentQ.passage}</p>
-        </div>
+  // ── Shared: timer bar ──────────────────────────────────────────────────────
+  const timerBar = timerSeconds > 0 ? (
+    <div style={{marginBottom:16}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+        <span style={{fontSize:11,color:C.muted,fontWeight:600,letterSpacing:'0.05em'}}>⏱ TIME</span>
+        <span style={{fontSize:13,fontWeight:800,color:timerColor,transition:'color 0.5s',fontVariantNumeric:'tabular-nums'}}>
+          {chosen === -1 ? "Time's up!" : `${remaining}s`}
+        </span>
+      </div>
+      <div style={{background:C.border,borderRadius:8,height:6}}>
+        <div style={{
+          width:`${timerPct}%`,
+          background:timerColor,
+          height:'100%',
+          borderRadius:8,
+          transition:'width 1s linear, background 0.5s',
+        }} />
+      </div>
+    </div>
+  ) : null
+
+  // ── Shared: badges ─────────────────────────────────────────────────────────
+  const badges = (
+    <div style={{display:'flex',gap:6,marginBottom:14,flexWrap:'wrap'}}>
+      {(reviewMode || topicFilter) && (
+        <Badge label={reviewMode ? 'Review Mode' : `Drilling: ${topicFilter}`} color={reviewMode ? '#F59E0B' : '#EF4444'} />
       )}
+      <Badge label={currentQ.topic} color={C.primary} />
+      <Badge label={`Difficulty ${'★'.repeat(currentQ.difficulty)}`} color={C.muted} />
+    </div>
+  )
 
-      {/* Question + hint + options — keyed by qIndex so the whole block remounts on every
-          question advance, wiping all DOM state (focus, inline styles) from the previous question */}
-      <div key={qIndex}>
-
+  // ── Shared: question block (keyed by qIndex) ───────────────────────────────
+  const questionBlock = (
+    <div key={qIndex}>
       {/* Question */}
       <div style={{background:C.card,borderRadius:22,padding:'22px 20px',marginBottom:16,boxShadow:dark?'0 6px 28px rgba(0,0,0,0.40)':'0 6px 24px rgba(0,0,0,0.08)'}}>
         <p style={{fontSize:16,fontWeight:700,color:C.navy,lineHeight:1.65,margin:0}}>{currentQ.q}</p>
@@ -418,10 +411,77 @@ export default function QuizPage({ user, profile, refreshProfile }) {
           )
         })}
       </div>
+    </div>
+  )
 
-      </div>{/* end keyed question block */}
+  // ── Shared: AI explanation content ────────────────────────────────────────
+  const aiExplainContent = (
+    <>
+      {(aiText === 'loading' || aiText === '') && (
+        <div style={{padding:'24px 16px',textAlign:'center'}}>
+          <div style={{display:'inline-block',width:20,height:20,border:`2px solid ${dark?'#C4B5FD':'#6366F1'}`,borderTopColor:'transparent',borderRadius:'50%',animation:'spin 0.8s linear infinite'}} />
+        </div>
+      )}
+      {aiText !== null && aiText !== 'loading' && aiText !== '' && (
+        <div>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+            <div style={{display:'flex',alignItems:'center',gap:6}}>
+              <span style={{fontSize:14}}>🤖</span>
+              <span style={{fontSize:10,fontWeight:800,color:'#7C3AED',letterSpacing:'0.1em'}}>AI TUTOR</span>
+            </div>
+            <div style={{display:'flex',gap:8,alignItems:'center'}}>
+              <CopyButton text={aiText} />
+              <button onClick={() => setAiOpen(false)} style={{background:'none',border:'none',fontSize:18,color:C.muted,cursor:'pointer',padding:'0 2px'}}>✕</button>
+            </div>
+          </div>
+          <div>
+            <style>{`
+              .ai-md h1{font-size:15px;font-weight:900;margin:0 0 6px;color:#1E293B}
+              .ai-md h2{font-size:13px;font-weight:800;margin:14px 0 4px;color:#7C3AED}
+              .ai-md h3{font-size:12px;font-weight:700;margin:10px 0 3px;color:#A855F7}
+              .ai-md p{margin:0 0 10px}
+              .ai-md ul,.ai-md ol{margin:4px 0 10px;padding-left:20px}
+              .ai-md li{margin-bottom:4px}
+              .ai-md strong{font-weight:800}
+              .ai-md code{background:#F3E8FF;padding:1px 5px;border-radius:4px;font-size:12px}
+            `}</style>
+            <div className="ai-md" style={{fontSize:13,color:C.navy,lineHeight:1.85}}><ReactMarkdown>{aiText}</ReactMarkdown></div>
+          </div>
+          {aiElaboration === null && (
+            <button onClick={handleElaborate} style={{
+              marginTop:12, width:'100%', background:'transparent',
+              border:`1px dashed #7C3AED50`,
+              borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:700,
+              color: '#7C3AED', cursor:'pointer',
+            }}>
+              🔍 Go deeper
+            </button>
+          )}
+          {(aiElaboration === 'loading' || aiElaboration === '') && (
+            <div style={{marginTop:10,textAlign:'center',padding:'10px 0'}}>
+              <div style={{display:'inline-block',width:16,height:16,border:`2px solid ${dark?'#A78BFA':'#6366F1'}`,borderTopColor:'transparent',borderRadius:'50%',animation:'spin 0.8s linear infinite'}} />
+            </div>
+          )}
+          {aiElaboration && aiElaboration !== 'loading' && aiElaboration !== '' && (
+            <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid #7C3AED25`}}>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+                <span style={{fontSize:10,fontWeight:800,color:'#7C3AED',letterSpacing:'0.1em'}}>🔍 DEEPER DIVE</span>
+                <CopyButton text={aiElaboration} />
+              </div>
+              <div className="ai-md"><ReactMarkdown>{aiElaboration}</ReactMarkdown></div>
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  )
 
-      {/* Post-answer AI explanation trigger */}
+  // ── Desktop right column: question + AI inline + next ────────────────────
+  const desktopRightColumn = (
+    <div>
+      {questionBlock}
+
+      {/* AI explanation trigger */}
       {chosen !== null && (
         <div style={{marginBottom:12}}>
           <button
@@ -440,85 +500,64 @@ export default function QuizPage({ user, profile, refreshProfile }) {
         </div>
       )}
 
-      {/* AI Tutor bottom sheet */}
-      {aiOpen && chosen !== null && (
-        <>
-          <div onClick={() => setAiOpen(false)} style={{position:'fixed',inset:0,zIndex:155,background:'rgba(0,0,0,0.4)'}} />
-          <div
-            ref={aiPanelRef}
-            className="animate-slide-up"
-            style={{
-              position:'fixed', bottom:NAV_HEIGHT, left:0, right:0, zIndex:160,
-              background: '#FFFFFF',
-              borderRadius:'20px 20px 0 0',
-              maxHeight:'62dvh',
-              overflowY:'auto',
-              boxShadow:'0 -8px 32px rgba(0,0,0,0.18)',
-            }}
-          >
-            <div style={{display:'flex',justifyContent:'center',padding:'10px 0 4px'}}>
-              <div style={{width:36,height:4,borderRadius:2,background:C.border}} />
+      {/* AI inline panel — desktop only */}
+      {isDesktop && aiOpen && chosen !== null && (
+        <div
+          ref={aiPanelRef}
+          style={{
+            background:'#FAFAFA', border:'1.5px solid #7C3AED20',
+            borderRadius:16, padding:'16px', marginBottom:12,
+            boxShadow:'0 2px 16px rgba(124,58,237,0.08)',
+          }}
+        >
+          {(aiText === 'loading' || aiText === '') && (
+            <div style={{padding:'16px',textAlign:'center'}}>
+              <div style={{display:'inline-block',width:20,height:20,border:`2px solid ${dark?'#C4B5FD':'#6366F1'}`,borderTopColor:'transparent',borderRadius:'50%',animation:'spin 0.8s linear infinite'}} />
             </div>
-            {(aiText === 'loading' || aiText === '') && (
-              <div style={{padding:'24px 16px',textAlign:'center'}}>
-                <div style={{display:'inline-block',width:20,height:20,border:`2px solid ${dark?'#C4B5FD':'#6366F1'}`,borderTopColor:'transparent',borderRadius:'50%',animation:'spin 0.8s linear infinite'}} />
-              </div>
-            )}
-            {aiText !== null && aiText !== 'loading' && aiText !== '' && (
-              <div style={{padding:'4px 16px 24px'}}>
-                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
-                  <div style={{display:'flex',alignItems:'center',gap:6}}>
-                    <span style={{fontSize:14}}>🤖</span>
-                    <span style={{fontSize:10,fontWeight:800,color:'#7C3AED',letterSpacing:'0.1em'}}>AI TUTOR</span>
-                  </div>
-                  <div style={{display:'flex',gap:8,alignItems:'center'}}>
-                    <CopyButton text={aiText} />
-                    <button onClick={() => setAiOpen(false)} style={{background:'none',border:'none',fontSize:18,color:C.muted,cursor:'pointer',padding:'0 2px'}}>✕</button>
-                  </div>
+          )}
+          {aiText !== null && aiText !== 'loading' && aiText !== '' && (
+            <div>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+                <div style={{display:'flex',alignItems:'center',gap:6}}>
+                  <span style={{fontSize:14}}>🤖</span>
+                  <span style={{fontSize:10,fontWeight:800,color:'#7C3AED',letterSpacing:'0.1em'}}>AI TUTOR</span>
                 </div>
-                <div>
-                  <style>{`
-                    .ai-md h1{font-size:15px;font-weight:900;margin:0 0 6px;color:#1E293B}
-                    .ai-md h2{font-size:13px;font-weight:800;margin:14px 0 4px;color:#7C3AED}
-                    .ai-md h3{font-size:12px;font-weight:700;margin:10px 0 3px;color:#A855F7}
-                    .ai-md p{margin:0 0 10px}
-                    .ai-md ul,.ai-md ol{margin:4px 0 10px;padding-left:20px}
-                    .ai-md li{margin-bottom:4px}
-                    .ai-md strong{font-weight:800}
-                    .ai-md code{background:#F3E8FF;padding:1px 5px;border-radius:4px;font-size:12px}
-                  `}</style>
-                  <div className="ai-md" style={{fontSize:13,color:C.navy,lineHeight:1.85}}><ReactMarkdown>{aiText}</ReactMarkdown></div>
+                <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                  <CopyButton text={aiText} />
+                  <button onClick={() => setAiOpen(false)} style={{background:'none',border:'none',fontSize:16,color:C.muted,cursor:'pointer',padding:'0 2px'}}>✕</button>
                 </div>
-                {aiElaboration === null && (
-                  <button onClick={handleElaborate} style={{
-                    marginTop:12, width:'100%', background:'transparent',
-                    border:`1px dashed #7C3AED50`,
-                    borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:700,
-                    color: '#7C3AED', cursor:'pointer',
-                  }}>
-                    🔍 Go deeper
-                  </button>
-                )}
-                {(aiElaboration === 'loading' || aiElaboration === '') && (
-                  <div style={{marginTop:10,textAlign:'center',padding:'10px 0'}}>
-                    <div style={{display:'inline-block',width:16,height:16,border:`2px solid ${dark?'#A78BFA':'#6366F1'}`,borderTopColor:'transparent',borderRadius:'50%',animation:'spin 0.8s linear infinite'}} />
-                  </div>
-                )}
-                {aiElaboration && aiElaboration !== 'loading' && aiElaboration !== '' && (
-                  <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid #7C3AED25`}}>
-                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
-                      <span style={{fontSize:10,fontWeight:800,color:'#7C3AED',letterSpacing:'0.1em'}}>🔍 DEEPER DIVE</span>
-                      <CopyButton text={aiElaboration} />
-                    </div>
-                    <div className="ai-md"><ReactMarkdown>{aiElaboration}</ReactMarkdown></div>
-                  </div>
-                )}
               </div>
-            )}
-          </div>
-        </>
+              <div className="ai-md" style={{fontSize:13,color:C.navy,lineHeight:1.85}}><ReactMarkdown>{aiText}</ReactMarkdown></div>
+              {aiElaboration === null && (
+                <button onClick={handleElaborate} style={{
+                  marginTop:12, width:'100%', background:'transparent',
+                  border:`1px dashed #7C3AED50`,
+                  borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:700,
+                  color: '#7C3AED', cursor:'pointer',
+                }}>
+                  🔍 Go deeper
+                </button>
+              )}
+              {(aiElaboration === 'loading' || aiElaboration === '') && (
+                <div style={{marginTop:10,textAlign:'center',padding:'8px 0'}}>
+                  <div style={{display:'inline-block',width:16,height:16,border:`2px solid ${dark?'#A78BFA':'#6366F1'}`,borderTopColor:'transparent',borderRadius:'50%',animation:'spin 0.8s linear infinite'}} />
+                </div>
+              )}
+              {aiElaboration && aiElaboration !== 'loading' && aiElaboration !== '' && (
+                <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid #7C3AED25`}}>
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+                    <span style={{fontSize:10,fontWeight:800,color:'#7C3AED',letterSpacing:'0.1em'}}>🔍 DEEPER DIVE</span>
+                    <CopyButton text={aiElaboration} />
+                  </div>
+                  <div className="ai-md"><ReactMarkdown>{aiElaboration}</ReactMarkdown></div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
 
+      {/* Next button */}
       {chosen !== null && (
         <button
           onClick={handleNext}
@@ -526,6 +565,180 @@ export default function QuizPage({ user, profile, refreshProfile }) {
         >
           {qIndex + 1 < total ? 'Next →' : 'See Results 🎉'}
         </button>
+      )}
+    </div>
+  )
+
+  return (
+    <Shell C={C} contentMax={isDesktop ? 1100 : undefined}>
+
+      {isDesktop ? (
+        /* ─────────── DESKTOP: 2-column layout ─────────── */
+        <>
+          {progressRow}
+          {timerBar}
+
+          {currentQ.passage ? (
+            /* Passage present: sticky left + question right */
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1.4fr', gap:28, alignItems:'start'}}>
+
+              {/* LEFT — sticky passage + badges */}
+              <div style={{position:'sticky', top:24}}>
+                {badges}
+                <div style={{fontSize:10, fontWeight:700, color:'#94A3B8', letterSpacing:'0.12em', marginBottom:10}}>
+                  PASSAGE — READ CAREFULLY
+                </div>
+                <div style={{
+                  background:C.card,
+                  border:`1px solid ${C.border}30`,
+                  borderRadius:16, padding:'18px 20px',
+                  fontSize:13, color:C.muted, lineHeight:1.85,
+                  maxHeight:'calc(100dvh - 220px)', overflowY:'auto',
+                  boxShadow: dark ? '0 4px 16px rgba(0,0,0,0.3)' : '0 4px 12px rgba(0,0,0,0.06)',
+                }}>
+                  {currentQ.passage}
+                </div>
+              </div>
+
+              {/* RIGHT — question + hint + options + AI inline + next */}
+              {desktopRightColumn}
+            </div>
+          ) : (
+            /* No passage: single centered column */
+            <div style={{maxWidth:640, margin:'0 auto'}}>
+              {badges}
+              {desktopRightColumn}
+            </div>
+          )}
+        </>
+
+      ) : (
+        /* ─────────── MOBILE: original single-column layout ─────────── */
+        <>
+          {progressRow}
+          {timerBar}
+
+          {/* Badges */}
+          <div style={{display:'flex',gap:6,marginBottom:14,flexWrap:'wrap'}}>
+            {(reviewMode || topicFilter) && (
+              <Badge label={reviewMode ? 'Review Mode' : `Drilling: ${topicFilter}`} color={reviewMode ? '#F59E0B' : '#EF4444'} />
+            )}
+            <Badge label={currentQ.topic} color={C.primary} />
+            <Badge label={`Difficulty ${'★'.repeat(currentQ.difficulty)}`} color={C.muted} />
+          </div>
+
+          {/* LNAT passage (shown when present) */}
+          {currentQ.passage && (
+            <div style={{background:C.card,border:`1px solid ${C.border}30`,borderRadius:16,padding:'14px 16px',marginBottom:12,maxHeight:190,overflowY:'auto',fontSize:13,color:C.muted,lineHeight:1.75,boxShadow:dark?'0 4px 16px rgba(0,0,0,0.3)':'0 4px 12px rgba(0,0,0,0.06)'}}>
+              <p style={{margin:'0 0 8px',fontWeight:700,color:C.primary,fontSize:10,letterSpacing:'0.12em'}}>PASSAGE — READ CAREFULLY</p>
+              <p style={{margin:0}}>{currentQ.passage}</p>
+            </div>
+          )}
+
+          {/* Question + hint + options — keyed by qIndex so the whole block remounts on every
+              question advance, wiping all DOM state (focus, inline styles) from the previous question */}
+          <div key={qIndex}>
+
+          {/* Question */}
+          <div style={{background:C.card,borderRadius:22,padding:'22px 20px',marginBottom:16,boxShadow:dark?'0 6px 28px rgba(0,0,0,0.40)':'0 6px 24px rgba(0,0,0,0.08)'}}>
+            <p style={{fontSize:16,fontWeight:700,color:C.navy,lineHeight:1.65,margin:0}}>{currentQ.q}</p>
+          </div>
+
+          {/* Hint */}
+          {!hintShown ? (
+            <button
+              onClick={() => setHintShown(true)}
+              disabled={chosen !== null}
+              style={{width:'100%',background:'transparent',border:`1px dashed ${C.border}`,borderRadius:10,padding:'8px 14px',fontSize:12,color:C.muted,cursor:chosen!==null?'default':'pointer',marginBottom:12,opacity:chosen!==null?0.5:1,touchAction:'manipulation'}}
+            >
+              💡 Show hint (−2 XP)
+            </button>
+          ) : (
+            <div style={{background:(dark?'#C4B5FD':'#FCD34D')+'25',border:`1px solid ${dark?'#C4B5FD':'#FCD34D'}60`,borderRadius:10,padding:'10px 14px',fontSize:13,color:dark?'#DDD6FE':'#92400E',marginBottom:12,fontWeight:600}}>
+              💡 {currentQ.hint}
+            </div>
+          )}
+
+          {/* Answer options */}
+          <div style={{display:'grid',gap:9,marginBottom:16}}>
+            {currentQ.opts.map((opt, i) => {
+              let bg = C.card, border = `1.5px solid ${C.border}50`, col = C.navy, shadow = 'none'
+              if (chosen !== null) {
+                if (i === currentQ.ans)                              { bg = C.success+'22'; border = `2px solid ${C.success}`; col = dark?'#4ADE80':'#166534'; shadow = `0 0 0 3px ${C.success}18` }
+                else if (chosen >= 0 && i === chosen && i !== currentQ.ans) { bg = '#EF444422'; border = '2px solid #EF4444'; col = dark?'#F87171':'#991B1B'; shadow = '0 0 0 3px #EF444418' }
+              }
+              return (
+                <button
+                  key={i} onClick={() => handleAnswer(i)}
+                  disabled={chosen !== null}
+                  style={{background:bg,border,borderRadius:16,padding:'14px 16px',minHeight:56,textAlign:'left',cursor:chosen!==null?'default':'pointer',fontSize:14,fontWeight:600,color:col,touchAction:'manipulation',pointerEvents:inputBlocked?'none':'auto',WebkitTapHighlightColor:'transparent',outline:'none',boxShadow:shadow,transition:'box-shadow 0.2s'}}
+                >
+                  <span style={{fontWeight:900,marginRight:10,opacity:0.4,fontSize:12}}>{['A','B','C','D'][i]}</span>
+                  {isDesktop && chosen === null && <span style={{float:'right',fontSize:10,fontWeight:700,opacity:0.3,letterSpacing:'0.05em'}}>{i+1}</span>}
+                  {opt}
+                  {chosen !== null && i === currentQ.ans && <span style={{float:'right'}}>✓</span>}
+                  {chosen !== null && chosen >= 0 && i === chosen && i !== currentQ.ans && <span style={{float:'right'}}>✗</span>}
+                </button>
+              )
+            })}
+          </div>
+
+          </div>{/* end keyed question block */}
+
+          {/* Post-answer AI explanation trigger */}
+          {chosen !== null && (
+            <div style={{marginBottom:12}}>
+              <button
+                onClick={handleAiExplain}
+                style={{
+                  width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                  background: aiOpen ? '#F5F3FF' : 'transparent',
+                  border:`1.5px solid #7C3AED40`,
+                  borderRadius:12, padding:'10px 14px', fontSize:13, fontWeight:700,
+                  color: '#7C3AED', cursor:'pointer', transition:'all 0.2s',
+                }}
+              >
+                <span style={{fontSize:16}}>✨</span>
+                {aiText === 'loading' ? 'Thinking…' : aiOpen ? 'Hide Explanation' : 'Explain with AI'}
+              </button>
+            </div>
+          )}
+
+          {/* AI Tutor bottom sheet — mobile only */}
+          {aiOpen && chosen !== null && (
+            <>
+              <div onClick={() => setAiOpen(false)} style={{position:'fixed',inset:0,zIndex:155,background:'rgba(0,0,0,0.4)'}} />
+              <div
+                ref={aiPanelRef}
+                className="animate-slide-up"
+                style={{
+                  position:'fixed', bottom:NAV_HEIGHT, left:0, right:0, zIndex:160,
+                  background: '#FFFFFF',
+                  borderRadius:'20px 20px 0 0',
+                  maxHeight:'62dvh',
+                  overflowY:'auto',
+                  boxShadow:'0 -8px 32px rgba(0,0,0,0.18)',
+                }}
+              >
+                <div style={{display:'flex',justifyContent:'center',padding:'10px 0 4px'}}>
+                  <div style={{width:36,height:4,borderRadius:2,background:C.border}} />
+                </div>
+                <div style={{padding:'4px 16px 24px'}}>
+                  {aiExplainContent}
+                </div>
+              </div>
+            </>
+          )}
+
+          {chosen !== null && (
+            <button
+              onClick={handleNext}
+              style={{width:'100%',background:`linear-gradient(135deg,${C.primary},${dark?'#1E1B4B':'#0F766E'})`,color:'white',border:'none',borderRadius:16,padding:'15px',fontSize:15,fontWeight:800,cursor:'pointer',boxShadow:`0 4px 16px ${C.primary}40`,touchAction:'manipulation'}}
+            >
+              {qIndex + 1 < total ? 'Next →' : 'See Results 🎉'}
+            </button>
+          )}
+        </>
       )}
 
       {/* Ghost-tap blocker: transparent full-screen overlay activated synchronously
@@ -540,7 +753,8 @@ export default function QuizPage({ user, profile, refreshProfile }) {
         onTouchEnd={e=>{e.stopPropagation();e.preventDefault()}}
       />
 
-      {/* Brain Break overlay */}      {breakCard && (
+      {/* Brain Break overlay */}
+      {breakCard && (
         <div style={{
           position:'fixed', inset:0, zIndex:200,
           background: 'rgba(255,255,255,0.97)',
