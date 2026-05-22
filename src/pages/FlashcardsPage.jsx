@@ -1,8 +1,9 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getQuestions } from '../data/questions.js'
 import { scheduleReview } from '../lib/srs.js'
 import { getColors, Shell } from './HomePage.jsx'
+import { useBreakpoint } from '../hooks/useBreakpoint.js'
 import FlashcardDeck from '../components/FlashcardDeck.jsx'
 
 // ── Rating config ─────────────────────────────────────────────────────────────
@@ -56,6 +57,8 @@ export default function FlashcardsPage() {
   const C         = getColors(stream, subject)
   const dark      = stream === 'alevel'
   const allQs     = getQuestions(stream, subject)
+  const deckRef   = useRef(null)
+  const { isDesktop } = useBreakpoint()
 
   const topics = useMemo(
     () => ['All', ...Array.from(new Set(allQs.map(q => q.topic)))],
@@ -75,6 +78,18 @@ export default function FlashcardsPage() {
     const t = setTimeout(() => setShowHint(false), 3000)
     return () => clearTimeout(t)
   }, [])
+
+  // Keyboard: ArrowLeft = again, ArrowRight = good, Space = flip
+  useEffect(() => {
+    function onKey(e) {
+      if (done) return
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+      if (e.key === 'ArrowLeft')  { e.preventDefault(); deckRef.current?.dismiss('left') }
+      if (e.key === 'ArrowRight') { e.preventDefault(); deckRef.current?.dismiss('right') }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [done])
 
   const cards = useMemo(
     () => topicFilter === 'All' ? allQs : allQs.filter(q => q.topic === topicFilter),
@@ -266,9 +281,10 @@ export default function FlashcardsPage() {
       <div style={{marginBottom: flipped ? 20 : 36, position:'relative'}}>
         <FlashcardDeck
           key={deckKey}
+          ref={deckRef}
           cards={deckCards}
           C={C}
-          height={240}
+          height={isDesktop ? 300 : 240}
           onDismiss={handleDeckDismiss}
           onFlipChange={setFlipped}
           onComplete={handleDeckComplete}
@@ -279,9 +295,9 @@ export default function FlashcardsPage() {
             fontSize:10, fontWeight:700, letterSpacing:'0.05em',
             marginTop:12, animation:'hintFade 1s ease 2s forwards', pointerEvents:'none',
           }}>
-            <span style={{color:'#EF4444'}}>← Again</span>
-            <span style={{color:C.muted, opacity:0.6}}>swipe to rate</span>
-            <span style={{color:'#10B981'}}>Good →</span>
+            <span style={{color:'#EF4444'}}>{isDesktop ? '← Again' : '← Again'}</span>
+            <span style={{color:C.muted, opacity:0.6}}>{isDesktop ? 'arrow keys to rate' : 'swipe to rate'}</span>
+            <span style={{color:'#10B981'}}>{isDesktop ? 'Good →' : 'Good →'}</span>
           </div>
         )}
       </div>
@@ -289,7 +305,7 @@ export default function FlashcardsPage() {
       {/* Rating prompt */}
       {flipped ? (
         <div style={{textAlign:'center', fontSize:11, color:C.muted, padding:'4px 0'}}>
-          Swipe right if you knew it · swipe left if you didn't
+          {isDesktop ? 'Arrow Left = again · Arrow Right = good' : 'Swipe right if you knew it · swipe left if you didn\'t'}
         </div>
       ) : (
         <div style={{textAlign:'center', fontSize:12, color:C.muted, padding:'6px 0'}}>

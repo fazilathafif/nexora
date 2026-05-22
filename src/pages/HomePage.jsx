@@ -12,7 +12,9 @@ import { upsertProfile } from '../lib/db.js'
 import { isSupabaseConfigured } from '../lib/supabase.js'
 import { getDueCount, getDueIds } from '../lib/srs.js'
 import { NAV_HEIGHT } from '../styles/tokens.js'
+import { SIDEBAR_W, CONTENT_MAX } from '../styles/breakpoints.js'
 import { useSubscription } from '../hooks/useSubscription.js'
+import { useBreakpoint } from '../hooks/useBreakpoint.js'
 import AuthModal from '../components/AuthModal.jsx'
 import WelcomeModal from '../components/WelcomeModal.jsx'
 import FanDeck from '../components/FanDeck.jsx'
@@ -713,7 +715,9 @@ function buildSegments(subjects) {
 
 function GcseSubjectGrid({ subjects, navigate, stream, C }) {
   const [collapsed, setCollapsed] = useState({})
+  const { isTablet, isDesktop } = useBreakpoint()
   const segments = buildSegments(subjects)
+  const cols = isDesktop ? 4 : isTablet ? 3 : 2
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
@@ -738,7 +742,7 @@ function GcseSubjectGrid({ subjects, navigate, stream, C }) {
               </button>
             )}
             {!isCollapsed && (
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+              <div style={{ display:'grid', gridTemplateColumns:`repeat(${cols}, 1fr)`, gap:12 }}>
                 {seg.subjects.map(s => (
                   <SubjectCard
                     key={s.id}
@@ -760,7 +764,43 @@ function GcseSubjectGrid({ subjects, navigate, stream, C }) {
 }
 
 export function Shell({ C, children, noNav, heroContent }) {
+  const { isDesktop, isTablet } = useBreakpoint()
   const heroH = heroContent ? 188 : 64
+
+  if (isDesktop) {
+    return (
+      <div style={{ minHeight:'100dvh', background:'linear-gradient(160deg,#FF6B35 0%,#FF3CAC 52%,#7B2FBE 100%)', fontFamily:'Inter,sans-serif', display:'flex' }}>
+        <style>{`*{box-sizing:border-box}button{font-family:inherit}
+          @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+          @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+          @keyframes spin{to{transform:rotate(360deg)}}
+          @keyframes bounceY{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(5px)}}
+          .animate-slide-up{animation:slideUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94) both}
+          @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+        `}</style>
+
+        {/* Sidebar spacer (BottomNav renders the actual sidebar) */}
+        <div style={{ width:SIDEBAR_W, flexShrink:0 }} />
+
+        {/* Main scrollable area */}
+        <div style={{ flex:1, minHeight:'100dvh', overflowY:'auto' }}>
+          {/* Hero band */}
+          <div style={{ minHeight:heroH, position:'relative', zIndex:1 }}>
+            {heroContent}
+          </div>
+
+          {/* White panel */}
+          <div style={{ background:'white', borderRadius:'28px 28px 0 0', minHeight:`calc(100dvh - ${heroH - 24}px)`, boxShadow:'0 -8px 40px rgba(0,0,0,0.16)' }}>
+            <div style={{ width:36, height:4, background:'#E2E8F0', borderRadius:2, margin:'12px auto 0' }} />
+            <div style={{ maxWidth:CONTENT_MAX, margin:'0 auto', padding:'16px 32px 40px', animation:'fadeUp 0.35s ease' }}>
+              {children}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div style={{ minHeight:'100dvh', background:'linear-gradient(160deg,#FF6B35 0%,#FF3CAC 52%,#7B2FBE 100%)', fontFamily:'Inter,sans-serif', position:'relative', overflowX:'hidden' }}>
       <style>{`*{box-sizing:border-box}button{font-family:inherit}
@@ -799,7 +839,8 @@ export function Shell({ C, children, noNav, heroContent }) {
         <div style={{ width:36, height:4, background:'#E2E8F0', borderRadius:2, margin:'12px auto 0' }} />
         <div style={{
           width:'100%',
-          padding:`16px 16px calc(${noNav ? 24 : NAV_HEIGHT + 24}px + env(safe-area-inset-bottom, 0px))`,
+          ...(isTablet ? { maxWidth:720, margin:'0 auto' } : {}),
+          padding:`16px ${isTablet ? 24 : 16}px calc(${noNav ? 24 : NAV_HEIGHT + 24}px + env(safe-area-inset-bottom, 0px))`,
           animation:'fadeUp 0.35s ease',
         }}>
           {children}

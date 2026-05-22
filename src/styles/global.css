@@ -72,6 +72,25 @@ img, svg { display: block; max-width: 100%; }
 /* Safe area for notched phones */
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 16px); }
 
+/* ── Responsive layout helpers ───────────────────────────────────────────── */
+:root {
+  --sidebar-w: 220px;
+  --content-max: 860px;
+  --panel-px: 16px;
+}
+@media (min-width: 640px) {
+  :root { --panel-px: 24px; }
+}
+@media (min-width: 1024px) {
+  :root { --panel-px: 32px; }
+}
+
+/* Hover states for interactive elements on pointer devices */
+@media (hover: hover) {
+  .btn-hover:hover { filter: brightness(1.08); }
+  .card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.14); transition: transform 0.18s ease, box-shadow 0.18s ease; }
+}
+
 /* Horizontal scroll strip — snap to cards */
 .scroll-x {
   display: flex;

@@ -5,6 +5,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react'
+import { useBreakpoint } from '../hooks/useBreakpoint.js'
 
 // ── Card geometry ─────────────────────────────────────────────────────────────
 const CARD_W      = 172
@@ -60,6 +61,7 @@ function isDarkCard(hex) {
 
 export default function FanDeck({ subjects, stream, navigate, C }) {
   const N = subjects.length
+  const { isDesktop } = useBreakpoint()
 
   const [activeIdx,  setActiveIdx]  = useState(0)
   const [showHint,   setShowHint]   = useState(true)
@@ -201,6 +203,57 @@ export default function FanDeck({ subjects, stream, navigate, C }) {
   const dark       = stream === 'alevel'
   const hintColor  = dark ? 'rgba(255,255,255,0.28)' : (C?.muted ?? 'rgba(0,0,0,0.3)')
   const dotInColor = dark ? 'rgba(255,255,255,0.15)' : (C?.border ?? 'rgba(0,0,0,0.15)')
+
+  // ── Desktop: horizontal card grid ─────────────────────────────────────────
+  if (isDesktop) {
+    return (
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(200px, 1fr))', gap:14 }}>
+        {subjects.map(s => {
+          const sc   = EXAM_COLORS[s.id] || SC
+          const m    = EXAM_META[s.id] || {}
+          const isActive = s.id === subj?.id
+          return (
+            <div key={s.id} style={{
+              background: sc.card,
+              border: `2px solid ${isActive ? sc.primary : sc.primary + '30'}`,
+              borderRadius:20, padding:'18px 16px',
+              display:'flex', flexDirection:'column', gap:10,
+              boxShadow: isActive ? `0 4px 20px ${sc.primary}30` : '0 2px 8px rgba(0,0,0,0.06)',
+              transition:'box-shadow 0.2s, border-color 0.2s',
+            }}>
+              <div style={{ fontSize:32, marginBottom:2 }}>{s.emoji}</div>
+              <div>
+                <div style={{ fontSize:15, fontWeight:900, color:sc.navy, marginBottom:2 }}>{s.label}</div>
+                {(m.type || s.desc) && (
+                  <div style={{ fontSize:11, fontWeight:700, color:sc.primary }}>{m.type || s.desc}</div>
+                )}
+              </div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:6, marginTop:'auto' }}>
+                <button
+                  onClick={() => navigate(`/${stream}/quiz/${s.id}`)}
+                  style={{ background:sc.primary, color:'white', border:'none', borderRadius:10, padding:'8px 4px', fontSize:11, fontWeight:800, cursor:'pointer', fontFamily:'Inter,sans-serif' }}
+                  onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.1)' }}
+                  onMouseLeave={e => { e.currentTarget.style.filter = 'none' }}
+                >Practice</button>
+                <button
+                  onClick={() => navigate(`/${stream}/mock/${s.id}`)}
+                  style={{ background:'transparent', border:`1.5px solid ${sc.primary}50`, borderRadius:10, padding:'8px 4px', fontSize:11, fontWeight:800, color:sc.primary, cursor:'pointer', fontFamily:'Inter,sans-serif' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = `${sc.primary}15` }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                >Mock</button>
+                <button
+                  onClick={() => navigate(`/${stream}/flashcards/${s.id}`)}
+                  style={{ background:'transparent', border:`1.5px solid ${sc.primary}50`, borderRadius:10, padding:'8px 4px', fontSize:11, fontWeight:800, color:sc.primary, cursor:'pointer', fontFamily:'Inter,sans-serif' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = `${sc.primary}15` }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                >Cards</button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
 
   return (
     <div style={{ userSelect:'none', marginBottom:4 }}>

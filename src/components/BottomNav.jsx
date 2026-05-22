@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { STREAM_CONFIG } from '../data/questions.js'
 import { getColors } from '../pages/HomePage.jsx'
-import { NAV_HEIGHT } from '../styles/tokens.js'
+import { NAV_HEIGHT, SERIF } from '../styles/tokens.js'
+import { SIDEBAR_W } from '../styles/breakpoints.js'
+import { useBreakpoint } from '../hooks/useBreakpoint.js'
 
 function useStream() {
   const { pathname } = useLocation()
@@ -169,6 +171,7 @@ export default function BottomNav() {
   const stream        = useStream()
   const activeTab     = useActiveTab(stream)
   const [showPicker, setShowPicker] = useState(false)
+  const { isDesktop } = useBreakpoint()
 
   if (!stream) return null
 
@@ -207,6 +210,77 @@ export default function BottomNav() {
       action: () => navigate(`/${stream}/settings`),
     },
   ]
+
+  if (isDesktop) {
+    return (
+      <>
+        {showPicker && (
+          <SubjectSheet stream={stream} C={C} dark={dark} onClose={() => setShowPicker(false)} />
+        )}
+        <nav style={{
+          position:'fixed', top:0, left:0, bottom:0,
+          width:SIDEBAR_W, zIndex:100,
+          display:'flex', flexDirection:'column',
+          background:'linear-gradient(180deg,#7B2FBE 0%,#FF3CAC 60%,#FF6B35 100%)',
+          boxShadow:'2px 0 20px rgba(0,0,0,0.25)',
+          paddingTop:'env(safe-area-inset-top, 0px)',
+        }}>
+          {/* Logo */}
+          <div style={{ padding:'28px 20px 24px', borderBottom:'1px solid rgba(255,255,255,0.12)' }}>
+            <div style={{ fontSize:22, fontWeight:900, color:'white', letterSpacing:'-0.5px', fontFamily:SERIF }}>
+              Nexora <span style={{ opacity:0.6 }}>✦</span>
+            </div>
+            <div style={{ fontSize:10, color:'rgba(255,255,255,0.55)', marginTop:3, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase' }}>
+              {stream === 'gcse' ? 'GCSE Track' : 'A-Level Track'}
+            </div>
+          </div>
+
+          {/* Nav items */}
+          <div style={{ flex:1, padding:'12px 10px', display:'flex', flexDirection:'column', gap:4 }}>
+            {tabs.map(tab => {
+              const active = activeTab === tab.id
+              return (
+                <button
+                  key={tab.id}
+                  onClick={tab.action}
+                  style={{
+                    display:'flex', alignItems:'center', gap:12,
+                    padding:'11px 14px',
+                    borderRadius:12,
+                    border:'none',
+                    background: active ? 'rgba(255,255,255,0.2)' : 'transparent',
+                    cursor:'pointer',
+                    fontFamily:'Inter,sans-serif',
+                    WebkitTapHighlightColor:'transparent',
+                    transition:'background 0.2s ease',
+                  }}
+                  onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.1)' }}
+                  onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
+                >
+                  <tab.Icon color={active ? 'white' : 'rgba(255,255,255,0.6)'} size={20} />
+                  <span style={{
+                    fontSize:13, fontWeight: active ? 800 : 500,
+                    color: active ? 'white' : 'rgba(255,255,255,0.65)',
+                    letterSpacing: active ? '-0.01em' : '0',
+                  }}>
+                    {tab.label}
+                  </span>
+                  {active && (
+                    <div style={{ marginLeft:'auto', width:4, height:4, borderRadius:2, background:'white' }} />
+                  )}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Bottom brand note */}
+          <div style={{ padding:'16px 20px', borderTop:'1px solid rgba(255,255,255,0.1)', fontSize:10, color:'rgba(255,255,255,0.35)', fontWeight:600, letterSpacing:'0.04em' }}>
+            nexoralearn.app
+          </div>
+        </nav>
+      </>
+    )
+  }
 
   return (
     <>

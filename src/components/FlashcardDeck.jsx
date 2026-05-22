@@ -18,7 +18,7 @@
  *   - Each new top card is mounted via `key={index}` so flip state resets.
  */
 
-import { useState, useRef } from 'react'
+import { useState, useRef, forwardRef, useImperativeHandle } from 'react'
 
 const DISMISS_PX  = 80    // px — commit dismiss above this
 const DISMISS_VEL = 0.4   // px/ms — fast-flick always dismisses
@@ -123,7 +123,7 @@ function useSwipe({ onDismiss, onFlip }) {
 }
 
 // ── Flashcard ─────────────────────────────────────────────────────────────────
-function Flashcard({ card, C, onDismiss, onFlipChange }) {
+const Flashcard = forwardRef(function Flashcard({ card, C, onDismiss, onFlipChange }, ref) {
   const [flipped, setFlipped] = useState(false)
 
   const { cardRef, leftRef, rightRef, onPointerDown, onPointerMove, onPointerUp } =
@@ -135,6 +135,19 @@ function Flashcard({ card, C, onDismiss, onFlipChange }) {
         return next
       }),
     })
+
+  useImperativeHandle(ref, () => ({
+    flyOut(dir) {
+      const flyX  = dir === 'right' ? 640 : -640
+      const angle = dir === 'right' ? 22 : -22
+      const el = cardRef.current
+      if (el) {
+        el.style.transition = 'transform 0.32s cubic-bezier(0.25,0.46,0.45,0.94)'
+        el.style.transform  = `translateX(${flyX}px) rotate(${angle}deg)`
+      }
+      setTimeout(() => onDismiss(dir), 320)
+    },
+  }))
 
   return (
     <div
@@ -223,7 +236,7 @@ function Flashcard({ card, C, onDismiss, onFlipChange }) {
       </div>
     </div>
   )
-}
+})
 
 // ── FlashcardDeck (default export) ────────────────────────────────────────────
 const DEFAULT_C = {
@@ -231,8 +244,13 @@ const DEFAULT_C = {
   navy:'#134E4A', muted:'#6B7280',
 }
 
-export default function FlashcardDeck({ cards, C = DEFAULT_C, height = 260, onDismiss, onFlipChange, onComplete }) {
+export default forwardRef(function FlashcardDeck({ cards, C = DEFAULT_C, height = 260, onDismiss, onFlipChange, onComplete }, ref) {
   const [index, setIndex] = useState(0)
+  const flashcardRef = useRef(null)
+
+  useImperativeHandle(ref, () => ({
+    dismiss(dir) { flashcardRef.current?.flyOut(dir) },
+  }))
 
   if (!cards?.length || index >= cards.length) return null
 
@@ -262,6 +280,7 @@ export default function FlashcardDeck({ cards, C = DEFAULT_C, height = 260, onDi
       {/* Top card — key resets flip state on each new card */}
       <Flashcard
         key={index}
+        ref={flashcardRef}
         card={cards[index]}
         C={C}
         onDismiss={handleDismiss}
@@ -269,4 +288,4 @@ export default function FlashcardDeck({ cards, C = DEFAULT_C, height = 260, onDi
       />
     </div>
   )
-}
+})

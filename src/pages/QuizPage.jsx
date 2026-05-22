@@ -13,6 +13,7 @@ import { scheduleReview, sortByDue, getDueIds } from '../lib/srs.js'
 import { getColors, Shell, Badge }     from './HomePage.jsx'
 import { getRandomBreak }              from '../data/breaks.js'
 import { NAV_HEIGHT }                  from '../styles/tokens.js'
+import { useBreakpoint }               from '../hooks/useBreakpoint.js'
 
 function CopyButton({ text }) {
   const [copied, setCopied] = useState(false)
@@ -44,6 +45,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
   const navigate            = useNavigate()
   const C                   = getColors(stream, subject)
   const dark                = stream === 'alevel'
+  const { isDesktop }       = useBreakpoint()
 
   // Computed once on mount — never re-sorted during the session.
   // sortByDue reads localStorage; scheduleReview writes it. If questions were
@@ -119,6 +121,26 @@ export default function QuizPage({ user, profile, refreshProfile }) {
       aiPanelRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     }
   }, [aiOpen, aiText])
+
+  // Keyboard navigation: 1-4 to answer, Enter/Space to advance
+  useEffect(() => {
+    function onKey(e) {
+      if (breakCard) return
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return
+      if (['1','2','3','4'].includes(e.key)) {
+        const idx = Number(e.key) - 1
+        if (idx < currentQRef.current?.opts?.length) {
+          e.preventDefault()
+          if (chosenRef.current === null && !inputBlocked) handleAnswer(idx)
+        }
+      }
+      if (e.key === 'Enter' || e.key === ' ') {
+        if (chosenRef.current !== null) { e.preventDefault(); handleNext() }
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [breakCard, inputBlocked]) // eslint-disable-line
 
   // Auto-dismiss brain break after 3.5s
   useEffect(() => {
@@ -388,6 +410,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
               style={{background:bg,border,borderRadius:16,padding:'14px 16px',minHeight:56,textAlign:'left',cursor:chosen!==null?'default':'pointer',fontSize:14,fontWeight:600,color:col,touchAction:'manipulation',pointerEvents:inputBlocked?'none':'auto',WebkitTapHighlightColor:'transparent',outline:'none',boxShadow:shadow,transition:'box-shadow 0.2s'}}
             >
               <span style={{fontWeight:900,marginRight:10,opacity:0.4,fontSize:12}}>{['A','B','C','D'][i]}</span>
+              {isDesktop && chosen === null && <span style={{float:'right',fontSize:10,fontWeight:700,opacity:0.3,letterSpacing:'0.05em'}}>{i+1}</span>}
               {opt}
               {chosen !== null && i === currentQ.ans && <span style={{float:'right'}}>✓</span>}
               {chosen !== null && chosen >= 0 && i === chosen && i !== currentQ.ans && <span style={{float:'right'}}>✗</span>}
@@ -502,6 +525,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
           style={{width:'100%',background:`linear-gradient(135deg,${C.primary},${dark?'#1E1B4B':'#0F766E'})`,color:'white',border:'none',borderRadius:16,padding:'15px',fontSize:15,fontWeight:800,cursor:'pointer',boxShadow:`0 4px 16px ${C.primary}40`,touchAction:'manipulation'}}
         >
           {qIndex + 1 < total ? 'Next →' : 'See Results 🎉'}
+          {isDesktop && <span style={{marginLeft:10,fontSize:11,opacity:0.55,fontWeight:600}}>Enter ↵</span>}
         </button>
       )}
 
