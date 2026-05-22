@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown'
 import { Shell, getColors } from './HomePage.jsx'
 import { useBreakpoint } from '../hooks/useBreakpoint.js'
 import { getNotes, deleteNote, exportNotesText, NOTES_MAX } from '../lib/notes.js'
+import { upsertProfile } from '../lib/db.js'
 
 const APP_VERSION = '1.0.0-beta'
 
@@ -229,7 +230,7 @@ function Card({ children, style }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function SettingsPage({ user, profile, signOut }) {
+export default function SettingsPage({ user, profile, signOut, refreshProfile }) {
   const { stream } = useParams()
   const navigate   = useNavigate()
   const C          = getColors(stream)
@@ -238,7 +239,12 @@ export default function SettingsPage({ user, profile, signOut }) {
   const [notes,        setNotes]        = useState(() => getNotes())
   const [expandedNote, setExpandedNote] = useState(null)
   const [copyAllDone,  setCopyAllDone]  = useState(false)
-  const [examYear,     setExamYear]     = useState(() => localStorage.getItem('nx_exam_target') || '')
+  // Derive exam year from profile.exam_date (authoritative), fall back to localStorage
+  const [examYear, setExamYear] = useState(() => {
+    if (profile?.exam_date) return new Date(profile.exam_date).getFullYear().toString()
+    return localStorage.getItem('nx_exam_target') || ''
+  })
+  const [examSaving, setExamSaving] = useState(false)
 
   const email   = user?.email ?? ''
   const isGuest = !email || user?.isGuest
@@ -274,6 +280,19 @@ export default function SettingsPage({ user, profile, signOut }) {
   }
 
   const daysLeft = examYear ? Math.max(0, Math.ceil((new Date(`${examYear}-06-01`) - new Date()) / 86400000)) : null
+
+  async function handleExamYearChange(year) {
+    setExamYear(year)
+    localStorage.setItem('nx_exam_target', year)
+    if (!year || isGuest || !user?.id) return
+    setExamSaving(true)
+    try {
+      const examDate = `${year}-06-01`
+      const { error } = await upsertProfile(user.id, { exam_date: examDate })
+      if (!error) await refreshProfile?.()
+    } catch { /* localStorage already updated — silent fail */ }
+    finally { setExamSaving(false) }
+  }
 
   // ── Hero profile content ─────────────────────────────────────────────────────
   const heroEl = (
@@ -387,7 +406,7 @@ export default function SettingsPage({ user, profile, signOut }) {
       <div style={{fontSize:11, fontWeight:700, color:'#64748B', letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:12}}>Exam Target</div>
       <select
         value={examYear}
-        onChange={e => { setExamYear(e.target.value); localStorage.setItem('nx_exam_target', e.target.value) }}
+        onChange={e => handleExamYearChange(e.target.value)}
         style={{width:'100%', padding:'9px 12px', borderRadius:10, border:'1.5px solid #E2E8F0', fontSize:13, fontWeight:700, color:'#1E293B', background:'white', cursor:'pointer', outline:'none'}}
       >
         <option value=''>Select exam year</option>
@@ -396,7 +415,8 @@ export default function SettingsPage({ user, profile, signOut }) {
         <option value='2027'>June 2027</option>
         <option value='2028'>June 2028</option>
       </select>
-      {daysLeft !== null && (
+      {examSaving && <div style={{marginTop:6, fontSize:11, color:'#94A3B8'}}>Saving…</div>}
+      {daysLeft !== null && !examSaving && (
         <div style={{marginTop:10, display:'flex', alignItems:'center', gap:6}}>
           <div style={{flex:1, background:'#F1F5F9', borderRadius:6, height:5}}>
             <div style={{width:`${Math.min(100, Math.max(0, 100 - (daysLeft / 365 * 100)))}%`, height:'100%', borderRadius:6, background:`linear-gradient(90deg,${C.primary},#10B981)`}} />

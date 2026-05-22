@@ -102,9 +102,10 @@ export async function getProfile(userId) {
 
 export async function upsertProfile(userId, updates) {
   if (!isSupabaseConfigured) return guestUpsertProfile(updates)
-  // Generate a referral code for brand-new profiles
   const patch = { ...updates }
-  if (!patch.referral_code) {
+  // Only generate a referral_code during initial profile creation (when stream is first set).
+  // Partial updates (e.g. exam_date) must not overwrite an existing code.
+  if (!patch.referral_code && patch.stream) {
     patch.referral_code = Math.random().toString(36).slice(2, 10).toUpperCase()
   }
   return supabase

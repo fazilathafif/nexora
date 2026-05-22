@@ -92,7 +92,7 @@ export default function App() {
           <MatchPage />
         } />
         <Route path="/:stream/settings" element={
-          <SettingsPage user={user} profile={profile} signOut={signOut} />
+          <SettingsPage user={user} profile={profile} signOut={signOut} refreshProfile={refreshProfile} />
         } />
 
         {/* Catch-all */}
