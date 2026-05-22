@@ -120,11 +120,14 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
   const [topics,      setTopics]      = useState([])
   const [loading,     setLoading]     = useState(true)
   const [editingDate, setEditingDate] = useState(false)
+  const [savedDate,   setSavedDate]   = useState(null)
   const [dateInput,   setDateInput]   = useState(profile?.exam_date ?? '')
   const [dateError,   setDateError]   = useState(null)
   const [dateSaving,  setDateSaving]  = useState(false)
 
-  const days = daysUntil(profile?.exam_date)
+  // Prefer locally-saved date so the UI updates instantly without waiting for a profile re-fetch
+  const examDate = savedDate ?? profile?.exam_date
+  const days = daysUntil(examDate)
 
   useEffect(() => {
     if (!user) { setLoading(false); return }
@@ -179,10 +182,18 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
     setDateError(null)
     setDateSaving(true)
     try {
-      const { error } = await upsertProfile(user.id, { exam_date: date })
+      // Race against a 10-second timeout so the button never hangs forever
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), 10000)
+      )
+      const { error } = await Promise.race([
+        upsertProfile(user.id, { exam_date: date }),
+        timeout,
+      ])
       if (error) throw error
-      await refreshProfile?.()
+      setSavedDate(date)        // optimistic — show countdown immediately
       setEditingDate(false)
+      refreshProfile?.()        // background refresh, not awaited
     } catch {
       setDateError('Could not save — please try again.')
     } finally {
@@ -252,7 +263,7 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
                 </div>
               )}
               <button
-                onClick={() => { setDateInput(profile?.exam_date ?? ''); setEditingDate(true) }}
+                onClick={() => { setDateInput(examDate ?? ''); setEditingDate(true) }}
                 style={{background:'rgba(255,255,255,0.15)',border:'none',borderRadius:10,padding:'6px 14px',color:'white',fontWeight:700,cursor:'pointer',fontSize:12}}
               >
                 ✏️ Edit date
