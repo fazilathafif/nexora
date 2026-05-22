@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { STREAM_CONFIG } from '../data/questions.js'
 import { getColors } from '../pages/HomePage.jsx'
@@ -18,11 +17,12 @@ function useActiveTab(stream) {
   if (pathname === `/${stream}`) return 'home'
   if (pathname.includes('/progress'))  return 'progress'
   if (pathname.includes('/plan'))      return 'plan'
+  if (pathname.includes('/today'))     return 'today'
   if (pathname.includes('/quiz/') ||
     pathname.includes('/mock/') ||
     pathname.includes('/flashcards/') ||
     pathname.includes('/match/')
-  ) return 'practice'
+  ) return 'today'
   if (pathname.includes('/settings')) return 'me'
   return 'home'
 }
@@ -40,13 +40,13 @@ function HomeIcon({ color, size = 26 }) {
   )
 }
 
-function PracticeIcon({ color, size = 26 }) {
+function TodayIcon({ color, size = 26 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      {/* Lightning bolt — energy, action */}
-      <path
-        d="M13 2L4.5 13.5H12L11 22L19.5 10.5H12z"
-        stroke={color} strokeWidth={1.9} strokeLinejoin="round" strokeLinecap="round"
+      {/* Sun / today — radiant circle with rays */}
+      <circle cx="12" cy="12" r="4" stroke={color} strokeWidth={1.9} />
+      <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
+        stroke={color} strokeWidth={1.9} strokeLinecap="round"
       />
     </svg>
   )
@@ -170,7 +170,6 @@ export default function BottomNav() {
   const navigate      = useNavigate()
   const stream        = useStream()
   const activeTab     = useActiveTab(stream)
-  const [showPicker, setShowPicker] = useState(false)
   const { isDesktop } = useBreakpoint()
 
   if (!stream) return null
@@ -186,10 +185,10 @@ export default function BottomNav() {
       action: () => navigate(`/${stream}`),
     },
     {
-      id: 'practice',
-      label: 'Practice',
-      Icon: PracticeIcon,
-      action: () => setShowPicker(true),
+      id: 'today',
+      label: 'Today',
+      Icon: TodayIcon,
+      action: () => navigate(`/${stream}/today`),
     },
     {
       id: 'progress',
@@ -213,11 +212,7 @@ export default function BottomNav() {
 
   if (isDesktop) {
     return (
-      <>
-        {showPicker && (
-          <SubjectSheet stream={stream} C={C} dark={dark} onClose={() => setShowPicker(false)} />
-        )}
-        <nav style={{
+      <nav style={{
           position:'fixed', top:0, left:0, bottom:0,
           width:SIDEBAR_W, zIndex:100,
           display:'flex', flexDirection:'column',
@@ -278,17 +273,11 @@ export default function BottomNav() {
             nexoralearn.app
           </div>
         </nav>
-      </>
     )
   }
 
   return (
-    <>
-      {showPicker && (
-        <SubjectSheet stream={stream} C={C} dark={dark} onClose={() => setShowPicker(false)} />
-      )}
-
-      <nav style={{
+    <nav style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
         height: NAV_HEIGHT,
         background: C.card,
@@ -367,6 +356,5 @@ export default function BottomNav() {
           )
         })}
       </nav>
-    </>
   )
 }

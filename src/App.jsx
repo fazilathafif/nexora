@@ -17,6 +17,7 @@ import StudyPlanPage       from './pages/StudyPlanPage.jsx'
 import FlashcardsPage      from './pages/FlashcardsPage.jsx'
 import MatchPage           from './pages/MatchPage.jsx'
 import SettingsPage        from './pages/SettingsPage.jsx'
+import TodayPage           from './pages/TodayPage.jsx'
 import PrivacyPage         from './pages/PrivacyPage.jsx'
 import TermsPage           from './pages/TermsPage.jsx'
 import LoadingSpinner      from './components/LoadingSpinner.jsx'
@@ -45,7 +46,6 @@ export default function App() {
     return <StreamOnboarding user={user} refreshProfile={refreshProfile} />
   }
 
-  // Show bottom nav only on stream routes (not settings)
   const showNav = /^\/(gcse|alevel)(\/(?!settings)|$)/.test(location.pathname)
 
   return (
@@ -84,6 +84,9 @@ export default function App() {
         } />
         <Route path="/:stream/plan" element={
           <StudyPlanPage user={user} profile={profile} refreshProfile={refreshProfile} />
+        } />
+        <Route path="/:stream/today" element={
+          <TodayPage user={user} profile={profile} />
         } />
         <Route path="/:stream/flashcards/:subject" element={
           <FlashcardsPage />
