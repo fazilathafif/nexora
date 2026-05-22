@@ -46,7 +46,7 @@ export default function App() {
     return <StreamOnboarding user={user} refreshProfile={refreshProfile} />
   }
 
-  const showNav = /^\/(gcse|alevel)(\/(?!settings)|$)/.test(location.pathname)
+  const showNav = /^\/(gcse|alevel)(\/|$)/.test(location.pathname)
 
   return (
     <>
