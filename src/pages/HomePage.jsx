@@ -223,14 +223,17 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
   function switchStream() { navigate('/switch') }
 
   // ── Hero content (rendered inside the gradient band) ──────────────────────
+  const { isDesktop: heroIsDesktop } = useBreakpoint()
   const heroEl = (
     <div style={{ padding:'max(18px, env(safe-area-inset-top, 18px)) 16px 0' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
-          <div style={{ fontSize:24, fontWeight:900, color:'white', letterSpacing:'-0.5px', fontFamily:"'Playfair Display', Georgia, serif" }}>
-            Nexora <span style={{ opacity:0.65 }}>✦</span>
-          </div>
-          <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:4 }}>
+          {!heroIsDesktop && (
+            <div style={{ fontSize:24, fontWeight:900, color:'white', letterSpacing:'-0.5px', fontFamily:"'Playfair Display', Georgia, serif" }}>
+              Nexora <span style={{ opacity:0.65 }}>✦</span>
+            </div>
+          )}
+          <div style={{ display:'flex', alignItems:'center', gap:6, marginTop: heroIsDesktop ? 0 : 4 }}>
             <span style={{ background:'rgba(255,255,255,0.22)', color:'white', border:'1px solid rgba(255,255,255,0.3)', borderRadius:20, padding:'2px 10px', fontSize:10, fontWeight:800, letterSpacing:'0.07em' }}>
               {cfg.label.replace(' Track','').toUpperCase()}
             </span>
