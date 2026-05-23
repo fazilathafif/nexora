@@ -112,7 +112,7 @@ export async function upsertProfile(userId, updates) {
     .from('profiles')
     .upsert({ id: userId, ...patch, updated_at: new Date().toISOString() })
     .select()
-    .single()
+    .maybeSingle()
 }
 
 export async function addXp(userId, amount) {
