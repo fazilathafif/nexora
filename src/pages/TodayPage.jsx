@@ -274,13 +274,7 @@ export default function TodayPage({ user, profile }) {
 
   useEffect(() => {
     if (!user) { setLoading(false); return }
-    const timeout = new Promise(resolve =>
-      setTimeout(() => resolve([{ data: [] }, { data: [] }]), 8000)
-    )
-    Promise.race([
-      Promise.all([getTopicStats(user.id, stream), getWeeklyActivity(user.id)]),
-      timeout,
-    ])
+    Promise.all([getTopicStats(user.id, stream), getWeeklyActivity(user.id)])
       .then(([tRes, aRes]) => {
         const map = {}
         ;(tRes.data ?? []).forEach(a => {

@@ -36,12 +36,9 @@ export default function ProgressPage({ user, profile }) {
 
   useEffect(() => {
     if (!user) { setLoading(false); return }
-    const timeout = new Promise(resolve =>
-      setTimeout(() => resolve([{ data: [] }, { data: [] }]), 8000)
-    )
-    Promise.race([
-      Promise.all([getWeeklyActivity(user.id), getTopicStats(user.id, stream)]),
-      timeout,
+    Promise.all([
+      getWeeklyActivity(user.id),
+      getTopicStats(user.id, stream),
     ]).then(([{ data: w }, { data: t }]) => {
       setWeekly(w ?? [])
       const map = {}
