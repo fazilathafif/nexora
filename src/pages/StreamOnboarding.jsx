@@ -42,8 +42,12 @@ export default function StreamOnboarding({ user, refreshProfile }) {
   async function choose(stream) {
     if (selecting) return
     setSelecting(stream)
-    await upsertProfile(user.id, { stream })
-    await refreshProfile()
+    try {
+      await upsertProfile(user.id, { stream })
+      await refreshProfile()
+    } catch {
+      setSelecting(null)
+    }
   }
 
   return (

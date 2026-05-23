@@ -97,7 +97,7 @@ export async function getProfile(userId) {
   if (!isSupabaseConfigured) {
     return { data: loadGuestProfile(), error: null }
   }
-  return supabase.from('profiles').select('*').eq('id', userId).single()
+  return supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
 }
 
 export async function upsertProfile(userId, updates) {

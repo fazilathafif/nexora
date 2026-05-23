@@ -77,10 +77,15 @@ export function useAuth() {
   }
 
   async function ensureProfile(u) {
-    const { data } = await upsertProfile(u.id, {
-      display_name: 'Student', xp: 0, streak: 0, stream: null,
-    })
-    setProfile(data)
+    const defaults = { id: u.id, display_name: 'Student', xp: 0, streak: 0, stream: null, updated_at: new Date().toISOString() }
+    const { data } = await supabase
+      .from('profiles')
+      .upsert(defaults, { ignoreDuplicates: true })
+      .select()
+      .maybeSingle()
+    // data is the newly-created row, or null if profile already existed (conflict skipped)
+    // Never set profile to null — fall back to known defaults so the app stays functional
+    setProfile(data ?? defaults)
   }
 
   async function refreshProfile() {
