@@ -273,7 +273,8 @@ export default function TodayPage({ user, profile }) {
   const totalDue = srsData.reduce((n, s) => n + s.dueCount, 0)
 
   useEffect(() => {
-    if (!user) { setLoading(false); return }
+    if (!user?.id) { setLoading(false); return }
+    setLoading(true)
     Promise.all([getTopicStats(user.id, stream), getWeeklyActivity(user.id)])
       .then(([tRes, aRes]) => {
         const map = {}
@@ -298,7 +299,7 @@ export default function TodayPage({ user, profile }) {
       })
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [user, stream])
+  }, [user?.id, stream])
 
   if (!cfg) { navigate('/'); return null }
 

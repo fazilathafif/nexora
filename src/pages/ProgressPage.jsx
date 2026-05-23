@@ -19,15 +19,6 @@ function guessSubjectForTopic(topic, cfg) {
   return cfg.subjects[0]?.id
 }
 
-function readCache(key) {
-  if (!key) return null
-  try { return JSON.parse(localStorage.getItem(key)) } catch { return null }
-}
-function writeCache(key, val) {
-  if (!key) return
-  try { localStorage.setItem(key, JSON.stringify(val)) } catch {}
-}
-
 export default function ProgressPage({ user, profile }) {
   const { stream } = useParams()
   const navigate   = useNavigate()
@@ -35,40 +26,34 @@ export default function ProgressPage({ user, profile }) {
   const dark       = stream === 'alevel'
   const cfg        = STREAM_CONFIG[stream]
 
-  const weeklyKey = user?.id ? `nx_weekly_${user.id}` : null
-  const topicsKey = user?.id ? `nx_topics_${user.id}_${stream}` : null
-
-  const [weekly,  setWeekly]  = useState(() => readCache(weeklyKey) ?? [])
-  const [topics,  setTopics]  = useState(() => readCache(topicsKey) ?? [])
-  const [loading, setLoading] = useState(() => !readCache(weeklyKey) || !readCache(topicsKey))
+  const [weekly,  setWeekly]  = useState([])
+  const [topics,  setTopics]  = useState([])
+  const [loading, setLoading] = useState(true)
 
   const xp     = profile?.xp     ?? 0
   const streak = profile?.streak  ?? 0
   const level  = Math.floor(xp / 150) + 1
 
   useEffect(() => {
-    if (!user) { setLoading(false); return }
+    if (!user?.id) { setLoading(false); return }
+    setLoading(true)
     Promise.all([
       getWeeklyActivity(user.id),
       getTopicStats(user.id, stream),
     ]).then(([{ data: w }, { data: t }]) => {
-      const weeklyData = w ?? []
-      setWeekly(weeklyData)
-      writeCache(weeklyKey, weeklyData)
+      setWeekly(w ?? [])
       const map = {}
       ;(t ?? []).forEach(a => {
         if (!map[a.topic]) map[a.topic] = { correct:0, total:0 }
         map[a.topic].total++
         if (a.is_correct) map[a.topic].correct++
       })
-      const topicsData = Object.entries(map).map(([topic, v]) => ({
+      setTopics(Object.entries(map).map(([topic, v]) => ({
         topic,
         pct: Math.round((v.correct / v.total) * 100),
-      }))
-      setTopics(topicsData)
-      writeCache(topicsKey, topicsData)
+      })))
     }).catch(() => {}).finally(() => setLoading(false))
-  }, [user, stream])
+  }, [user?.id, stream])
 
   // Build 7-day heatmap (fill gaps with 0)
   const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']

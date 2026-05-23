@@ -10,15 +10,6 @@ import { STREAM_CONFIG, getQuestions }  from '../data/questions.js'
 import { getColors, Shell, SectionLabel, Badge } from './HomePage.jsx'
 import { upsertProfile }                from '../lib/db.js'
 
-function readCache(key) {
-  if (!key) return null
-  try { return JSON.parse(localStorage.getItem(key)) } catch { return null }
-}
-function writeCache(key, val) {
-  if (!key) return
-  try { localStorage.setItem(key, JSON.stringify(val)) } catch {}
-}
-
 function daysUntil(dateStr) {
   if (!dateStr) return null
   const diff = new Date(dateStr).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)
@@ -126,17 +117,14 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
   const dark       = stream === 'alevel'
   const cfg        = STREAM_CONFIG[stream]
 
-  const topicsKey = user?.id ? `nx_topics_${user.id}_${stream}` : null
-
-  const [topics,      setTopics]      = useState(() => readCache(topicsKey) ?? [])
-  const [loading,     setLoading]     = useState(() => !readCache(topicsKey))
+  const [topics,      setTopics]      = useState([])
+  const [loading,     setLoading]     = useState(true)
   const [editingDate, setEditingDate] = useState(false)
   const [savedDate,   setSavedDate]   = useState(null)
   const [dateInput,   setDateInput]   = useState(profile?.exam_date ?? '')
   const [dateError,   setDateError]   = useState(null)
   const [dateSaving,  setDateSaving]  = useState(false)
 
-  // Prefer locally-saved date so the UI updates instantly without waiting for a profile re-fetch
   const examDate = savedDate ?? profile?.exam_date
   const days = daysUntil(examDate)
 
@@ -146,7 +134,8 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
   }, [profile?.exam_date])
 
   useEffect(() => {
-    if (!user) { setLoading(false); return }
+    if (!user?.id) { setLoading(false); return }
+    setLoading(true)
     getTopicStats(user.id, stream)
       .then(({ data }) => {
         const map = {}
@@ -161,11 +150,10 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
           total: v.total,
         })).sort((a, b) => a.pct - b.pct)
         setTopics(list)
-        writeCache(topicsKey, list)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [user, stream])
+  }, [user?.id, stream])
 
   // Determine which subject a topic belongs to
   function subjectForTopic(topic) {
