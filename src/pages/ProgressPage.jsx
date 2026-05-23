@@ -36,12 +36,14 @@ export default function ProgressPage({ user, profile }) {
 
   useEffect(() => {
     if (!user) { setLoading(false); return }
-    Promise.all([
-      getWeeklyActivity(user.id),
-      getTopicStats(user.id, stream),
+    const timeout = new Promise(resolve =>
+      setTimeout(() => resolve([{ data: [] }, { data: [] }]), 8000)
+    )
+    Promise.race([
+      Promise.all([getWeeklyActivity(user.id), getTopicStats(user.id, stream)]),
+      timeout,
     ]).then(([{ data: w }, { data: t }]) => {
       setWeekly(w ?? [])
-      // Aggregate accuracy by topic
       const map = {}
       ;(t ?? []).forEach(a => {
         if (!map[a.topic]) map[a.topic] = { correct:0, total:0 }
