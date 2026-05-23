@@ -10,6 +10,15 @@ import { STREAM_CONFIG, getQuestions }  from '../data/questions.js'
 import { getColors, Shell, SectionLabel, Badge } from './HomePage.jsx'
 import { upsertProfile }                from '../lib/db.js'
 
+function readCache(key) {
+  if (!key) return null
+  try { return JSON.parse(localStorage.getItem(key)) } catch { return null }
+}
+function writeCache(key, val) {
+  if (!key) return
+  try { localStorage.setItem(key, JSON.stringify(val)) } catch {}
+}
+
 function daysUntil(dateStr) {
   if (!dateStr) return null
   const diff = new Date(dateStr).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)
@@ -117,8 +126,10 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
   const dark       = stream === 'alevel'
   const cfg        = STREAM_CONFIG[stream]
 
-  const [topics,      setTopics]      = useState([])
-  const [loading,     setLoading]     = useState(true)
+  const topicsKey = user?.id ? `nx_topics_${user.id}_${stream}` : null
+
+  const [topics,      setTopics]      = useState(() => readCache(topicsKey) ?? [])
+  const [loading,     setLoading]     = useState(() => !readCache(topicsKey))
   const [editingDate, setEditingDate] = useState(false)
   const [savedDate,   setSavedDate]   = useState(null)
   const [dateInput,   setDateInput]   = useState(profile?.exam_date ?? '')
@@ -128,6 +139,11 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
   // Prefer locally-saved date so the UI updates instantly without waiting for a profile re-fetch
   const examDate = savedDate ?? profile?.exam_date
   const days = daysUntil(examDate)
+
+  // Sync dateInput when profile loads or updates
+  useEffect(() => {
+    if (profile?.exam_date && !savedDate) setDateInput(profile.exam_date)
+  }, [profile?.exam_date])
 
   useEffect(() => {
     if (!user) { setLoading(false); return }
@@ -145,6 +161,7 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
           total: v.total,
         })).sort((a, b) => a.pct - b.pct)
         setTopics(list)
+        writeCache(topicsKey, list)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -244,7 +261,7 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
         ) : (
           <div style={{color:'white'}}>
             <div style={{fontSize:13,opacity:0.8,marginBottom:4}}>
-              {formatDate(profile.exam_date)} · {cfg.label}
+              {formatDate(examDate)} · {cfg.label}
             </div>
             <div style={{fontSize:42,fontWeight:900,lineHeight:1,marginBottom:6}}>
               {days > 0 ? days : 0}
