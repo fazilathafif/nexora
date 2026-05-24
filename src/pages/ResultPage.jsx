@@ -8,13 +8,13 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { fetchExplanation } from '../lib/ai.js'
 import { getColors, Shell } from './HomePage.jsx'
 
-export default function ResultPage({ user, profile }) {
+export default function ResultPage({ user, profile, isDark }) {
   const { stream }  = useParams()
   const navigate    = useNavigate()
   const { state }   = useLocation()
   const subject     = state?.subject
-  const C           = getColors(stream, subject)
-  const dark        = stream === 'alevel'
+  const C           = getColors(stream, subject, isDark)
+  const dark        = isDark
 
   const { answers = [], score = 0, total = 1, xpEarned = 0 } = state ?? {}
 
@@ -22,6 +22,7 @@ export default function ResultPage({ user, profile }) {
   const [explanation, setExplanation] = useState('')
   const [aiLoading, setAiLoading]     = useState(false)
   const [modalOpen, setModalOpen]     = useState(false)
+  const [challengeCopied, setChallengeCopied] = useState(false)
 
   const pct = Math.round((score / total) * 100)
   const medal = pct >= 80 ? '🏆' : pct >= 60 ? '⭐' : '💡'
@@ -38,11 +39,11 @@ export default function ResultPage({ user, profile }) {
   }
 
   return (
-    <Shell C={C}>
+    <Shell C={C} isDark={isDark}>
       {/* Hero */}
       <div style={{textAlign:'center',padding:'16px 0 20px'}}>
         <div style={{fontSize:52,marginBottom:8}}>{medal}</div>
-        <div style={{fontSize:28,fontWeight:900,color:C.navy,fontFamily:"'Playfair Display', Georgia, serif",letterSpacing:'-0.5px'}}>{msg}</div>
+        <div style={{fontSize:22,fontWeight:800,color:C.navy,letterSpacing:'-0.5px'}}>{msg}</div>
         <div style={{fontSize:14,color:C.muted,marginTop:4}}>
           {score}/{total} correct · <span style={{color:C.primary,fontWeight:700}}>+{xpEarned} XP</span>
         </div>
@@ -58,10 +59,12 @@ export default function ResultPage({ user, profile }) {
       <div style={{display:'grid',gap:10,marginBottom:20}}>
         {answers.map((a, i) => (
           <div key={i} style={{
-            background: a.correct ? C.success+'15' : '#EF4444'+'12',
-            borderRadius:16, padding:'14px 16px',
+            background: a.correct ? C.successBg : C.errorBg,
+            border: a.correct ? `1.5px solid ${C.success}30` : `1.5px solid ${C.error}30`,
+            borderLeft: a.correct ? `4px solid ${C.success}` : `4px solid ${C.error}`,
+            borderRadius:8, padding:'14px 16px',
             display:'flex', justifyContent:'space-between', alignItems:'center',
-            boxShadow: dark ? '0 4px 16px rgba(0,0,0,0.3)' : '0 4px 14px rgba(0,0,0,0.07)',
+            boxShadow:'0 1px 4px rgba(0,0,0,0.06)',
           }}>
             <div>
               <div style={{fontSize:12,fontWeight:800,color:a.correct?C.success:'#EF4444'}}>
@@ -84,9 +87,47 @@ export default function ResultPage({ user, profile }) {
         ))}
       </div>
 
+      {/* Challenge a Friend */}
+      {subject && (
+        <div style={{
+          background: `${C.primary}10`, border: `1.5px solid ${C.primary}30`,
+          borderRadius: 16, padding: '16px', marginBottom: 14,
+          display: 'flex', alignItems: 'center', gap: 14,
+        }}>
+          <div style={{ fontSize: 24, flexShrink: 0 }}>🎯</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: C.navy }}>Challenge a Friend</div>
+            <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
+              Beat your score of {score}/{total}!
+            </div>
+          </div>
+          <button
+            onClick={async () => {
+              const url = `${window.location.origin}/${stream}/quiz/${subject}?challenge=1&target=${score}`
+              if (navigator.share) {
+                try { await navigator.share({ title: 'Beat my Nexora score!', url }) } catch {}
+              } else {
+                await navigator.clipboard.writeText(url)
+                setChallengeCopied(true)
+                setTimeout(() => setChallengeCopied(false), 2000)
+              }
+            }}
+            style={{
+              background: challengeCopied ? '#DCFCE7' : `linear-gradient(135deg,${C.primary},${dark?'#1E1B4B':'#0F766E'})`,
+              color: challengeCopied ? '#16A34A' : 'white',
+              border: challengeCopied ? '1.5px solid #16A34A40' : 'none',
+              borderRadius: 10, padding: '8px 14px', fontSize: 12, fontWeight: 800,
+              cursor: 'pointer', flexShrink: 0, fontFamily: 'Inter,sans-serif',
+            }}
+          >
+            {challengeCopied ? '✓ Copied!' : 'Copy Link'}
+          </button>
+        </div>
+      )}
+
       <button
         onClick={() => navigate(`/${stream}`)}
-        style={{width:'100%',background:`linear-gradient(135deg,${C.primary},${dark?'#1E1B4B':'#0F766E'})`,color:'white',border:'none',borderRadius:16,padding:'15px',fontSize:15,fontWeight:800,cursor:'pointer'}}
+        style={{width:'100%',background:C.primary,color:'white',border:'none',borderRadius:8,padding:'15px',height:52,fontSize:15,fontWeight:700,cursor:'pointer'}}
       >
         Choose Another Subject 🎯
       </button>
@@ -160,7 +201,7 @@ function ScoreRing({ pct, color, size=120 }) {
           style={{transition:'stroke-dashoffset 0.8s ease'}}/>
       </svg>
       <div style={{position:'absolute',textAlign:'center'}}>
-        <div style={{fontSize:26,fontWeight:900,color,fontFamily:"'Playfair Display', Georgia, serif"}}>{pct}%</div>
+        <div style={{fontSize:26,fontWeight:900,color}}>{pct}%</div>
       </div>
     </div>
   )

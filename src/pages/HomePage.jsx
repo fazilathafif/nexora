@@ -13,7 +13,9 @@ import { isSupabaseConfigured } from '../lib/supabase.js'
 import { getDueCount, getDueIds } from '../lib/srs.js'
 import { NAV_HEIGHT } from '../styles/tokens.js'
 import { SIDEBAR_W, CONTENT_MAX } from '../styles/breakpoints.js'
+import { getTheme } from '../styles/courseraTokens.js'
 import { useSubscription } from '../hooks/useSubscription.js'
+import { useMastery } from '../hooks/useMastery.js'
 import { useBreakpoint } from '../hooks/useBreakpoint.js'
 import AuthModal from '../components/AuthModal.jsx'
 import WelcomeModal from '../components/WelcomeModal.jsx'
@@ -41,6 +43,30 @@ const ALEVEL_COLORS = {
   muted:     '#64748B',
   success:   '#10B981',
   border:    '#E2E8F0',
+}
+const SAT_COLORS = {
+  primary: '#EA580C', secondary: '#F97316', accent: '#FDBA74',
+  bg: '#FFF7ED', card: '#FFFFFF', navy: '#1E293B', soft: '#FFEDD5',
+  muted: '#64748B', success: '#10B981', border: '#E2E8F0',
+}
+const ACT_COLORS = {
+  primary: '#DC2626', secondary: '#EF4444', accent: '#FECACA',
+  bg: '#FEF2F2', card: '#FFFFFF', navy: '#1E293B', soft: '#FEE2E2',
+  muted: '#64748B', success: '#10B981', border: '#E2E8F0',
+}
+const AP_COLORS = {
+  primary: '#1D4ED8', secondary: '#3B82F6', accent: '#BFDBFE',
+  bg: '#EFF6FF', card: '#FFFFFF', navy: '#1E293B', soft: '#DBEAFE',
+  muted: '#64748B', success: '#10B981', border: '#E2E8F0',
+}
+const PSAT_COLORS = {
+  primary: '#059669', secondary: '#10B981', accent: '#A7F3D0',
+  bg: '#ECFDF5', card: '#FFFFFF', navy: '#1E293B', soft: '#D1FAE5',
+  muted: '#64748B', success: '#10B981', border: '#E2E8F0',
+}
+const STREAM_COLORS = {
+  gcse: GCSE_COLORS, alevel: ALEVEL_COLORS,
+  sat: SAT_COLORS, act: ACT_COLORS, ap: AP_COLORS, psat: PSAT_COLORS,
 }
 
 const SUBJECT_COLORS = {
@@ -158,17 +184,16 @@ const SUBJECT_COLORS = {
   },
 }
 
-export function getColors(stream, subject) {
-  if (subject && SUBJECT_COLORS[subject]) return SUBJECT_COLORS[subject]
-  return stream === 'gcse' ? GCSE_COLORS : ALEVEL_COLORS
+export function getColors(stream, subject, isDark = false) {
+  return getTheme(stream, isDark)
 }
 
-export default function HomePage({ user, profile, refreshProfile, signOut, startPomodoro }) {
+export default function HomePage({ user, profile, refreshProfile, signOut, startPomodoro, isDark }) {
   const { stream } = useParams()
   const navigate   = useNavigate()
   const cfg        = STREAM_CONFIG[stream]
-  const C          = getColors(stream)
-  const dark       = stream === 'alevel'
+  const C          = getColors(stream, null, isDark)
+  const dark       = isDark
   const sub        = useSubscription(profile)
   const [showAuth, setShowAuth]           = useState(false)
   const [editingDate, setEditingDate]     = useState(false)
@@ -229,8 +254,8 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
           {!isDesktop && (
-            <div style={{ fontSize:24, fontWeight:900, color:'white', letterSpacing:'-0.5px', fontFamily:"'Playfair Display', Georgia, serif" }}>
-              Nexora <span style={{ opacity:0.65 }}>✦</span>
+            <div style={{ fontSize:22, fontWeight:900, color:'white', letterSpacing:'-0.5px' }}>
+              Nexora
             </div>
           )}
           <div style={{ display:'flex', alignItems:'center', gap:6, marginTop: isDesktop ? 0 : 4 }}>
@@ -365,6 +390,26 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
     </button>
   )
 
+  const leaderboardWidget = (
+    <button
+      onClick={() => navigate(`/${stream}/leaderboard`)}
+      style={{
+        width:'100%', display:'flex', alignItems:'center', gap:12,
+        background:'white', border:'1px solid #F1F5F9',
+        boxShadow:'0 2px 12px rgba(0,0,0,0.05)',
+        borderRadius:16, padding:'14px 16px', cursor:'pointer',
+        fontFamily:'Inter,sans-serif', textAlign:'left',
+      }}
+    >
+      <span style={{ fontSize:20 }}>🏆</span>
+      <div>
+        <div style={{ fontSize:13, fontWeight:800, color:'#1E293B' }}>Leaderboard</div>
+        <div style={{ fontSize:11, color:'#64748B', marginTop:1 }}>Top students by XP this week</div>
+      </div>
+      <span style={{ marginLeft:'auto', fontSize:12, fontWeight:700, color:C.primary }}>View →</span>
+    </button>
+  )
+
   // ── University finder (shared) ────────────────────────────────────────────
   const uniFinder = stream === 'alevel' ? (
     <div>
@@ -443,7 +488,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
   ) : null
 
   return (
-    <Shell C={C} heroContent={heroEl} contentMax={isDesktop ? 1200 : undefined}>
+    <Shell C={C} isDark={isDark} heroContent={heroEl} contentMax={isDesktop ? 1200 : undefined}>
       {showAuth && <AuthModal C={C} dark={dark} onClose={() => setShowAuth(false)} />}
       <WelcomeModal user={user} C={C} dark={dark} />
 
@@ -557,6 +602,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
             {reviewWidget}
             {missionWidget}
             {focusWidget}
+            {leaderboardWidget}
           </div>
         </div>
 
@@ -727,6 +773,25 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
             </div>
             <span style={{ marginLeft:'auto', fontSize:12, fontWeight:700, color:C.primary }}>Start →</span>
           </button>
+
+          {/* ── Leaderboard link ─────────────────────────────────────────────── */}
+          <button
+            onClick={() => navigate(`/${stream}/leaderboard`)}
+            style={{
+              width:'100%', display:'flex', alignItems:'center', gap:12,
+              background:'white', border:'1px solid #F1F5F9',
+              boxShadow:'0 2px 12px rgba(0,0,0,0.05)',
+              borderRadius:18, padding:'14px 16px', cursor:'pointer',
+              fontFamily:'Inter,sans-serif', textAlign:'left', marginTop:10,
+            }}
+          >
+            <span style={{ fontSize:22 }}>🏆</span>
+            <div>
+              <div style={{ fontSize:13, fontWeight:800, color:'#1E293B' }}>Leaderboard</div>
+              <div style={{ fontSize:11, color:'#64748B', marginTop:1 }}>Top students by XP this week</div>
+            </div>
+            <span style={{ marginLeft:'auto', fontSize:12, fontWeight:700, color:C.primary }}>View →</span>
+          </button>
         </>
       )}
     </Shell>
@@ -846,11 +911,35 @@ function ExamRowCard({ subject, C, dark, onClick, onMock, onFlashcards }) {
   )
 }
 
-function SubjectCard({ subject, C, dark, onClick, onMock, onFlashcards }) {
-  const SC = getColors(dark ? 'alevel' : 'gcse', subject.id)
-  const [pressed, setPressed] = useState(false)
+function MasteryBadge({ badge }) {
+  if (!badge) return null
+  const SPEC = {
+    bronze: { emoji:'🥉', bg:'#CD7F32', shadow:'#CD7F3255' },
+    silver: { emoji:'🥈', bg:'#C0C0C0', shadow:'#C0C0C055' },
+    gold:   { emoji:'🥇', bg:'#FBBF24', shadow:'#FBBF2455' },
+  }
+  const b = SPEC[badge]
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+    <div style={{
+      position:'absolute', top:-6, right:-6, zIndex:10,
+      width:26, height:26, borderRadius:13,
+      background:b.bg, boxShadow:`0 2px 8px ${b.shadow}`,
+      display:'flex', alignItems:'center', justifyContent:'center',
+      fontSize:15, pointerEvents:'none',
+    }}>
+      {b.emoji}
+    </div>
+  )
+}
+
+function SubjectCard({ subject, C, dark, stream, onClick, onMock, onFlashcards }) {
+  const SC      = getColors(dark ? 'alevel' : 'gcse', subject.id)
+  const [pressed, setPressed] = useState(false)
+  const questions = stream ? getQuestions(stream, subject.id) : []
+  const { badge } = useMastery(questions)
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:5, position:'relative' }}>
+      <MasteryBadge badge={badge} />
       <button
         onClick={onClick}
         onPointerDown={() => setPressed(true)}
@@ -942,6 +1031,7 @@ function GcseSubjectGrid({ subjects, navigate, stream, C }) {
                     subject={s}
                     C={C}
                     dark={false}
+                    stream={stream}
                     onClick={() => navigate(`/${stream}/quiz/${s.id}`)}
                     onMock={() => navigate(`/${stream}/mock/${s.id}`)}
                     onFlashcards={() => navigate(`/${stream}/flashcards/${s.id}`)}
@@ -956,38 +1046,36 @@ function GcseSubjectGrid({ subjects, navigate, stream, C }) {
   )
 }
 
-export function Shell({ C, children, noNav, heroContent, contentMax }) {
+export function Shell({ C, isDark, children, noNav, heroContent, contentMax }) {
   const { isDesktop, isTablet } = useBreakpoint()
   const heroH = heroContent ? 188 : 64
 
+  const css = `
+    *{box-sizing:border-box}button{font-family:inherit}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes bounceY{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(5px)}}
+    .animate-slide-up{animation:slideUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94) both}
+    @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+  `
+
   if (isDesktop) {
     return (
-      <div style={{ minHeight:'100dvh', background:'linear-gradient(160deg,#FF6B35 0%,#FF3CAC 52%,#7B2FBE 100%)', fontFamily:'Inter,sans-serif', display:'flex' }}>
-        <style>{`*{box-sizing:border-box}button{font-family:inherit}
-          @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-          @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
-          @keyframes spin{to{transform:rotate(360deg)}}
-          @keyframes bounceY{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(5px)}}
-          .animate-slide-up{animation:slideUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94) both}
-          @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
-        `}</style>
-
-        {/* Sidebar spacer (BottomNav renders the actual sidebar) */}
+      <div style={{ minHeight:'100dvh', background:C.bg, fontFamily:'Inter,sans-serif', display:'flex' }}>
+        <style>{css}</style>
         <div style={{ width:SIDEBAR_W, flexShrink:0 }} />
-
-        {/* Main scrollable area */}
         <div style={{ flex:1, minHeight:'100dvh', overflowY:'auto' }}>
-          {/* Hero band */}
-          <div style={{ minHeight:heroH, position:'relative', zIndex:1 }}>
-            {heroContent}
-          </div>
-
-          {/* White panel */}
-          <div style={{ background:'white', borderRadius:'28px 28px 0 0', minHeight:`calc(100dvh - ${heroH - 24}px)`, boxShadow:'0 -8px 40px rgba(0,0,0,0.16)' }}>
-            <div style={{ width:36, height:4, background:'#E2E8F0', borderRadius:2, margin:'12px auto 0' }} />
-            <div style={{ maxWidth: contentMax ?? CONTENT_MAX, margin:'0 auto', padding:'16px 32px 40px', animation:'fadeUp 0.35s ease' }}>
-              {children}
+          {heroContent && (
+            <div style={{
+              background:`linear-gradient(135deg, ${C.trackAccent} 0%, ${C.trackAccent}CC 100%)`,
+              minHeight:heroH, position:'relative', zIndex:1,
+            }}>
+              {heroContent}
             </div>
+          )}
+          <div style={{ maxWidth:contentMax ?? CONTENT_MAX, margin:'0 auto', padding:'24px 32px 40px', animation:'fadeUp 0.35s ease' }}>
+            {children}
           </div>
         </div>
       </div>
@@ -995,49 +1083,25 @@ export function Shell({ C, children, noNav, heroContent, contentMax }) {
   }
 
   return (
-    <div style={{ minHeight:'100dvh', background:'linear-gradient(160deg,#FF6B35 0%,#FF3CAC 52%,#7B2FBE 100%)', fontFamily:'Inter,sans-serif', position:'relative', overflowX:'hidden' }}>
-      <style>{`*{box-sizing:border-box}button{font-family:inherit}
-        @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
-        @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes bounceY{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(5px)}}
-        .animate-slide-up{animation:slideUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94) both}
-        @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
-      `}</style>
+    <div style={{ minHeight:'100dvh', background:C.bg, fontFamily:'Inter,sans-serif', position:'relative', overflowX:'hidden' }}>
+      <style>{css}</style>
 
-      {/* Bokeh */}
-      {[
-        { w:280, h:280, top:'-6%',  left:'-14%', r:'255,200,80',  o:0.45, blur:85 },
-        { w:200, h:200, top:'2%',   right:'-7%', r:'255,80,200',  o:0.38, blur:60 },
-        { w:140, h:140, top:'20%',  left:'8%',   r:'255,255,160', o:0.20, blur:40 },
-        { w:220, h:220, top:'10%',  right:'-4%', r:'200,60,255',  o:0.26, blur:70 },
-      ].map((b, i) => (
-        <div key={i} style={{
-          position:'absolute', borderRadius:'50%',
-          width:b.w, height:b.h,
-          background:`rgba(${b.r},${b.o})`, filter:`blur(${b.blur}px)`,
-          top:b.top, left:b.left, right:b.right, pointerEvents:'none',
-        }} />
-      ))}
-
-      <ScrollBar C={C} />
-
-      {/* Gradient hero band */}
-      <div style={{ minHeight:heroH, position:'relative', zIndex:1 }}>
-        {heroContent}
-      </div>
-
-      {/* White content panel */}
-      <div style={{ position:'relative', zIndex:1, background:'white', borderRadius:'28px 28px 0 0', minHeight:`calc(100dvh - ${heroH - 24}px)`, boxShadow:'0 -8px 40px rgba(0,0,0,0.16)' }}>
-        <div style={{ width:36, height:4, background:'#E2E8F0', borderRadius:2, margin:'12px auto 0' }} />
+      {heroContent && (
         <div style={{
-          width:'100%',
-          ...(isTablet ? { maxWidth:720, margin:'0 auto' } : {}),
-          padding:`16px ${isTablet ? 24 : 16}px calc(${noNav ? 24 : NAV_HEIGHT + 24}px + env(safe-area-inset-bottom, 0px))`,
-          animation:'fadeUp 0.35s ease',
+          background:`linear-gradient(135deg, ${C.trackAccent} 0%, ${C.trackAccent}CC 100%)`,
+          minHeight:heroH, position:'relative', zIndex:1,
         }}>
-          {children}
+          {heroContent}
         </div>
+      )}
+
+      <div style={{
+        position:'relative', zIndex:1,
+        ...(isTablet ? { maxWidth:720, margin:'0 auto' } : {}),
+        padding:`16px ${isTablet ? 24 : 16}px calc(${noNav ? 24 : NAV_HEIGHT + 24}px + env(safe-area-inset-bottom, 0px))`,
+        animation:'fadeUp 0.35s ease',
+      }}>
+        {children}
       </div>
     </div>
   )

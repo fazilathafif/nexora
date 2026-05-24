@@ -4,7 +4,10 @@ import ReactMarkdown from 'react-markdown'
 import { Shell, getColors } from './HomePage.jsx'
 import { useBreakpoint } from '../hooks/useBreakpoint.js'
 import { getNotes, deleteNote, exportNotesText, NOTES_MAX } from '../lib/notes.js'
-import { upsertProfile } from '../lib/db.js'
+import { updateProfile } from '../lib/db.js'
+import { STREAM_CONFIG } from '../data/questions.js'
+import { usePreferences } from '../hooks/usePreferences.js'
+import { useTheme } from '../hooks/useTheme.js'
 
 const APP_VERSION = '1.0.0-beta'
 
@@ -28,7 +31,7 @@ function Avatar({ initial, C, size = 64 }) {
   return (
     <div style={{
       width:size, height:size, borderRadius:size/2,
-      background:`linear-gradient(135deg,${C.primary},${C.secondary??C.primary})`,
+      background: C.primary,
       display:'flex', alignItems:'center', justifyContent:'center',
       fontSize:size*0.38, fontWeight:900, color:'white',
       boxShadow:`0 4px 24px ${C.primary}55`, flexShrink:0,
@@ -52,23 +55,26 @@ function StatCard({ icon, val, label, color, compact }) {
   )
 }
 
-function AchBadge({ icon, label, desc, unlocked, size='normal' }) {
+function AchBadge({ icon, label, desc, unlocked, size='normal', C }) {
   const sm = size === 'small'
+  const lockedBg     = C?.bg     ?? '#F8FAFC'
+  const lockedBorder = C?.border ?? '#E2E8F0'
+  const navyColor    = C?.navy   ?? '#1E293B'
   return (
     <div style={{
       display:'flex', flexDirection:'column', alignItems:'center', gap:5,
       padding: sm ? '12px 6px' : '14px 8px',
-      background: unlocked ? '#7C3AED08' : '#F8FAFC',
-      border:`1.5px solid ${unlocked ? '#7C3AED30' : '#E2E8F0'}`,
+      background: unlocked ? '#7C3AED08' : lockedBg,
+      border:`1.5px solid ${unlocked ? '#7C3AED30' : lockedBorder}`,
       borderRadius:14, opacity: unlocked ? 1 : 0.38, transition:'all 0.2s',
     }}>
       <div style={{
         width: sm ? 32 : 38, height: sm ? 32 : 38, borderRadius:10,
-        background: unlocked ? 'linear-gradient(135deg,#7C3AED20,#6366F120)' : '#F1F5F9',
+        background: unlocked ? 'linear-gradient(135deg,#7C3AED20,#6366F120)' : lockedBg,
         display:'flex', alignItems:'center', justifyContent:'center',
         fontSize: sm ? 16 : 20, filter: unlocked ? 'none' : 'grayscale(1)',
       }}>{icon}</div>
-      <div style={{fontSize: sm ? 10 : 11, fontWeight: unlocked ? 800 : 600, color: unlocked ? '#1E293B' : '#94A3B8', textAlign:'center', letterSpacing:'-0.01em', lineHeight:1.2}}>{label}</div>
+      <div style={{fontSize: sm ? 10 : 11, fontWeight: unlocked ? 800 : 600, color: unlocked ? navyColor : '#94A3B8', textAlign:'center', letterSpacing:'-0.01em', lineHeight:1.2}}>{label}</div>
       {!sm && <div style={{fontSize:9, color:'#94A3B8', textAlign:'center', lineHeight:1.3}}>{desc}</div>}
     </div>
   )
@@ -83,7 +89,30 @@ function SL({ children, C, action }) {
   )
 }
 
-function NoteCard({ note, expanded, onToggle, onDelete }) {
+function Toggle({ value, onChange, color }) {
+  return (
+    <button
+      role="switch"
+      aria-checked={value}
+      onClick={() => onChange(!value)}
+      style={{
+        width:44, height:24, borderRadius:12, border:'none', cursor:'pointer',
+        background: value ? color : '#CBD5E1',
+        position:'relative', transition:'background 0.2s ease', flexShrink:0,
+        WebkitTapHighlightColor:'transparent',
+      }}
+    >
+      <div style={{
+        position:'absolute', top:3,
+        left: value ? 'calc(100% - 21px)' : 3,
+        width:18, height:18, borderRadius:9, background:'white',
+        boxShadow:'0 1px 4px rgba(0,0,0,0.22)', transition:'left 0.2s ease',
+      }} />
+    </button>
+  )
+}
+
+function NoteCard({ note, expanded, onToggle, onDelete, C }) {
   const [copied, setCopied] = useState(false)
   const streamColor = note.stream === 'alevel' ? '#7C3AED' : '#FF6B35'
   const subjectLabel = note.subject ? note.subject.charAt(0).toUpperCase() + note.subject.slice(1) : 'Unknown'
@@ -95,15 +124,20 @@ function NoteCard({ note, expanded, onToggle, onDelete }) {
     })
   }
 
+  const card  = C?.card   ?? 'white'
+  const bord  = C?.border ?? '#F1F5F9'
+  const bg    = C?.bg     ?? '#F8FAFC'
+  const navy  = C?.navy   ?? '#1E293B'
+  const muted = C?.muted  ?? '#64748B'
+
   return (
     <div style={{
-      background:'white', border:'1px solid #F1F5F9',
+      background: card, border:`1px solid ${bord}`,
       borderLeft:`3px solid #7C3AED`,
       borderRadius:14, overflow:'hidden',
       boxShadow:'0 2px 10px rgba(0,0,0,0.05)',
       transition:'box-shadow 0.2s',
     }}>
-      {/* Card header */}
       <div style={{padding:'12px 14px 10px'}}>
         <div style={{display:'flex', alignItems:'flex-start', gap:8}}>
           <div style={{flex:1, minWidth:0}}>
@@ -117,7 +151,7 @@ function NoteCard({ note, expanded, onToggle, onDelete }) {
               <span style={{marginLeft:'auto', fontSize:10, color:'#94A3B8', fontWeight:600}}>{savedDate}</span>
             </div>
             <p style={{
-              fontSize:12, fontWeight:600, color:'#1E293B', margin:0, lineHeight:1.55,
+              fontSize:12, fontWeight:600, color:navy, margin:0, lineHeight:1.55,
               ...(!expanded ? {display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden'} : {}),
             }}>
               {note.question}
@@ -131,11 +165,10 @@ function NoteCard({ note, expanded, onToggle, onDelete }) {
         </div>
       </div>
 
-      {/* Toggle */}
       <button
         onClick={onToggle}
         style={{
-          width:'100%', background:'#F8FAFC', border:'none', borderTop:'1px solid #F1F5F9',
+          width:'100%', background: bg, border:'none', borderTop:`1px solid ${bord}`,
           padding:'7px 14px', display:'flex', alignItems:'center', justifyContent:'space-between',
           cursor:'pointer', fontSize:11, fontWeight:700, color:'#7C3AED',
           fontFamily:'Inter,sans-serif',
@@ -145,21 +178,20 @@ function NoteCard({ note, expanded, onToggle, onDelete }) {
         <span style={{transform: expanded ? 'rotate(180deg)' : 'rotate(0)', transition:'transform 0.2s', display:'inline-block'}}>▾</span>
       </button>
 
-      {/* Expanded explanation */}
       {expanded && (
-        <div style={{padding:'12px 14px 14px', borderTop:'1px solid #F1F5F9', background:'#FAFBFF'}}>
+        <div style={{padding:'12px 14px 14px', borderTop:`1px solid ${bord}`, background: bg}}>
           <style>{`
-            .nm-ai h1{font-size:14px;font-weight:900;margin:0 0 6px;color:#1E293B}
+            .nm-ai h1{font-size:14px;font-weight:900;margin:0 0 6px;color:${navy}}
             .nm-ai h2{font-size:12px;font-weight:800;margin:12px 0 3px;color:#7C3AED}
             .nm-ai h3{font-size:11px;font-weight:700;margin:8px 0 3px;color:#A855F7}
-            .nm-ai p{margin:0 0 8px;font-size:12px;color:#374151;line-height:1.75}
+            .nm-ai p{margin:0 0 8px;font-size:12px;color:${muted};line-height:1.75}
             .nm-ai ul,.nm-ai ol{margin:4px 0 8px;padding-left:18px}
-            .nm-ai li{font-size:12px;color:#374151;line-height:1.65;margin-bottom:3px}
+            .nm-ai li{font-size:12px;color:${muted};line-height:1.65;margin-bottom:3px}
             .nm-ai strong{font-weight:800}
             .nm-ai code{background:#F3E8FF;padding:1px 4px;border-radius:4px;font-size:11px}
           `}</style>
           <div className="nm-ai"><ReactMarkdown>{note.explanation}</ReactMarkdown></div>
-          <div style={{display:'flex', gap:8, justifyContent:'flex-end', marginTop:8, paddingTop:8, borderTop:'1px solid #F1F5F9'}}>
+          <div style={{display:'flex', gap:8, justifyContent:'flex-end', marginTop:8, paddingTop:8, borderTop:`1px solid ${bord}`}}>
             <button
               onClick={handleCopy}
               style={{
@@ -178,14 +210,17 @@ function NoteCard({ note, expanded, onToggle, onDelete }) {
   )
 }
 
-function SettingsRow({ icon, label, sublabel, onClick, right, danger }) {
+function SettingsRow({ icon, label, sublabel, onClick, right, danger, C }) {
+  const card  = C?.card  ?? 'white'
+  const navy  = C?.navy  ?? '#1E293B'
+  const muted = C?.muted ?? '#64748B'
   return (
     <button
       onClick={onClick}
       disabled={!onClick}
       style={{
         width:'100%', display:'flex', alignItems:'center', gap:14,
-        background:'white', border:'none', borderRadius:0,
+        background: card, border:'none', borderRadius:0,
         padding:'13px 0', cursor: onClick ? 'pointer' : 'default',
         textAlign:'left', fontFamily:'Inter,sans-serif',
         WebkitTapHighlightColor:'transparent',
@@ -195,8 +230,8 @@ function SettingsRow({ icon, label, sublabel, onClick, right, danger }) {
         {icon}
       </div>
       <div style={{flex:1, minWidth:0}}>
-        <div style={{fontSize:13, fontWeight:700, color: danger ? '#DC2626' : '#1E293B'}}>{label}</div>
-        {sublabel && <div style={{fontSize:11, color:'#64748B', marginTop:1}}>{sublabel}</div>}
+        <div style={{fontSize:13, fontWeight:700, color: danger ? '#DC2626' : navy}}>{label}</div>
+        {sublabel && <div style={{fontSize:11, color: muted, marginTop:1}}>{sublabel}</div>}
       </div>
       {right !== undefined ? right : onClick ? (
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{flexShrink:0}}>
@@ -211,18 +246,22 @@ function SectionBox({ title, children, C }) {
   return (
     <div style={{marginBottom:20}}>
       <div style={{fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:8, paddingLeft:2}}>{title}</div>
-      <div style={{background:'white', borderRadius:16, border:'1px solid #F1F5F9', overflow:'hidden', boxShadow:'0 1px 6px rgba(0,0,0,0.04)'}}>
+      <div style={{background: C.card, borderRadius:16, border:`1px solid ${C.border}`, overflow:'hidden', boxShadow:'0 1px 6px rgba(0,0,0,0.04)'}}>
         {children}
       </div>
     </div>
   )
 }
 
-function Divider() { return <div style={{height:1, background:'#F1F5F9', marginLeft:48}} /> }
+function Divider({ C }) {
+  return <div style={{height:1, background: C?.border ?? '#F1F5F9', marginLeft:48}} />
+}
 
-function Card({ children, style }) {
+function Card({ children, style, C }) {
+  const card  = C?.card   ?? 'white'
+  const bord  = C?.border ?? '#F1F5F9'
   return (
-    <div style={{background:'white', border:'1px solid #F1F5F9', borderRadius:18, padding:'18px', boxShadow:'0 2px 12px rgba(0,0,0,0.05)', ...style}}>
+    <div style={{background: card, border:`1px solid ${bord}`, borderRadius:18, padding:'18px', boxShadow:'0 2px 12px rgba(0,0,0,0.05)', ...style}}>
       {children}
     </div>
   )
@@ -230,16 +269,17 @@ function Card({ children, style }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function SettingsPage({ user, profile, signOut, refreshProfile }) {
+export default function SettingsPage({ user, profile, signOut, refreshProfile, isDark }) {
   const { stream } = useParams()
   const navigate   = useNavigate()
-  const C          = getColors(stream)
+  const C          = getColors(stream, null, isDark)
   const { isMobile, isTablet, isDesktop } = useBreakpoint()
+  const { mode, setMode } = useTheme()
 
   const [notes,        setNotes]        = useState(() => getNotes())
   const [expandedNote, setExpandedNote] = useState(null)
   const [copyAllDone,  setCopyAllDone]  = useState(false)
-  // Derive exam year from profile.exam_date (authoritative), fall back to localStorage
+  const { prefs, updatePref } = usePreferences(user?.id)
   const [examYear, setExamYear] = useState(() => {
     if (profile?.exam_date) return new Date(profile.exam_date).getFullYear().toString()
     return localStorage.getItem('nx_exam_target') || ''
@@ -288,7 +328,7 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile })
     setExamSaving(true)
     try {
       const examDate = `${year}-06-01`
-      const { error } = await upsertProfile(user.id, { exam_date: examDate })
+      const { error } = await updateProfile(user.id, { exam_date: examDate })
       if (!error) await refreshProfile?.()
     } catch { /* localStorage already updated — silent fail */ }
     finally { setExamSaving(false) }
@@ -297,7 +337,6 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile })
   // ── Hero profile content ─────────────────────────────────────────────────────
   const heroEl = (
     <div style={{padding:`max(18px, env(safe-area-inset-top, 18px)) ${isDesktop ? 32 : 16}px 0`}}>
-      {/* Back + title */}
       <div style={{display:'flex', alignItems:'center', gap:12, marginBottom: isMobile ? 20 : 16}}>
         <button
           onClick={() => navigate(-1)}
@@ -313,7 +352,6 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile })
         </div>
       </div>
 
-      {/* Profile info */}
       {isMobile ? (
         <div style={{display:'flex', flexDirection:'column', alignItems:'center', paddingBottom:28}}>
           <Avatar initial={initial} C={C} size={72} />
@@ -322,7 +360,7 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile })
           </div>
           <div style={{fontSize:12, color:'rgba(255,255,255,0.68)', marginTop:3}}>{email || 'Guest account'}</div>
           <div style={{marginTop:10, background:'rgba(255,255,255,0.2)', border:'1px solid rgba(255,255,255,0.32)', borderRadius:20, padding:'4px 14px', fontSize:10, fontWeight:800, color:'white', letterSpacing:'0.07em'}}>
-            {stream === 'gcse' ? '📚 GCSE TRACK' : '🎓 A-LEVEL TRACK'}
+            {STREAM_CONFIG[stream]?.label?.toUpperCase() ?? stream.toUpperCase()}
           </div>
         </div>
       ) : (
@@ -335,7 +373,7 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile })
             <div style={{fontSize:12, color:'rgba(255,255,255,0.7)', marginTop:3}}>{email || 'Guest account'}</div>
           </div>
           <div style={{background:'rgba(255,255,255,0.2)', border:'1px solid rgba(255,255,255,0.32)', borderRadius:20, padding:'5px 14px', fontSize:10, fontWeight:800, color:'white', letterSpacing:'0.07em', flexShrink:0}}>
-            {stream === 'gcse' ? '📚 GCSE TRACK' : '🎓 A-LEVEL TRACK'}
+            {STREAM_CONFIG[stream]?.label?.toUpperCase() ?? stream.toUpperCase()}
           </div>
         </div>
       )}
@@ -346,8 +384,8 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile })
   const notesEmpty = (
     <div style={{textAlign:'center', padding:'32px 16px'}}>
       <div style={{fontSize:38, marginBottom:10}}>📝</div>
-      <div style={{fontSize:14, fontWeight:700, color:'#1E293B', marginBottom:6}}>No notes yet</div>
-      <div style={{fontSize:12, color:'#64748B', lineHeight:1.7, maxWidth:280, margin:'0 auto'}}>
+      <div style={{fontSize:14, fontWeight:700, color:C.navy, marginBottom:6}}>No notes yet</div>
+      <div style={{fontSize:12, color:C.muted, lineHeight:1.7, maxWidth:280, margin:'0 auto'}}>
         After the AI tutor explains a question, tap <strong style={{color:'#7C3AED'}}>✦ Save</strong> to add it here for later revision.
       </div>
     </div>
@@ -364,6 +402,7 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile })
         <NoteCard
           key={note.id}
           note={note}
+          C={C}
           expanded={expandedNote === note.id}
           onToggle={() => setExpandedNote(p => p === note.id ? null : note.id)}
           onDelete={() => { if(expandedNote === note.id) setExpandedNote(null); handleDeleteNote(note.id) }}
@@ -384,7 +423,7 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile })
       </button>
       <button
         onClick={handleDownload}
-        style={{background:'transparent', border:'1px solid #E2E8F0', borderRadius:8, padding:'5px 12px', fontSize:11, fontWeight:700, color:'#64748B', cursor:'pointer', fontFamily:'Inter,sans-serif'}}
+        style={{background:'transparent', border:`1px solid ${C.border}`, borderRadius:8, padding:'5px 12px', fontSize:11, fontWeight:700, color:C.muted, cursor:'pointer', fontFamily:'Inter,sans-serif'}}
       >
         ⬇ Download .txt
       </button>
@@ -395,19 +434,19 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile })
   const achievementsGrid = (cols) => (
     <div style={{display:'grid', gridTemplateColumns:`repeat(${cols}, 1fr)`, gap:8}}>
       {allAchievements.map(a => (
-        <AchBadge key={a.id} icon={a.icon} label={a.label} desc={a.desc} unlocked={a.unlocked} size={cols >= 4 ? 'small' : 'normal'} />
+        <AchBadge key={a.id} icon={a.icon} label={a.label} desc={a.desc} unlocked={a.unlocked} size={cols >= 4 ? 'small' : 'normal'} C={C} />
       ))}
     </div>
   )
 
   // ── Exam target card ─────────────────────────────────────────────────────────
   const examTargetCard = (
-    <Card>
-      <div style={{fontSize:11, fontWeight:700, color:'#64748B', letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:12}}>Exam Target</div>
+    <Card C={C}>
+      <div style={{fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:12}}>Exam Target</div>
       <select
         value={examYear}
         onChange={e => handleExamYearChange(e.target.value)}
-        style={{width:'100%', padding:'9px 12px', borderRadius:10, border:'1.5px solid #E2E8F0', fontSize:13, fontWeight:700, color:'#1E293B', background:'white', cursor:'pointer', outline:'none'}}
+        style={{width:'100%', padding:'9px 12px', borderRadius:10, border:`1.5px solid ${C.border}`, fontSize:13, fontWeight:700, color:C.navy, background:C.card, cursor:'pointer', outline:'none'}}
       >
         <option value=''>Select exam year</option>
         <option value='2025'>June 2025</option>
@@ -418,8 +457,8 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile })
       {examSaving && <div style={{marginTop:6, fontSize:11, color:'#94A3B8'}}>Saving…</div>}
       {daysLeft !== null && !examSaving && (
         <div style={{marginTop:10, display:'flex', alignItems:'center', gap:6}}>
-          <div style={{flex:1, background:'#F1F5F9', borderRadius:6, height:5}}>
-            <div style={{width:`${Math.min(100, Math.max(0, 100 - (daysLeft / 365 * 100)))}%`, height:'100%', borderRadius:6, background:`linear-gradient(90deg,${C.primary},#10B981)`}} />
+          <div style={{flex:1, background:C.border, borderRadius:6, height:5}}>
+            <div style={{width:`${Math.min(100, Math.max(0, 100 - (daysLeft / 365 * 100)))}%`, height:'100%', borderRadius:6, background: C.primary}} />
           </div>
           <span style={{fontSize:11, fontWeight:700, color: daysLeft < 60 ? '#EF4444' : daysLeft < 180 ? '#F59E0B' : C.primary}}>
             {daysLeft > 0 ? `${daysLeft}d` : 'Soon!'}
@@ -429,29 +468,54 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile })
     </Card>
   )
 
+  // ── Appearance section ───────────────────────────────────────────────────────
+  const appearanceSection = (
+    <SectionBox title="Appearance" C={C}>
+      <div style={{padding:'12px 16px 14px'}}>
+        <div style={{fontSize:12, fontWeight:700, color:C.navy, marginBottom:8}}>Theme</div>
+        <div style={{display:'flex', gap:6}}>
+          {[['light','Light'],['dark','Dark'],['system','System']].map(([val, label]) => (
+            <button
+              key={val}
+              onClick={() => setMode(val)}
+              style={{
+                flex:1, padding:'7px 0',
+                background: mode === val ? `${C.primary}18` : C.bg,
+                border: `1.5px solid ${mode === val ? C.primary : C.border}`,
+                borderRadius:8, fontSize:11, fontWeight:700,
+                color: mode === val ? C.primary : C.muted,
+                cursor:'pointer', fontFamily:'Inter,sans-serif',
+              }}
+            >{label}</button>
+          ))}
+        </div>
+      </div>
+    </SectionBox>
+  )
+
   // ── Account section ──────────────────────────────────────────────────────────
   const accountRows = (
     <>
       <SectionBox title="Account" C={C}>
-        <SettingsRow icon="👤" label={isGuest ? 'Guest account' : email} sublabel={isGuest ? 'Sign in to save progress' : 'Signed in'} onClick={null} right={null} />
+        <SettingsRow C={C} icon="👤" label={isGuest ? 'Guest account' : email} sublabel={isGuest ? 'Sign in to save progress' : 'Signed in'} onClick={null} right={null} />
         {!isGuest && (
           <>
-            <Divider />
-            <SettingsRow icon="⭐" label="Manage Subscription" sublabel="Plan · billing · cancel" onClick={() => window.open('https://nexoralearn.app/billing', '_blank')} />
-            <Divider />
-            <SettingsRow icon="🚪" label="Sign Out" sublabel="You can sign back in at any time" onClick={() => { signOut?.(); navigate('/') }} danger right={null} />
+            <Divider C={C} />
+            <SettingsRow C={C} icon="⭐" label="Manage Subscription" sublabel="Plan · billing · cancel" onClick={() => window.open('https://nexoralearn.app/billing', '_blank')} />
+            <Divider C={C} />
+            <SettingsRow C={C} icon="🚪" label="Sign Out" sublabel="You can sign back in at any time" onClick={() => { signOut?.(); navigate('/') }} danger right={null} />
           </>
         )}
       </SectionBox>
       <SectionBox title="Support" C={C}>
-        <SettingsRow icon="✉️" label="Contact Support" sublabel="support@nexoralearn.app" onClick={() => window.open('mailto:support@nexoralearn.app')} />
-        <Divider />
-        <SettingsRow icon="🐞" label="Report a Bug" sublabel="Help us improve Nexora" onClick={() => window.open('mailto:support@nexoralearn.app?subject=Bug%20Report')} />
+        <SettingsRow C={C} icon="✉️" label="Contact Support" sublabel="support@nexoralearn.app" onClick={() => window.open('mailto:support@nexoralearn.app')} />
+        <Divider C={C} />
+        <SettingsRow C={C} icon="🐞" label="Report a Bug" sublabel="Help us improve Nexora" onClick={() => window.open('mailto:support@nexoralearn.app?subject=Bug%20Report')} />
       </SectionBox>
       <SectionBox title="Legal" C={C}>
-        <SettingsRow icon="🔒" label="Privacy Policy" sublabel="How we use your data" onClick={() => navigate('/privacy')} />
-        <Divider />
-        <SettingsRow icon="📄" label="Terms of Service" sublabel="Subscription terms" onClick={() => navigate('/terms')} />
+        <SettingsRow C={C} icon="🔒" label="Privacy Policy" sublabel="How we use your data" onClick={() => navigate('/privacy')} />
+        <Divider C={C} />
+        <SettingsRow C={C} icon="📄" label="Terms of Service" sublabel="Subscription terms" onClick={() => navigate('/terms')} />
       </SectionBox>
     </>
   )
@@ -463,50 +527,112 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile })
     </div>
   )
 
+  // ── Privacy section ──────────────────────────────────────────────────────────
+  const privacySection = (
+    <SectionBox title="Privacy" C={C}>
+      <SettingsRow
+        C={C}
+        icon="🏆"
+        label="Show me on Leaderboard"
+        sublabel="Your name and XP appear in stream rankings"
+        right={<Toggle value={prefs.leaderboard_opt_in !== false} onChange={v => updatePref('leaderboard_opt_in', v)} color={C.primary} />}
+      />
+    </SectionBox>
+  )
+
+  // ── Accessibility section ───────────────────────────────────────────────────
+  const accessibilitySection = (
+    <SectionBox title="Accessibility" C={C}>
+      <div style={{padding:'12px 16px 10px'}}>
+        <div style={{fontSize:12, fontWeight:700, color:C.navy, marginBottom:8}}>Font size</div>
+        <div style={{display:'flex', gap:6}}>
+          {[['small','S'],['medium','M'],['large','L'],['xl','XL']].map(([sz, label]) => (
+            <button
+              key={sz}
+              onClick={() => updatePref('font_size', sz)}
+              style={{
+                flex:1, padding:'7px 0',
+                background: prefs.font_size === sz ? `${C.primary}18` : C.bg,
+                border: `1.5px solid ${prefs.font_size === sz ? C.primary : C.border}`,
+                borderRadius:9, fontSize:11, fontWeight:700,
+                color: prefs.font_size === sz ? C.primary : C.muted,
+                cursor:'pointer', fontFamily:'Inter,sans-serif',
+              }}
+            >{label}</button>
+          ))}
+        </div>
+      </div>
+      <Divider C={C} />
+      <SettingsRow C={C} icon="🌗" label="High Contrast" sublabel="Stronger colour separation"
+        right={<Toggle value={prefs.high_contrast} onChange={v => updatePref('high_contrast', v)} color={C.primary} />}
+      />
+      <Divider C={C} />
+      <SettingsRow C={C} icon="✋" label="Reduce Motion" sublabel="Fewer animations"
+        right={<Toggle value={prefs.reduce_motion} onChange={v => updatePref('reduce_motion', v)} color={C.primary} />}
+      />
+      <Divider C={C} />
+      <SettingsRow C={C} icon="🔤" label="Dyslexia-Friendly Font" sublabel="OpenDyslexic typeface"
+        right={<Toggle value={prefs.dyslexia_font} onChange={v => updatePref('dyslexia_font', v)} color={C.primary} />}
+      />
+      <Divider C={C} />
+      <div style={{padding:'12px 16px 14px'}}>
+        <div style={{fontSize:12, fontWeight:700, color:C.navy, marginBottom:8}}>Colour-blind mode</div>
+        <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
+          {[['none','None'],['deuteranopia','Deuter.'],['protanopia','Protan.'],['tritanopia','Tritan.']].map(([val, label]) => (
+            <button
+              key={val}
+              onClick={() => updatePref('color_blind_mode', val)}
+              style={{
+                padding:'6px 12px',
+                background: prefs.color_blind_mode === val ? `${C.primary}18` : C.bg,
+                border: `1.5px solid ${prefs.color_blind_mode === val ? C.primary : C.border}`,
+                borderRadius:9, fontSize:11, fontWeight:700,
+                color: prefs.color_blind_mode === val ? C.primary : C.muted,
+                cursor:'pointer', fontFamily:'Inter,sans-serif',
+              }}
+            >{label}</button>
+          ))}
+        </div>
+      </div>
+    </SectionBox>
+  )
+
   // ════════════════════════════════════════════════════════════════════════════
   // DESKTOP (≥ 1024px): 2-column sticky/scroll layout
   // ════════════════════════════════════════════════════════════════════════════
   if (isDesktop) {
     return (
-      <Shell C={C} heroContent={heroEl} contentMax={1100}>
+      <Shell C={C} isDark={isDark} heroContent={heroEl} contentMax={1100}>
         <div style={{display:'grid', gridTemplateColumns:'260px 1fr', gap:32, alignItems:'start'}}>
 
-          {/* ── LEFT: sticky profile widgets + account ── */}
           <div style={{position:'sticky', top:24, display:'flex', flexDirection:'column', gap:14}}>
-
-            {/* Stats 2×2 */}
-            <Card>
-              <div style={{fontSize:11, fontWeight:700, color:'#64748B', letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:14}}>Quick Stats</div>
+            <Card C={C}>
+              <div style={{fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:14}}>Quick Stats</div>
               <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10}}>
                 {statsData.map(s => <StatCard key={s.label} compact {...s} />)}
               </div>
             </Card>
 
-            {/* Exam target */}
             {examTargetCard}
-
-            {/* Account */}
+            {appearanceSection}
+            {accessibilitySection}
+            {privacySection}
             {accountRows}
             {appInfo}
           </div>
 
-          {/* ── RIGHT: notes + achievements ── */}
           <div style={{display:'flex', flexDirection:'column', gap:24}}>
-
-            {/* My Notes */}
             <div>
               <SL C={C} action={exportBar}>My AI Notes</SL>
-              <div style={{background:'white', border:'1px solid #F1F5F9', borderRadius:18, padding: notes.length ? '16px' : '0', boxShadow:'0 2px 12px rgba(0,0,0,0.05)'}}>
+              <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:18, padding: notes.length ? '16px' : '0', boxShadow:'0 2px 12px rgba(0,0,0,0.05)'}}>
                 {notes.length === 0 ? notesEmpty : noteCardsGrid}
               </div>
             </div>
 
-            {/* Achievements */}
             <div>
               <SL C={C}>Achievements</SL>
               {achievementsGrid(4)}
             </div>
-
           </div>
         </div>
       </Shell>
@@ -518,30 +644,29 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile })
   // ════════════════════════════════════════════════════════════════════════════
   if (isTablet) {
     return (
-      <Shell C={C} heroContent={heroEl}>
+      <Shell C={C} isDark={isDark} heroContent={heroEl}>
 
-        {/* Stats — 4 col row */}
         <div style={{display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:24}}>
           {statsData.map(s => <StatCard key={s.label} {...s} />)}
         </div>
 
-        {/* Exam target */}
         <div style={{marginBottom:24}}>{examTargetCard}</div>
 
-        {/* My Notes */}
         <div style={{marginBottom:24}}>
           <SL C={C} action={exportBar}>My AI Notes</SL>
-          <div style={{background:'white', border:'1px solid #F1F5F9', borderRadius:18, padding: notes.length ? '16px' : '0', boxShadow:'0 2px 12px rgba(0,0,0,0.05)'}}>
+          <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:18, padding: notes.length ? '16px' : '0', boxShadow:'0 2px 12px rgba(0,0,0,0.05)'}}>
             {notes.length === 0 ? notesEmpty : noteCardsGrid}
           </div>
         </div>
 
-        {/* Achievements — 4 col */}
         <div style={{marginBottom:24}}>
           <SL C={C}>Achievements</SL>
           {achievementsGrid(4)}
         </div>
 
+        {appearanceSection}
+        {accessibilitySection}
+        {privacySection}
         {accountRows}
         {appInfo}
       </Shell>
@@ -552,36 +677,35 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile })
   // MOBILE (< 640px): single-column, 2×2 stats, full-width notes, scroll achiev
   // ════════════════════════════════════════════════════════════════════════════
   return (
-    <Shell C={C} heroContent={heroEl}>
+    <Shell C={C} isDark={isDark} heroContent={heroEl}>
 
-      {/* Stats 2×2 */}
       <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:22}}>
         {statsData.map(s => <StatCard key={s.label} {...s} />)}
       </div>
 
-      {/* Exam target */}
       <div style={{marginBottom:22}}>{examTargetCard}</div>
 
-      {/* My Notes */}
       <div style={{marginBottom:22}}>
         <SL C={C} action={exportBar}>My AI Notes</SL>
-        <div style={{background:'white', border:'1px solid #F1F5F9', borderRadius:18, padding: notes.length ? '12px' : '0', boxShadow:'0 2px 12px rgba(0,0,0,0.05)'}}>
+        <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:18, padding: notes.length ? '12px' : '0', boxShadow:'0 2px 12px rgba(0,0,0,0.05)'}}>
           {notes.length === 0 ? notesEmpty : noteCardsGrid}
         </div>
       </div>
 
-      {/* Achievements — horizontal scroll on mobile */}
       <div style={{marginBottom:22}}>
         <SL C={C}>Achievements</SL>
         <div style={{display:'flex', gap:8, overflowX:'auto', paddingBottom:4, scrollbarWidth:'none', WebkitOverflowScrolling:'touch'}}>
           {allAchievements.map(a => (
             <div key={a.id} style={{flexShrink:0, width:90}}>
-              <AchBadge icon={a.icon} label={a.label} desc={a.desc} unlocked={a.unlocked} size='small' />
+              <AchBadge icon={a.icon} label={a.label} desc={a.desc} unlocked={a.unlocked} size='small' C={C} />
             </div>
           ))}
         </div>
       </div>
 
+      {appearanceSection}
+      {accessibilitySection}
+      {privacySection}
       {accountRows}
       {appInfo}
     </Shell>

@@ -1,5 +1,41 @@
-const FN_URL   = 'https://nwouvraxquxdjgfxljui.supabase.co/functions/v1/explain'
-const JWT_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53b3V2cmF4cXV4ZGpnZnhsanVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwOTQ1NzgsImV4cCI6MjA5NDY3MDU3OH0.v3f8GYT2_A7LfuKZZTeGMn2Lwy2A4AKucw6p7HyrYMg'
+const FN_URL      = 'https://nwouvraxquxdjgfxljui.supabase.co/functions/v1/explain'
+const ADVISOR_URL = 'https://nwouvraxquxdjgfxljui.supabase.co/functions/v1/track-advisor'
+const JWT_KEY     = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53b3V2cmF4cXV4ZGpnZnhsanVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwOTQ1NzgsImV4cCI6MjA5NDY3MDU3OH0.v3f8GYT2_A7LfuKZZTeGMn2Lwy2A4AKucw6p7HyrYMg'
+
+export async function fetchTrackRecommendation(context) {
+  try {
+    const res = await fetch(ADVISOR_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': JWT_KEY,
+        'Authorization': `Bearer ${JWT_KEY}`,
+      },
+      body: JSON.stringify(context),
+      signal: AbortSignal.timeout(12000),
+    })
+    if (!res.ok) throw new Error('non-2xx')
+    const data = await res.json()
+    return data // { tracks: string[], reason: string }
+  } catch {
+    return advisorFallback(context)
+  }
+}
+
+function advisorFallback({ country, year, goal }) {
+  if (country === 'uk') {
+    const tracks = year <= 11 ? ['gcse'] : ['alevel']
+    return {
+      tracks,
+      reason: `Year ${year} UK students typically follow the ${tracks[0].toUpperCase()} curriculum.`,
+    }
+  }
+  const tracks = goal === 'ivy' ? ['sat', 'ap'] : ['sat', 'act']
+  return {
+    tracks,
+    reason: `US students aiming for ${goal === 'ivy' ? 'selective universities' : 'college'} usually prepare for ${tracks.join(' + ').toUpperCase()}.`,
+  }
+}
 
 export async function fetchExplanation(question, chosenIdx, stream) {
   try {

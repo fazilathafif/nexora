@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { getTopicStats, getWeeklyActivity } from '../lib/db.js'
+import { getTopicStats, getWeeklyActivity, addXp, updateProfile } from '../lib/db.js'
 import { STREAM_CONFIG, getQuestions } from '../data/questions.js'
 import { getDueCount } from '../lib/srs.js'
 import { getColors, Shell } from './HomePage.jsx'
@@ -26,12 +26,182 @@ function dailyRec(days) {
   return { sessions: 4, minutes: 20 }
 }
 
+function getTodayStr() { return new Date().toISOString().split('T')[0] }
+
+function readDailyChallenge(stream) {
+  try {
+    const raw = localStorage.getItem(`nx_daily_${stream}`)
+    if (!raw) return null
+    const data = JSON.parse(raw)
+    return data.date === getTodayStr() ? data : null
+  } catch { return null }
+}
+
+function getDailySubject(subjects) {
+  const start = new Date(new Date().getFullYear(), 0, 0).getTime()
+  const dayOfYear = Math.floor((Date.now() - start) / 86400000)
+  return subjects[dayOfYear % subjects.length]
+}
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function SectionHeading({ label, C }) {
   return (
     <div style={{ fontSize: 11, fontWeight: 800, color: C.muted, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10, marginTop: 4 }}>
       {label}
+    </div>
+  )
+}
+
+function DailyChallengeCard({ stream, subjects, C, dark, navigate }) {
+  const data       = readDailyChallenge(stream)
+  const completed  = !!data
+  const subject    = getDailySubject(subjects)
+
+  function handleStart() {
+    navigate(`/${stream}/quiz/${subject.id}?daily=1`)
+  }
+
+  return (
+    <div style={{
+      marginBottom: 14,
+      background: completed
+        ? 'linear-gradient(135deg,#DCFCE7,#F0FDF4)'
+        : `linear-gradient(135deg,${C.primary}15,${C.primary}08)`,
+      border: `1.5px solid ${completed ? '#10B98140' : C.primary + '40'}`,
+      borderRadius: 18, padding: '16px 18px',
+      display: 'flex', alignItems: 'center', gap: 14,
+    }}>
+      <div style={{
+        width: 48, height: 48, borderRadius: 13, flexShrink: 0,
+        background: completed ? '#10B98120' : `${C.primary}20`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 24,
+      }}>
+        {completed ? '✅' : '🎯'}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 900, color: completed ? '#065F46' : C.navy, letterSpacing: '-0.2px' }}>
+          Daily Challenge
+        </div>
+        <div style={{ fontSize: 12, color: completed ? '#059669' : C.muted, marginTop: 2 }}>
+          {completed
+            ? `Completed · ${data.score}/${data.total} correct — come back tomorrow!`
+            : `Today's subject: ${subject.emoji} ${subject.label} · 10 questions`
+          }
+        </div>
+      </div>
+      {!completed && (
+        <button
+          onClick={handleStart}
+          style={{
+            background: `linear-gradient(135deg,${C.primary},${C.secondary ?? C.primary})`,
+            color: 'white', border: 'none', borderRadius: 11,
+            padding: '9px 16px', fontSize: 13, fontWeight: 800,
+            cursor: 'pointer', fontFamily: 'Inter,sans-serif', flexShrink: 0,
+          }}
+        >
+          Start →
+        </button>
+      )}
+    </div>
+  )
+}
+
+function BrainBreakRow({ stream, C, navigate }) {
+  return (
+    <button
+      onClick={() => navigate(`/${stream}/wellbeing`)}
+      style={{
+        width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+        background: 'white', border: `1.5px solid ${C.border}`,
+        borderRadius: 14, padding: '12px 16px', marginBottom: 14,
+        cursor: 'pointer', fontFamily: 'Inter,sans-serif', textAlign: 'left',
+        boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      <div style={{
+        width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+        background: '#A7F3D015', border: '1px solid #10B98130',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
+      }}>🧘</div>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: C.navy }}>Brain Break</div>
+        <div style={{ fontSize: 11, color: C.muted, marginTop: 1 }}>Box breathing & coming soon: music, tips</div>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <path d="M9 18l6-6-6-6" stroke={C.muted} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </button>
+  )
+}
+
+function StreakShieldCard({ user, profile, C, onShieldUsed }) {
+  const [used, setUsed] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  async function handleUse() {
+    setSaving(true)
+    try {
+      await addXp(user.id, -50)
+      await updateProfile(user.id, { streak: profile.streak })
+      const today = new Date().toISOString().split('T')[0]
+      localStorage.setItem(`nx_shield_used_${today}`, '1')
+      setUsed(true)
+      onShieldUsed?.()
+    } catch {
+      // silent fail — streak preserved locally
+      setUsed(true)
+    } finally { setSaving(false) }
+  }
+
+  if (used) return (
+    <div style={{
+      marginBottom: 14, background: '#F0FDF4', border: '1.5px solid #10B98140',
+      borderRadius: 16, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12,
+    }}>
+      <span style={{ fontSize: 22 }}>🛡️</span>
+      <div>
+        <div style={{ fontSize: 14, fontWeight: 800, color: '#065F46' }}>Streak protected!</div>
+        <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>50 XP spent · keep going tomorrow</div>
+      </div>
+    </div>
+  )
+
+  return (
+    <div style={{
+      marginBottom: 14,
+      background: 'linear-gradient(135deg,#FEF3C7,#FFFBEB)',
+      border: '1.5px solid #F59E0B40',
+      borderRadius: 16, padding: '14px 16px',
+      display: 'flex', alignItems: 'center', gap: 12,
+    }}>
+      <div style={{
+        width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+        background: '#F59E0B20',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
+      }}>🛡️</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 800, color: '#92400E' }}>Streak at risk!</div>
+        <div style={{ fontSize: 12, color: '#B45309', marginTop: 2 }}>
+          Spend 50 XP to protect your {profile.streak}-day streak
+        </div>
+      </div>
+      <button
+        onClick={handleUse}
+        disabled={saving}
+        style={{
+          background: saving ? '#E2E8F0' : '#F59E0B',
+          color: saving ? '#94A3B8' : 'white',
+          border: 'none', borderRadius: 10,
+          padding: '8px 14px', fontSize: 12, fontWeight: 800,
+          cursor: saving ? 'default' : 'pointer',
+          fontFamily: 'Inter,sans-serif', flexShrink: 0,
+        }}
+      >
+        {saving ? '…' : 'Use Shield'}
+      </button>
     </div>
   )
 }
@@ -219,11 +389,12 @@ function QuickStartGrid({ subjects, stream, C, cols }) {
               </div>
               <div style={{ fontSize: 11, fontWeight: 800, color: '#1E293B', lineHeight: 1.2 }}>{s.label}</div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 4 }}>
               {[
                 { label: 'Quiz',  path: `/${stream}/quiz/${s.id}` },
                 { label: 'Cards', path: `/${stream}/flashcards/${s.id}` },
                 { label: 'Mock',  path: `/${stream}/mock/${s.id}` },
+                { label: 'Learn', path: `/${stream}/learn/${s.id}` },
               ].map(m => (
                 <button
                   key={m.label}
@@ -248,11 +419,11 @@ function QuickStartGrid({ subjects, stream, C, cols }) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
-export default function TodayPage({ user, profile }) {
+export default function TodayPage({ user, profile, isDark }) {
   const { stream }  = useParams()
   const navigate    = useNavigate()
-  const C           = getColors(stream)
-  const dark        = stream === 'alevel'
+  const C           = getColors(stream, null, isDark)
+  const dark        = isDark
   const cfg         = STREAM_CONFIG[stream]
   const { isDesktop, isTablet } = useBreakpoint()
 
@@ -304,7 +475,12 @@ export default function TodayPage({ user, profile }) {
   if (!cfg) { navigate('/'); return null }
 
   const today       = new Date().toISOString().split('T')[0]
-  const studiedToday = activity.some(a => a.date === today)
+  const yesterday   = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+  const studiedToday     = activity.some(a => a.date === today)
+  const missedYesterday  = !loading && !activity.some(a => a.date === yesterday)
+  const shieldUsedToday  = localStorage.getItem(`nx_shield_used_${today}`) === '1'
+  const canShield = missedYesterday && !shieldUsedToday && (profile?.streak ?? 0) >= 2 && (profile?.xp ?? 0) >= 50
+
   const weakTopics  = topics.filter(t => t.pct < 70).slice(0, 3)
 
   const hour     = new Date().getHours()
@@ -328,9 +504,14 @@ export default function TodayPage({ user, profile }) {
   )
 
   const goalCard     = <GoalCard rec={rec} days={days} studiedToday={studiedToday} C={C} />
+  const dailyCard    = <DailyChallengeCard stream={stream} subjects={cfg.subjects} C={C} dark={dark} navigate={navigate} />
   const drillCard    = <PriorityDrillCard topics={weakTopics} stream={stream} C={C} navigate={navigate} />
   const srsCard      = <SrsDueCard srsData={srsData} totalDue={totalDue} stream={stream} C={C} dark={dark} navigate={navigate} />
+  const brainBreak   = <BrainBreakRow stream={stream} C={C} navigate={navigate} />
   const quickGrid    = <QuickStartGrid subjects={cfg.subjects} stream={stream} C={C} cols={isDesktop ? 3 : isTablet ? 3 : 2} />
+  const shieldCard   = canShield && user?.id ? (
+    <StreakShieldCard user={user} profile={profile} C={C} onShieldUsed={() => {}} />
+  ) : null
 
   const allCaughtUp = !loading && !weakTopics.length && (
     <div style={{ marginBottom: 14, background: '#F0FDF4', border: '1px solid #10B98130', borderRadius: 16, padding: '14px 18px' }}>
@@ -341,16 +522,19 @@ export default function TodayPage({ user, profile }) {
 
   if (isDesktop) {
     return (
-      <Shell C={C} heroContent={heroEl}>
+      <Shell C={C} isDark={isDark} heroContent={heroEl}>
         <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 28, paddingTop: 8 }}>
           {/* Left rail */}
           <div>
+            {shieldCard}
             {goalCard}
+            {dailyCard}
             {srsCard}
           </div>
           {/* Right area */}
           <div>
             {drillCard || allCaughtUp}
+            {brainBreak}
             {quickGrid}
           </div>
         </div>
@@ -359,10 +543,13 @@ export default function TodayPage({ user, profile }) {
   }
 
   return (
-    <Shell C={C} heroContent={heroEl}>
+    <Shell C={C} isDark={isDark} heroContent={heroEl}>
+      {shieldCard}
+      {dailyCard}
       {goalCard}
       {drillCard || allCaughtUp}
       {srsCard}
+      {brainBreak}
       {quickGrid}
     </Shell>
   )

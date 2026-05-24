@@ -5,10 +5,9 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useParams }       from 'react-router-dom'
-import { getTopicStats }                from '../lib/db.js'
+import { getTopicStats, updateProfile }      from '../lib/db.js'
 import { STREAM_CONFIG, getQuestions }  from '../data/questions.js'
 import { getColors, Shell, SectionLabel, Badge } from './HomePage.jsx'
-import { upsertProfile }                from '../lib/db.js'
 
 function daysUntil(dateStr) {
   if (!dateStr) return null
@@ -110,11 +109,11 @@ function dailyRec(days, weakCount) {
   return { sessions: 4, minutes: 20 }
 }
 
-export default function StudyPlanPage({ user, profile, refreshProfile }) {
+export default function StudyPlanPage({ user, profile, refreshProfile, isDark }) {
   const { stream } = useParams()
   const navigate   = useNavigate()
-  const C          = getColors(stream)
-  const dark       = stream === 'alevel'
+  const C          = getColors(stream, null, isDark)
+  const dark       = isDark
   const cfg        = STREAM_CONFIG[stream]
 
   const [topics,      setTopics]      = useState([])
@@ -187,27 +186,21 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
     setDateError(null)
     setDateSaving(true)
     try {
-      // Race against a 10-second timeout so the button never hangs forever
-      const timeout = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('timeout')), 10000)
-      )
-      const { error } = await Promise.race([
-        upsertProfile(user.id, { exam_date: date }),
-        timeout,
-      ])
+      const { data, error } = await updateProfile(user.id, { exam_date: date })
       if (error) throw error
-      setSavedDate(date)        // optimistic — show countdown immediately
+      if (!data) throw new Error('Profile not found — please reload the page')
+      setSavedDate(date)
       setEditingDate(false)
-      refreshProfile?.()        // background refresh, not awaited
-    } catch {
-      setDateError('Could not save — please try again.')
+      refreshProfile?.()
+    } catch (e) {
+      setDateError(`Could not save — ${e?.message ?? 'please try again.'}`)
     } finally {
       setDateSaving(false)
     }
   }
 
   return (
-    <Shell C={C}>
+    <Shell C={C} isDark={isDark}>
       {/* Header */}
       <div style={{marginBottom:22}}>
         <div style={{fontSize:26,fontWeight:900,color:C.navy,fontFamily:"'Playfair Display', Georgia, serif",letterSpacing:'-0.4px'}}>Study Plan</div>
@@ -241,7 +234,7 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
                   style={{padding:'7px 10px',borderRadius:8,border:`1.5px solid ${C.border}`,background:'#F8FAFC',color:C.navy,fontSize:13}}
                 />
                 <button onClick={() => saveExamDate(dateInput)} disabled={dateSaving} style={{background:C.primary,color:'white',border:'none',borderRadius:8,padding:'7px 16px',fontWeight:700,cursor:dateSaving?'default':'pointer',opacity:dateSaving?0.7:1,fontSize:13}}>{dateSaving ? 'Saving…' : 'Save'}</button>
-                <button onClick={() => { setEditingDate(false); setDateError(null) }} style={{background:'none',border:'none',color:C.muted,cursor:'pointer',fontSize:12}}>Cancel</button>
+                <button onClick={() => { setEditingDate(false); setDateError(null); setDateSaving(false) }} style={{background:'none',border:'none',color:C.muted,cursor:'pointer',fontSize:12}}>Cancel</button>
                 {dateError && <span style={{width:'100%',fontSize:11,color:'#EF4444',fontWeight:600}}>{dateError}</span>}
               </div>
             )}
@@ -286,7 +279,7 @@ export default function StudyPlanPage({ user, profile, refreshProfile }) {
             style={{flex:1,minWidth:130,padding:'6px 10px',borderRadius:8,border:`1.5px solid ${C.border}`,background:'#F8FAFC',color:C.navy,fontSize:13}}
           />
           <button onClick={() => saveExamDate(dateInput)} disabled={dateSaving} style={{background:C.primary,color:'white',border:'none',borderRadius:8,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:dateSaving?'default':'pointer',opacity:dateSaving?0.7:1}}>{dateSaving ? 'Saving…' : 'Save'}</button>
-          <button onClick={() => { setEditingDate(false); setDateError(null) }} style={{background:'none',border:'none',color:C.muted,fontSize:12,cursor:'pointer'}}>Cancel</button>
+          <button onClick={() => { setEditingDate(false); setDateError(null); setDateSaving(false) }} style={{background:'none',border:'none',color:C.muted,fontSize:12,cursor:'pointer'}}>Cancel</button>
           {dateError && <span style={{width:'100%',fontSize:11,color:'#EF4444',fontWeight:600}}>{dateError}</span>}
         </div>
       )}

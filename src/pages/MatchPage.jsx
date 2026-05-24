@@ -18,11 +18,11 @@ function clip(text, max = 72) {
   return text.length > max ? text.slice(0, max - 1) + '…' : text
 }
 
-export default function MatchPage() {
+export default function MatchPage({ isDark }) {
   const { stream, subject } = useParams()
   const navigate = useNavigate()
-  const C    = getColors(stream, subject)
-  const dark = stream === 'alevel'
+  const C    = getColors(stream, subject, isDark)
+  const dark = isDark
 
   const questions = useMemo(() => {
     const all = getQuestions(stream, subject)
@@ -96,7 +96,7 @@ export default function MatchPage() {
     const timeLabel = elapsed < 60 ? `${elapsed}s` : `${mins}:${secs}`
     const rating = misses === 0 ? '🏆 Perfect!' : misses <= 2 ? '⭐ Great!' : '💪 Keep going!'
     return (
-      <Shell C={C}>
+      <Shell C={C} isDark={isDark}>
         <style>{css}</style>
         <div style={{textAlign:'center', paddingTop:48, fontFamily:'Inter,sans-serif'}}>
           <div style={{fontSize:52, marginBottom:12}}>🎯</div>
@@ -142,7 +142,7 @@ export default function MatchPage() {
 
   // ── Game board ───────────────────────────────────────────────────────────────
   return (
-    <Shell C={C}>
+    <Shell C={C} isDark={isDark}>
       <style>{css}</style>
 
       {/* Header */}

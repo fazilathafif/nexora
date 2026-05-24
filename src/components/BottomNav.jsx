@@ -1,13 +1,16 @@
+import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { STREAM_CONFIG } from '../data/questions.js'
 import { getColors } from '../pages/HomePage.jsx'
-import { NAV_HEIGHT, SERIF } from '../styles/tokens.js'
+import { NAV_HEIGHT } from '../styles/tokens.js'
 import { SIDEBAR_W } from '../styles/breakpoints.js'
 import { useBreakpoint } from '../hooks/useBreakpoint.js'
+import { useTheme } from '../hooks/useTheme.js'
+import { COURSERA_BLUE } from '../styles/courseraTokens.js'
 
 function useStream() {
   const { pathname } = useLocation()
-  const m = pathname.match(/^\/(gcse|alevel)/)
+  const m = pathname.match(/^\/(gcse|alevel|sat|act|ap|psat)/)
   return m ? m[1] : null
 }
 
@@ -15,21 +18,21 @@ function useActiveTab(stream) {
   const { pathname } = useLocation()
   if (!stream) return null
   if (pathname === `/${stream}`) return 'home'
-  if (pathname.includes('/progress'))  return 'progress'
-  if (pathname.includes('/plan'))      return 'plan'
-  if (pathname.includes('/today'))     return 'today'
-  if (pathname.includes('/quiz/') ||
+  if (pathname.includes('/progress'))  return 'learn'
+  if (pathname.includes('/plan'))      return 'learn'
+  if (pathname.includes('/settings'))  return 'me'
+  if (pathname.includes('/today') ||
+    pathname.includes('/quiz/') ||
     pathname.includes('/mock/') ||
     pathname.includes('/flashcards/') ||
     pathname.includes('/match/')
-  ) return 'today'
-  if (pathname.includes('/settings')) return 'me'
+  ) return 'practice'
   return 'home'
 }
 
 // ── SVG icons ─────────────────────────────────────────────────────────────────
 
-function HomeIcon({ color, size = 26 }) {
+function HomeIcon({ color, size = 24 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
@@ -40,10 +43,9 @@ function HomeIcon({ color, size = 26 }) {
   )
 }
 
-function TodayIcon({ color, size = 26 }) {
+function PracticeIcon({ color, size = 24 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      {/* Sun / today — radiant circle with rays */}
       <circle cx="12" cy="12" r="4" stroke={color} strokeWidth={1.9} />
       <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
         stroke={color} strokeWidth={1.9} strokeLinecap="round"
@@ -52,10 +54,9 @@ function TodayIcon({ color, size = 26 }) {
   )
 }
 
-function ProgressIcon({ color, size = 26 }) {
+function LearnIcon({ color, size = 24 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      {/* Trending up with arrow */}
       <polyline
         points="3,18 8,12 13,15 20,7"
         stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round"
@@ -68,24 +69,7 @@ function ProgressIcon({ color, size = 26 }) {
   )
 }
 
-function PlanIcon({ color, size = 26 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      {/* Calendar with checkmark */}
-      <rect x="3" y="4" width="18" height="17" rx="2.5"
-        stroke={color} strokeWidth={1.9} strokeLinejoin="round"
-      />
-      <path d="M16 2v4M8 2v4M3 9h18"
-        stroke={color} strokeWidth={1.9} strokeLinecap="round"
-      />
-      <path d="M8.5 15l2 2 5-5"
-        stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
-
-function MeIcon({ color, size = 26 }) {
+function MeIcon({ color, size = 24 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <circle cx="12" cy="8" r="4" stroke={color} strokeWidth={1.9} strokeLinecap="round"/>
@@ -95,7 +79,7 @@ function MeIcon({ color, size = 26 }) {
 }
 
 // ── Subject picker bottom sheet ───────────────────────────────────────────────
-function SubjectSheet({ stream, C, dark, onClose }) {
+function SubjectSheet({ stream, C, onClose }) {
   const navigate = useNavigate()
   const cfg = STREAM_CONFIG[stream]
 
@@ -136,18 +120,19 @@ function SubjectSheet({ stream, C, dark, onClose }) {
               </div>
               <div style={{ fontSize:15, fontWeight:800, color:C.navy }}>{s.label}</div>
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, padding:'0 20px 14px' }}>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:8, padding:'0 20px 14px' }}>
               {[
                 { label:'Quiz',  icon:'📝', path:`/${stream}/quiz/${s.id}` },
                 { label:'Cards', icon:'🃏', path:`/${stream}/flashcards/${s.id}` },
                 { label:'Mock',  icon:'📋', path:`/${stream}/mock/${s.id}` },
+                { label:'Learn', icon:'🧠', path:`/${stream}/learn/${s.id}` },
               ].map(m => (
                 <button
                   key={m.label}
                   onClick={() => go(m.path)}
                   style={{
-                    background: dark ? `${C.primary}20` : `${C.primary}10`,
-                    border: `1.5px solid ${C.primary}30`,
+                    background:`${C.primary}10`,
+                    border:`1.5px solid ${C.primary}30`,
                     borderRadius:12, padding:'10px 4px',
                     display:'flex', flexDirection:'column', alignItems:'center', gap:4,
                     cursor:'pointer', fontFamily:'Inter,sans-serif',
@@ -165,196 +150,242 @@ function SubjectSheet({ stream, C, dark, onClose }) {
   )
 }
 
+// ── macOS-style spring tab item ───────────────────────────────────────────────
+const SPRING = 'cubic-bezier(0.34, 1.56, 0.64, 1)'
+const EASE   = 'cubic-bezier(0.4, 0, 0.2, 1)'
+
+function NavTab({ tab, active, isDark, C }) {
+  const [pressed, setPressed] = useState(false)
+
+  const iconColor = active ? 'white' : (isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.38)')
+  const scale = pressed ? 0.88 : active ? 1.08 : 1
+
+  return (
+    <button
+      onClick={tab.action}
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => setPressed(false)}
+      onMouseLeave={() => setPressed(false)}
+      onTouchStart={() => setPressed(true)}
+      onTouchEnd={() => setPressed(false)}
+      style={{
+        flex: 1,
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        gap: 4,
+        border: 'none',
+        background: 'transparent',
+        cursor: 'pointer',
+        padding: '6px 4px 8px',
+        fontFamily: 'Inter,sans-serif',
+        WebkitTapHighlightColor: 'transparent',
+        transform: `scale(${scale})`,
+        transition: pressed
+          ? `transform 0.12s ${EASE}`
+          : `transform 0.38s ${SPRING}`,
+      }}
+    >
+      {/* Icon pill */}
+      <div style={{
+        width: 44,
+        height: 32,
+        borderRadius: 10,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: active ? COURSERA_BLUE : 'transparent',
+        boxShadow: active
+          ? `0 2px 10px ${COURSERA_BLUE}55`
+          : 'none',
+        transition: `background 0.22s ${EASE}, box-shadow 0.22s ${EASE}`,
+      }}>
+        <tab.Icon color={iconColor} size={20} />
+      </div>
+
+      {/* Label */}
+      <span style={{
+        fontSize: 10,
+        fontWeight: active ? 700 : 500,
+        color: active
+          ? COURSERA_BLUE
+          : (isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.38)'),
+        lineHeight: 1,
+        letterSpacing: active ? '-0.2px' : '0px',
+        transition: `color 0.2s ${EASE}`,
+      }}>
+        {tab.label}
+      </span>
+    </button>
+  )
+}
+
 // ── BottomNav ─────────────────────────────────────────────────────────────────
 export default function BottomNav() {
   const navigate      = useNavigate()
   const stream        = useStream()
   const activeTab     = useActiveTab(stream)
   const { isDesktop } = useBreakpoint()
+  const { isDark }    = useTheme()
 
   if (!stream) return null
 
-  const C    = getColors(stream)
-  const dark = stream === 'alevel'
+  const C = getColors(stream, null, isDark)
 
   const tabs = [
-    {
-      id: 'home',
-      label: 'Home',
-      Icon: HomeIcon,
-      action: () => navigate(`/${stream}`),
-    },
-    {
-      id: 'today',
-      label: 'Today',
-      Icon: TodayIcon,
-      action: () => navigate(`/${stream}/today`),
-    },
-    {
-      id: 'progress',
-      label: 'Progress',
-      Icon: ProgressIcon,
-      action: () => navigate(`/${stream}/progress`),
-    },
-    {
-      id: 'plan',
-      label: 'Plan',
-      Icon: PlanIcon,
-      action: () => navigate(`/${stream}/plan`),
-    },
-    {
-      id: 'me',
-      label: 'Me',
-      Icon: MeIcon,
-      action: () => navigate(`/${stream}/settings`),
-    },
+    { id:'home',     label:'Home',        Icon:HomeIcon,     action:() => navigate(`/${stream}`) },
+    { id:'practice', label:'Practice',    Icon:PracticeIcon, action:() => navigate(`/${stream}/today`) },
+    { id:'learn',    label:'My Learning', Icon:LearnIcon,    action:() => navigate(`/${stream}/progress`) },
+    { id:'me',       label:'Profile',     Icon:MeIcon,       action:() => navigate(`/${stream}/settings`) },
   ]
 
+  // ── Desktop sidebar ─────────────────────────────────────────────────────────
   if (isDesktop) {
     return (
       <nav style={{
-          position:'fixed', top:0, left:0, bottom:0,
-          width:SIDEBAR_W, zIndex:100,
-          display:'flex', flexDirection:'column',
-          background:'linear-gradient(180deg,#7B2FBE 0%,#FF3CAC 60%,#FF6B35 100%)',
-          boxShadow:'2px 0 20px rgba(0,0,0,0.25)',
-          paddingTop:'env(safe-area-inset-top, 0px)',
-        }}>
-          {/* Logo */}
-          <div style={{ padding:'28px 20px 24px', borderBottom:'1px solid rgba(255,255,255,0.12)' }}>
-            <div style={{ fontSize:22, fontWeight:900, color:'white', letterSpacing:'-0.5px', fontFamily:SERIF }}>
-              Nexora <span style={{ opacity:0.6 }}>✦</span>
-            </div>
-            <div style={{ fontSize:10, color:'rgba(255,255,255,0.55)', marginTop:3, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase' }}>
-              {stream === 'gcse' ? 'GCSE Track' : 'A-Level Track'}
-            </div>
+        position:'fixed', top:0, left:0, bottom:0,
+        width:SIDEBAR_W, zIndex:100,
+        display:'flex', flexDirection:'column',
+        background: isDark ? 'rgba(28,29,31,0.88)' : 'rgba(255,255,255,0.88)',
+        backdropFilter: 'blur(24px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+        borderRight: `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'}`,
+        paddingTop:'env(safe-area-inset-top, 0px)',
+        boxShadow: isDark
+          ? '2px 0 20px rgba(0,0,0,0.4)'
+          : '2px 0 20px rgba(0,0,0,0.06)',
+      }}>
+        {/* Logo */}
+        <div style={{ padding:'28px 20px 24px', borderBottom:`1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'}` }}>
+          <div style={{ fontSize:20, fontWeight:900, color:COURSERA_BLUE, letterSpacing:'-0.5px' }}>
+            Nexora
           </div>
+          <div style={{ fontSize:10, color:C.muted, marginTop:3, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase' }}>
+            {STREAM_CONFIG[stream]?.label?.replace(' Track','').replace(' Prep','') ?? stream.toUpperCase()}
+          </div>
+        </div>
 
-          {/* Nav items */}
-          <div style={{ flex:1, padding:'12px 10px', display:'flex', flexDirection:'column', gap:4 }}>
-            {tabs.map(tab => {
-              const active = activeTab === tab.id
-              return (
-                <button
-                  key={tab.id}
-                  onClick={tab.action}
-                  style={{
-                    display:'flex', alignItems:'center', gap:12,
-                    padding:'11px 14px',
-                    borderRadius:12,
-                    border:'none',
-                    background: active ? 'rgba(255,255,255,0.2)' : 'transparent',
-                    cursor:'pointer',
-                    fontFamily:'Inter,sans-serif',
-                    WebkitTapHighlightColor:'transparent',
-                    transition:'background 0.2s ease',
-                  }}
-                  onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.1)' }}
-                  onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
-                >
-                  <tab.Icon color={active ? 'white' : 'rgba(255,255,255,0.6)'} size={20} />
-                  <span style={{
-                    fontSize:13, fontWeight: active ? 800 : 500,
-                    color: active ? 'white' : 'rgba(255,255,255,0.65)',
-                    letterSpacing: active ? '-0.01em' : '0',
-                  }}>
-                    {tab.label}
-                  </span>
-                  {active && (
-                    <div style={{ marginLeft:'auto', width:4, height:4, borderRadius:2, background:'white' }} />
-                  )}
-                </button>
-              )
-            })}
-          </div>
+        {/* Nav items */}
+        <div style={{ flex:1, padding:'12px 10px', display:'flex', flexDirection:'column', gap:2 }}>
+          {tabs.map(tab => {
+            const active = activeTab === tab.id
+            return (
+              <DesktopNavItem
+                key={tab.id}
+                tab={tab}
+                active={active}
+                isDark={isDark}
+                C={C}
+              />
+            )
+          })}
+        </div>
 
-          {/* Bottom brand note */}
-          <div style={{ padding:'16px 20px', borderTop:'1px solid rgba(255,255,255,0.1)', fontSize:10, color:'rgba(255,255,255,0.35)', fontWeight:600, letterSpacing:'0.04em' }}>
-            nexoralearn.app
-          </div>
-        </nav>
+        {/* Footer */}
+        <div style={{ padding:'16px 20px', borderTop:`1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'}`, fontSize:10, color:C.muted, fontWeight:600, letterSpacing:'0.04em' }}>
+          nexoralearn.app
+        </div>
+      </nav>
     )
   }
 
+  // ── Mobile floating bar ─────────────────────────────────────────────────────
   return (
-    <nav style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0,
-        height: NAV_HEIGHT,
-        background: C.card,
-        borderTop: `1px solid ${C.border}`,
+    <nav
+      aria-label="Main navigation"
+      style={{
+        position: 'fixed',
+        bottom: 'calc(10px + env(safe-area-inset-bottom, 0px))',
+        left: 16,
+        right: 16,
+        height: 62,
+        zIndex: 100,
         display: 'flex',
         alignItems: 'stretch',
-        zIndex: 100,
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        boxShadow: dark
-          ? '0 -1px 0 rgba(255,255,255,0.06), 0 -8px 32px rgba(0,0,0,0.4)'
-          : '0 -1px 0 rgba(0,0,0,0.06), 0 -4px 20px rgba(0,0,0,0.07)',
+        borderRadius: 20,
+        overflow: 'hidden',
+        // Frosted glass
+        background: isDark ? 'rgba(36,37,40,0.86)' : 'rgba(255,255,255,0.86)',
+        backdropFilter: 'blur(28px) saturate(200%)',
+        WebkitBackdropFilter: 'blur(28px) saturate(200%)',
+        border: `1px solid ${isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.07)'}`,
+        boxShadow: isDark
+          ? '0 8px 32px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)'
+          : '0 8px 32px rgba(0,0,0,0.13), 0 2px 8px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)',
+      }}
+    >
+      {tabs.map(tab => (
+        <NavTab
+          key={tab.id}
+          tab={tab}
+          active={activeTab === tab.id}
+          isDark={isDark}
+          C={C}
+        />
+      ))}
+    </nav>
+  )
+}
+
+// ── Desktop sidebar item with spring hover ────────────────────────────────────
+function DesktopNavItem({ tab, active, isDark, C }) {
+  const [hovered, setHovered] = useState(false)
+  const [pressed, setPressed] = useState(false)
+
+  const scale = pressed ? 0.96 : hovered && !active ? 1.02 : 1
+  const tx    = hovered && !active ? 2 : 0
+
+  return (
+    <button
+      key={tab.id}
+      onClick={tab.action}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => { setHovered(false); setPressed(false) }}
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => setPressed(false)}
+      style={{
+        display:'flex', alignItems:'center', gap:12,
+        padding:'10px 12px',
+        borderRadius:10,
+        border:'none',
+        background: active
+          ? `${COURSERA_BLUE}14`
+          : hovered ? (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)') : 'transparent',
+        cursor:'pointer',
+        fontFamily:'Inter,sans-serif',
+        WebkitTapHighlightColor:'transparent',
+        transform: `scale(${scale}) translateX(${tx}px)`,
+        transition: pressed
+          ? `transform 0.1s ${EASE}, background 0.15s ${EASE}`
+          : `transform 0.32s ${SPRING}, background 0.18s ${EASE}`,
+        position:'relative',
+      }}
+    >
+      {/* Active left bar */}
+      {active && (
+        <div style={{
+          position:'absolute', left:0, top:'18%', bottom:'18%',
+          width:3, borderRadius:'0 3px 3px 0',
+          background:COURSERA_BLUE,
+          boxShadow:`0 0 6px ${COURSERA_BLUE}80`,
+          transition:`opacity 0.2s ${EASE}`,
+        }} />
+      )}
+
+      {/* Icon container */}
+      <div style={{
+        width:32, height:32, borderRadius:8, flexShrink:0,
+        display:'flex', alignItems:'center', justifyContent:'center',
+        background: active ? `${COURSERA_BLUE}18` : 'transparent',
+        transition:`background 0.2s ${EASE}`,
       }}>
-        {tabs.map(tab => {
-          const active = activeTab === tab.id
-          const iconColor = active ? C.primary : C.muted
+        <tab.Icon color={active ? COURSERA_BLUE : C.muted} size={18} />
+      </div>
 
-          return (
-            <button
-              key={tab.id}
-              onClick={tab.action}
-              style={{
-                flex: 1,
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center',
-                gap: 4,
-                border: 'none',
-                background: 'transparent',
-                cursor: 'pointer',
-                padding: '0 6px',
-                position: 'relative',
-                fontFamily: 'Inter,sans-serif',
-                WebkitTapHighlightColor: 'transparent',
-              }}
-            >
-              {/* Active top bar */}
-              <div style={{
-                position: 'absolute',
-                top: 0, left: '15%', right: '15%',
-                height: 3,
-                borderRadius: '0 0 3px 3px',
-                background: active ? C.primary : 'transparent',
-                transition: 'background 0.2s ease',
-                boxShadow: active && dark ? `0 0 10px ${C.primary}` : 'none',
-              }} />
-
-              {/* Icon wrapper — fills most of the bar */}
-              <div
-                key={active ? 'active' : 'inactive'}
-                className={active ? 'tab-icon-active' : ''}
-                style={{
-                  width: 46, height: 36,
-                  borderRadius: 12,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: active ? `${C.primary}18` : 'transparent',
-                  transition: 'background 0.2s ease',
-                  flexShrink: 0,
-                }}>
-                <tab.Icon
-                  color={iconColor}
-                  size={26}
-                />
-              </div>
-
-              {/* Label */}
-              <span style={{
-                fontSize: 10.5,
-                fontWeight: active ? 800 : 500,
-                color: iconColor,
-                lineHeight: 1,
-                letterSpacing: active ? '-0.01em' : '0',
-                transition: 'color 0.2s ease, font-weight 0.1s',
-              }}>
-                {tab.label}
-              </span>
-            </button>
-          )
-        })}
-      </nav>
+      <span style={{
+        fontSize:13, fontWeight: active ? 700 : 500,
+        color: active ? COURSERA_BLUE : C.muted,
+        transition:`color 0.2s ${EASE}`,
+      }}>
+        {tab.label}
+      </span>
+    </button>
   )
 }

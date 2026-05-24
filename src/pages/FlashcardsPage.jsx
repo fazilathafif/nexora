@@ -54,12 +54,14 @@ function incrementEasyCount(id) {
 export default function FlashcardsPage() {
   const { stream, subject } = useParams()
   const navigate  = useNavigate()
-  const C         = getColors(stream, subject)
-  const dark      = stream === 'alevel'
+  const C         = getColors(stream, subject, isDark)
+  const dark      = isDark
   const allQs     = getQuestions(stream, subject)
   const deckRef   = useRef(null)
   const { isDesktop } = useBreakpoint()
   const ratingQualityRef = useRef(null)  // set before programmatic dismiss to route quality
+
+  const [shared, setShared] = useState(false)
 
   const topics = useMemo(
     () => ['All', ...Array.from(new Set(allQs.map(q => q.topic)))],
@@ -174,7 +176,7 @@ export default function FlashcardsPage() {
 
   if (!allQs.length) {
     return (
-      <Shell C={C}>
+      <Shell C={C} isDark={isDark}>
         <p style={{color:C.muted,textAlign:'center',marginTop:60}}>No flashcards available for this subject.</p>
         <button onClick={() => navigate(`/${stream}`)} style={backBtn(C)}>← Back</button>
       </Shell>
@@ -185,7 +187,7 @@ export default function FlashcardsPage() {
     const total = counts.again + counts.hard + counts.good + counts.easy + counts.mastered
     const pct   = total > 0 ? Math.round(((counts.good + counts.easy + counts.mastered) / total) * 100) : 0
     return (
-      <Shell C={C}>
+      <Shell C={C} isDark={isDark}>
         <style>{css}</style>
         <div style={{textAlign:'center', padding:'48px 12px 0'}}>
           <div style={{fontSize:52, marginBottom:12}}>
@@ -230,7 +232,7 @@ export default function FlashcardsPage() {
   const deckCards   = cards.map(q => ({ id: q.id, front: q.q, back: q.opts[q.ans], label: q.topic }))
 
   return (
-    <Shell C={C}>
+    <Shell C={C} isDark={isDark}>
       <style>{css}</style>
 
       {/* Header */}
@@ -243,6 +245,26 @@ export default function FlashcardsPage() {
           <div style={{fontWeight:900, color:C.navy, fontSize:22, fontFamily:"'Playfair Display', Georgia, serif", letterSpacing:'-0.4px'}}>Flashcards</div>
         </div>
         <div style={{display:'flex', gap:6, alignItems:'center'}}>
+          <button
+            onClick={async () => {
+              const url = `${window.location.origin}/${stream}/flashcards/${subject}`
+              if (navigator.share) {
+                try { await navigator.share({ title: `${subject} Flashcards`, url }) } catch {}
+              } else {
+                await navigator.clipboard.writeText(url)
+                setShared(true)
+                setTimeout(() => setShared(false), 2000)
+              }
+            }}
+            style={{
+              background: shared ? '#DCFCE720' : 'transparent',
+              border: `1.5px solid ${shared ? '#16A34A40' : C.primary + '50'}`,
+              borderRadius:8, padding:'5px 10px', fontSize:11, fontWeight:700,
+              color: shared ? '#16A34A' : C.primary, cursor:'pointer', fontFamily:'Inter,sans-serif',
+            }}
+          >
+            {shared ? '✓ Copied!' : '🔗 Share'}
+          </button>
           <button
             onClick={() => navigate(`/${stream}/match/${subject}`)}
             style={{

@@ -28,6 +28,11 @@ import { STEP_BATCH }    from './batch_step.js'
 import { TARA_BATCH }    from './batch_tara.js'
 import { MAT_BATCH }     from './batch_mat.js'
 import { PAT_BATCH }     from './batch_pat.js'
+import { SAT_MATH_BATCH } from './batch_sat_math.js'
+import { SAT_RW_BATCH }   from './batch_sat_rw.js'
+import { ACT_ENGLISH_BATCH } from './batch_act_english.js'
+import { ACT_MATH_BATCH }    from './batch_act_math.js'
+import { ACT_SCIENCE_BATCH } from './batch_act_science.js'
 
 // ── GCSE STREAM ───────────────────────────────────────────────────────────────
 
@@ -625,10 +630,29 @@ export const ALEVEL = {
   ],
 }
 
+// ── US Question Banks ─────────────────────────────────────────────────────────
+
+export const SAT = {
+  sat_math: [...SAT_MATH_BATCH],
+  sat_rw:   [...SAT_RW_BATCH],
+}
+
+export const ACT = {
+  act_english: [...ACT_ENGLISH_BATCH],
+  act_math:    [...ACT_MATH_BATCH],
+  act_science: [...ACT_SCIENCE_BATCH],
+}
+
+// AP and PSAT share SAT content for now; Phase 4 will add dedicated AP batches
+export const AP   = {}
+export const PSAT = { sat_math: [...SAT_MATH_BATCH], sat_rw: [...SAT_RW_BATCH] }
+
 // ── Helper: get questions for a subject ──────────────────────────────────────
 
+const BANK_MAP = { gcse: GCSE, alevel: ALEVEL, sat: SAT, act: ACT, ap: AP, psat: PSAT }
+
 export function getQuestions(stream, subject, topicFilter = null, tier = null) {
-  const bank = stream === 'gcse' ? GCSE : ALEVEL
+  const bank = BANK_MAP[stream] ?? GCSE
   let qs = bank[subject] ?? []
   if (topicFilter) qs = qs.filter(q => q.topic === topicFilter)
   if (tier) qs = qs.filter(q => !q.tier || q.tier === tier)
@@ -672,6 +696,61 @@ export const STREAM_CONFIG = {
       { id:'tsa',   label:'TSA',        emoji:'📋', desc:'PPE, Economics, Philosophy', deprecated: true, deprecationNote: 'TSA has been replaced by TARA from 2026 entry onwards. This content is kept for reference only and is no longer relevant for current applicants.' },
     ],
   },
+
+  // ── US Tracks ──────────────────────────────────────────────────────────────
+
+  sat: {
+    label: 'SAT Prep',
+    flag: '🇺🇸',
+    years: 'Grades 10–12',
+    region: 'us',
+    subjects: [
+      { id:'sat_math', label:'SAT Math',          emoji:'📐', desc:'Algebra, Advanced Math, Data Analysis' },
+      { id:'sat_rw',   label:'Reading & Writing', emoji:'📖', desc:'Craft & Structure, Conventions, Rhetoric' },
+    ],
+  },
+
+  act: {
+    label: 'ACT Prep',
+    flag: '🇺🇸',
+    years: 'Grades 10–12',
+    region: 'us',
+    subjects: [
+      { id:'act_english', label:'English',  emoji:'✍️',  desc:'Usage, Mechanics, Rhetorical Skills' },
+      { id:'act_math',    label:'Math',     emoji:'📐', desc:'Pre-Algebra through Trigonometry' },
+      { id:'act_science', label:'Science',  emoji:'🔬', desc:'Data Interpretation, Research Summaries' },
+    ],
+  },
+
+  ap: {
+    label: 'AP Subjects',
+    flag: '🇺🇸',
+    years: 'Grades 11–12',
+    region: 'us',
+    modular: true,
+    subjects: [
+      { id:'ap_calculus',  label:'AP Calculus AB',        emoji:'∫',   desc:'Limits, Derivatives, Integrals' },
+      { id:'ap_stats',     label:'AP Statistics',         emoji:'📊', desc:'Exploring Data, Inference, Probability' },
+      { id:'ap_bio',       label:'AP Biology',            emoji:'🧬', desc:'Evolution, Cell Biology, Genetics' },
+      { id:'ap_chem',      label:'AP Chemistry',          emoji:'⚗️',  desc:'Atomic Structure, Thermodynamics, Kinetics' },
+      { id:'ap_phys',      label:'AP Physics 1',          emoji:'⚛️',  desc:'Mechanics, Waves, Electric Charge' },
+      { id:'ap_ush',       label:'AP US History',         emoji:'🗽', desc:'Colonial Era through Modern America' },
+      { id:'ap_eng_lang',  label:'AP English Language',   emoji:'📝', desc:'Rhetoric, Argumentation, Analysis' },
+      { id:'ap_cs',        label:'AP Computer Science A', emoji:'💻', desc:'Java, OOP, Algorithms, Data Structures' },
+      { id:'ap_econ',      label:'AP Economics',          emoji:'💹', desc:'Micro + Macro Economics' },
+    ],
+  },
+
+  psat: {
+    label: 'PSAT / NMSQT',
+    flag: '🇺🇸',
+    years: 'Grades 9–11',
+    region: 'us',
+    subjects: [
+      { id:'sat_math', label:'Math',             emoji:'📐', desc:'Algebra, Problem Solving & Data Analysis' },
+      { id:'sat_rw',   label:'Reading & Writing',emoji:'📖', desc:'Craft & Structure, Conventions' },
+    ],
+  },
 }
 
 // ── Timer config (seconds per question, 0 = untimed) ─────────────────────────
@@ -679,6 +758,10 @@ export const STREAM_CONFIG = {
 export const TIMER_CONFIG = {
   gcse:   90,
   alevel: { ucat: 90, lnat: 180, tmua: 135, esat: 120, mat: 135, pat: 120, tara: 108, tsa: 150, step: 0 },
+  sat:    { sat_math: 96, sat_rw: 71 },
+  act:    { act_english: 36, act_math: 60, act_science: 53 },
+  ap:     90,
+  psat:   { sat_math: 96, sat_rw: 71 },
 }
 
 // ── Mock exam config ──────────────────────────────────────────────────────────
@@ -696,4 +779,8 @@ export const MOCK_CONFIG = {
     tsa:   { duration: 5400,  label: 'TSA Full Paper (90 min)' },
     step:  { duration: 10800, label: 'STEP Full Paper (3 hrs)' },
   },
+  sat:    { duration: 8040,  label: 'SAT Full Test (134 min)' },
+  act:    { duration: 10500, label: 'ACT Full Test (175 min)' },
+  ap:     { duration: 9000,  label: 'AP Exam Simulation (150 min)' },
+  psat:   { duration: 8520,  label: 'PSAT Full Test (142 min)' },
 }

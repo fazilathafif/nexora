@@ -1,7 +1,7 @@
 // Design tokens — single source of truth for spacing, typography, shadows, radii.
 // Import NAV_HEIGHT wherever bottom-nav clearance is needed.
 
-export const NAV_HEIGHT = 64   // px — fixed bottom nav height
+export const NAV_HEIGHT = 80   // px — clearance for floating bottom nav (bar 62px + 10px gap)
 
 export const sp = {
   s0: 4,
@@ -14,11 +14,12 @@ export const sp = {
   s7: 48,
 }
 
+// Coursera-aligned radius scale (smaller, cleaner)
 export const radius = {
-  sm:   8,
-  md:   12,
-  lg:   16,
-  xl:   20,
+  sm:   4,
+  md:   8,
+  lg:   12,
+  xl:   16,
   full: 999,
 }
 
@@ -29,6 +30,11 @@ export const shadow = {
   smDark: '0 1px 4px rgba(0,0,0,0.25)',
   mdDark: '0 4px 16px rgba(0,0,0,0.35)',
   lgDark: '0 8px 32px rgba(0,0,0,0.50)',
+  // Coursera elevation levels
+  card:     '0 2px 8px rgba(0,0,0,0.08)',
+  cardDark: '0 2px 8px rgba(0,0,0,0.32)',
+  modal:    '0 12px 40px rgba(0,0,0,0.18)',
+  fab:      '0 4px 16px rgba(0,0,0,0.22)',
 }
 
 export const fontSize = {

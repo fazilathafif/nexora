@@ -6,9 +6,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getWeeklyActivity, getTopicStats } from '../lib/db.js'
-import { STREAM_CONFIG } from '../data/questions.js'
+import { STREAM_CONFIG, getQuestions } from '../data/questions.js'
 import { getColors, Shell, SectionLabel } from './HomePage.jsx'
 import { shadow } from '../styles/tokens.js'
+import { useMastery } from '../hooks/useMastery.js'
+import { TRACK_COLORS } from '../styles/courseraTokens.js'
 
 // Map topic name → subject id for drill routing
 function guessSubjectForTopic(topic, cfg) {
@@ -19,11 +21,11 @@ function guessSubjectForTopic(topic, cfg) {
   return cfg.subjects[0]?.id
 }
 
-export default function ProgressPage({ user, profile }) {
+export default function ProgressPage({ user, profile, isDark }) {
   const { stream } = useParams()
   const navigate   = useNavigate()
-  const C          = getColors(stream)
-  const dark       = stream === 'alevel'
+  const C          = getColors(stream, null, isDark)
+  const dark       = isDark
   const cfg        = STREAM_CONFIG[stream]
 
   const [weekly,  setWeekly]  = useState([])
@@ -34,12 +36,17 @@ export default function ProgressPage({ user, profile }) {
   const streak = profile?.streak  ?? 0
   const level  = Math.floor(xp / 150) + 1
 
+  // Enrolled tracks tab bar (only when user has > 1 stream)
+  const enrolledStreams = profile?.streams ?? [stream]
+  const showStreamTabs  = enrolledStreams.length > 1
+
   useEffect(() => {
     if (!user?.id) { setLoading(false); return }
     setLoading(true)
-    Promise.all([
-      getWeeklyActivity(user.id),
-      getTopicStats(user.id, stream),
+    const timeout = new Promise(resolve => setTimeout(() => resolve([{ data: [] }, { data: [] }]), 8000))
+    Promise.race([
+      Promise.all([getWeeklyActivity(user.id), getTopicStats(user.id, stream)]),
+      timeout,
     ]).then(([{ data: w }, { data: t }]) => {
       setWeekly(w ?? [])
       const map = {}
@@ -72,13 +79,42 @@ export default function ProgressPage({ user, profile }) {
   ]
 
   return (
-    <Shell C={C}>
+    <Shell C={C} isDark={isDark}>
+      {/* Track switcher — only when enrolled in multiple streams */}
+      {showStreamTabs && (
+        <div style={{ display:'flex', gap:8, overflowX:'auto', marginBottom:18, paddingBottom:2, scrollbarWidth:'none' }}>
+          {enrolledStreams.map(s => {
+            const sc = STREAM_CONFIG[s]
+            const active = s === stream
+            return (
+              <button
+                key={s}
+                onClick={() => navigate(`/${s}/progress`)}
+                style={{
+                  flexShrink: 0,
+                  background: active ? C.primary : '#F1F5F9',
+                  color: active ? 'white' : '#64748B',
+                  border: active ? `1.5px solid ${C.primary}` : '1.5px solid #E2E8F0',
+                  borderRadius: 20, padding: '6px 14px',
+                  fontSize: 12, fontWeight: 800, cursor: 'pointer',
+                  fontFamily: 'Inter,sans-serif',
+                  WebkitTapHighlightColor: 'transparent',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {sc?.label?.replace(' Track','').replace(' Prep','') ?? s.toUpperCase()}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
       {/* Header */}
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,marginBottom:22}}>
-        <div style={{fontSize:26,fontWeight:900,color:C.navy,fontFamily:"'Playfair Display', Georgia, serif",letterSpacing:'-0.4px'}}>My Progress</div>
+        <div style={{fontSize:24,fontWeight:800,color:C.navy,letterSpacing:'-0.4px'}}>My Learning</div>
         <button
           onClick={() => navigate(`/${stream}/plan`)}
-          style={{background:`linear-gradient(135deg,${C.primary},${stream==='alevel'?'#312E81':'#0F766E'})`,color:'white',border:'none',borderRadius:10,padding:'7px 14px',cursor:'pointer',fontWeight:700,fontSize:12,display:'flex',alignItems:'center',gap:6}}
+          style={{background:C.primary,color:'white',border:'none',borderRadius:8,padding:'7px 14px',cursor:'pointer',fontWeight:700,fontSize:12,display:'flex',alignItems:'center',gap:6}}
         >
           📅 Study Plan
         </button>
@@ -110,9 +146,12 @@ export default function ProgressPage({ user, profile }) {
         )}
       </div>
 
+      {/* Subject Mastery strip */}
+      <SubjectMasteryStrip streams={enrolledStreams} C={C} />
+
       {/* Topic accuracy */}
       <div style={{background:C.card,borderRadius:16,padding:'18px',marginBottom:14,boxShadow:dark?'0 4px 20px rgba(0,0,0,0.35)':'0 4px 20px rgba(0,0,0,0.07)'}}>
-        <SectionLabel C={C}>{dark ? 'Exam Readiness' : 'Subject Strength'}</SectionLabel>
+        <SectionLabel C={C}>{dark ? 'Exam Readiness' : ['sat','act','ap','psat'].includes(stream) ? 'Topic Performance' : 'Subject Strength'}</SectionLabel>
         {loading ? <Skeleton C={C} height={120} /> : topics.length === 0 ? (
           // Show demo bars if no data yet
           cfg.subjects.slice(0,4).map((s,i) => (
@@ -136,6 +175,100 @@ export default function ProgressPage({ user, profile }) {
   )
 }
 
+const UK_STREAMS = ['gcse', 'alevel']
+const US_STREAMS = ['sat', 'act', 'ap', 'psat']
+
+function SubjectMasteryStrip({ streams, C }) {
+  const [collapsed, setCollapsed] = useState({})
+
+  const normStreams = Array.isArray(streams) ? streams : [streams]
+  const ukEnrolled = normStreams.filter(s => UK_STREAMS.includes(s))
+  const usEnrolled = normStreams.filter(s => US_STREAMS.includes(s))
+  const totalStreams = normStreams.length
+
+  function toggleTrack(s) {
+    setCollapsed(prev => ({ ...prev, [s]: !prev[s] }))
+  }
+
+  function renderTrackGroup(regionLabel, regionStreams) {
+    if (!regionStreams.length) return null
+    return (
+      <div key={regionLabel} style={{ marginBottom: 8 }}>
+        {totalStreams > 1 && (
+          <div style={{ fontSize: 10, fontWeight: 800, color: C.muted, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+            {regionLabel}
+          </div>
+        )}
+        {regionStreams.map(s => {
+          const cfg = STREAM_CONFIG[s]
+          if (!cfg) return null
+          const accent = TRACK_COLORS[s] ?? C.primary
+          const isCollapsed = collapsed[s]
+          return (
+            <div key={s} style={{ marginBottom: 10 }}>
+              {totalStreams > 1 && (
+                <button
+                  onClick={() => toggleTrack(s)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+                    background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0 6px',
+                    textAlign: 'left', fontFamily: 'Inter,sans-serif',
+                  }}
+                >
+                  <div style={{ width: 10, height: 10, borderRadius: 5, background: accent, flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: C.navy, flex: 1 }}>
+                    {cfg.label?.replace(' Track', '').replace(' Prep', '') ?? s.toUpperCase()}
+                  </span>
+                  <span style={{ fontSize: 11, color: C.muted }}>{isCollapsed ? '▸' : '▾'}</span>
+                </button>
+              )}
+              {!isCollapsed && (
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  {cfg.subjects.filter(sub => !sub.deprecated).map(sub => (
+                    <SubjectMasteryDot key={sub.id} stream={s} subject={sub} C={C} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ background: C.card, borderRadius: 16, padding: '16px 18px', marginBottom: 14, boxShadow: '0 4px 20px rgba(0,0,0,0.07)' }}>
+      <SectionLabel C={C}>Subject Mastery</SectionLabel>
+      {renderTrackGroup('🇬🇧 United Kingdom', ukEnrolled)}
+      {renderTrackGroup('🇺🇸 United States', usEnrolled)}
+    </div>
+  )
+}
+
+function SubjectMasteryDot({ stream, subject, C }) {
+  const questions = getQuestions(stream, subject.id)
+  const { pct, badge } = useMastery(questions)
+  const badgeLabel = badge === 'gold' ? '🥇' : badge === 'silver' ? '🥈' : badge === 'bronze' ? '🥉' : null
+  const barColor   = badge === 'gold' ? '#FBBF24' : badge === 'silver' ? '#9CA3AF' : badge === 'bronze' ? '#CD7F32' : C.primary
+  return (
+    <div style={{textAlign:'center', minWidth:56}}>
+      <div style={{
+        width:44, height:44, borderRadius:22, margin:'0 auto 5px',
+        background:`${barColor}18`, border:`2px solid ${barColor}40`,
+        display:'flex', alignItems:'center', justifyContent:'center',
+        fontSize:20, position:'relative',
+      }}>
+        {subject.emoji}
+        {badgeLabel && (
+          <div style={{position:'absolute', top:-4, right:-4, fontSize:14}}>{badgeLabel}</div>
+        )}
+      </div>
+      <div style={{fontSize:9, fontWeight:700, color:C.navy, lineHeight:1.2}}>{subject.label.replace(' & ','\n& ')}</div>
+      <div style={{fontSize:10, fontWeight:800, color:barColor, marginTop:2}}>{pct}%</div>
+    </div>
+  )
+}
+
 function TopicBar({ topic, pct, C, onDrill }) {
   return (
     <div style={{marginBottom:12}}>
@@ -151,8 +284,8 @@ function TopicBar({ topic, pct, C, onDrill }) {
         )}
         <span style={{color: pct>=75?C.success:pct>=50?C.primary:'#EF4444'}}>{pct}%</span>
       </div>
-      <div style={{background:C.border,borderRadius:6,height:7}}>
-        <div style={{width:`${pct}%`,background:`linear-gradient(90deg,${C.primary},${C.secondary??C.primary})`,height:'100%',borderRadius:6,transition:'width 0.6s ease'}} />
+      <div style={{background:C.border,borderRadius:4,height:6}}>
+        <div style={{width:`${pct}%`,background:C.primary,height:'100%',borderRadius:4,transition:'width 0.6s ease'}} />
       </div>
     </div>
   )

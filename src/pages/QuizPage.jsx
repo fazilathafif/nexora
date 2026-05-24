@@ -57,14 +57,17 @@ function SaveNoteButton({ onSave, saved, notesCount }) {
   )
 }
 
-export default function QuizPage({ user, profile, refreshProfile }) {
+export default function QuizPage({ user, profile, refreshProfile, isDark }) {
   const { stream, subject } = useParams()
   const [searchParams]      = useSearchParams()
   const reviewMode          = searchParams.get('review') === '1'
+  const dailyMode           = searchParams.get('daily')  === '1'
+  const challengeMode       = searchParams.get('challenge') === '1'
+  const challengeTarget     = challengeMode ? Number(searchParams.get('target') ?? 0) : null
   const topicFilter         = searchParams.get('topic') ?? null
   const navigate            = useNavigate()
-  const C                   = getColors(stream, subject)
-  const dark                = stream === 'alevel'
+  const C                   = getColors(stream, subject, isDark)
+  const dark                = isDark
   const { isDesktop }       = useBreakpoint()
 
   // Computed once on mount — never re-sorted during the session.
@@ -74,9 +77,14 @@ export default function QuizPage({ user, profile, refreshProfile }) {
   // question while chosen still held the previous answer's value.
   const [questions] = useState(() => {
     const allQs = getQuestions(stream, subject, topicFilter)
-    return reviewMode
+    const base = reviewMode
       ? allQs.filter(q => getDueIds(allQs).includes(q.id))
       : sortByDue(allQs)
+    if (dailyMode) {
+      const shuffled = [...base].sort(() => Math.random() - 0.5)
+      return shuffled.slice(0, 10)
+    }
+    return base
   })
   const { startQuizSession, submitAnswer, finishQuizSession } = useProgress(user, profile, refreshProfile)
 
@@ -179,6 +187,16 @@ export default function QuizPage({ user, profile, refreshProfile }) {
     ? TIMER_CONFIG.gcse
     : (TIMER_CONFIG.alevel?.[subject] ?? 0)
 
+  function writeDailyChallenge(finalScore) {
+    try {
+      localStorage.setItem(`nx_daily_${stream}`, JSON.stringify({
+        date:  new Date().toISOString().split('T')[0],
+        score: finalScore,
+        total: questions.length,
+      }))
+    } catch {}
+  }
+
   const handleTimerExpire = useCallback(() => {
     if (chosenRef.current !== null) return   // already answered
     const q = currentQRef.current
@@ -190,6 +208,17 @@ export default function QuizPage({ user, profile, refreshProfile }) {
 
   const { remaining, pct: timerPct, warning, danger } = useTimer(timerSeconds, handleTimerExpire, qIndex)
 
+  // Daily challenge 5-min session timer (inactive when not in daily mode)
+  const handleDailyExpire = useCallback(async () => {
+    writeDailyChallenge(score)
+    const xpEarned = await finishQuizSession(score, stream)
+    navigate(`/${stream}/result`, {
+      state: { answers, score, total: questions.length, subject, xpEarned: xpEarned ?? score * 10 },
+    })
+  }, [score, answers]) // eslint-disable-line
+  const { remaining: dailyRemaining, pct: dailyTimerPct, warning: dailyWarn, danger: dailyDanger } =
+    useTimer(dailyMode ? 300 : 0, handleDailyExpire, 0)
+
   // Start Supabase session once
   useEffect(() => {
     if (!started && questions.length > 0) {
@@ -200,7 +229,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
 
   if (!questions.length) {
     return (
-      <Shell C={C}>
+      <Shell C={C} isDark={isDark}>
         <p style={{color:C.muted,textAlign:'center',marginTop:60}}>
           {reviewMode ? 'No questions due for review right now — great work!' : 'No questions found for this subject.'}
         </p>
@@ -238,6 +267,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
       }
     } else {
       const xpEarned = await finishQuizSession(score, stream)
+      if (dailyMode) writeDailyChallenge(score)
       navigate(`/${stream}/result`, {
         state: { answers, score, total, subject, xpEarned: xpEarned ?? score * (dark ? 15 : 10) },
       })
@@ -356,8 +386,8 @@ export default function QuizPage({ user, profile, refreshProfile }) {
         <span style={{fontWeight:700}}>Q{qIndex + 1} / {total}</span>
         <span style={{color:C.primary,fontWeight:700}}>Score: {score}</span>
       </div>
-      <div style={{background:C.border,borderRadius:8,height:5}}>
-        <div style={{width:`${progressPct}%`,background:`linear-gradient(90deg,${C.primary},${C.secondary ?? C.primary})`,height:'100%',borderRadius:8,transition:'width 0.4s ease'}} />
+      <div style={{background:C.border,borderRadius:4,height:4}}>
+        <div style={{width:`${progressPct}%`,background:C.primary,height:'100%',borderRadius:4,transition:'width 0.4s ease'}} />
       </div>
     </div>
   )
@@ -383,11 +413,33 @@ export default function QuizPage({ user, profile, refreshProfile }) {
     </div>
   ) : null
 
+  // ── Daily session timer bar ────────────────────────────────────────────────
+  const dailyTimerColor = dailyDanger ? '#EF4444' : dailyWarn ? '#F59E0B' : '#10B981'
+  const dailyTimerBar = dailyMode ? (
+    <div style={{marginBottom:10}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:3}}>
+        <span style={{fontSize:10,color:C.muted,fontWeight:700,letterSpacing:'0.05em'}}>🎯 DAILY CHALLENGE</span>
+        <span style={{fontSize:12,fontWeight:800,color:dailyTimerColor,fontVariantNumeric:'tabular-nums'}}>
+          {Math.floor(dailyRemaining / 60)}:{String(dailyRemaining % 60).padStart(2,'0')}
+        </span>
+      </div>
+      <div style={{background:C.border,borderRadius:6,height:4}}>
+        <div style={{
+          width:`${dailyTimerPct}%`, background:dailyTimerColor,
+          height:'100%', borderRadius:6, transition:'width 1s linear, background 0.5s',
+        }} />
+      </div>
+    </div>
+  ) : null
+
   // ── Shared: badges ─────────────────────────────────────────────────────────
   const badges = (
     <div style={{display:'flex',gap:6,marginBottom:14,flexWrap:'wrap'}}>
       {(reviewMode || topicFilter) && (
         <Badge label={reviewMode ? 'Review Mode' : `Drilling: ${topicFilter}`} color={reviewMode ? '#F59E0B' : '#EF4444'} />
+      )}
+      {challengeMode && (
+        <Badge label={`🎯 Beat ${challengeTarget}/${total}`} color='#7C3AED' />
       )}
       <Badge label={currentQ.topic} color={C.primary} />
       <Badge label={`Difficulty ${'★'.repeat(currentQ.difficulty)}`} color={C.muted} />
@@ -397,45 +449,67 @@ export default function QuizPage({ user, profile, refreshProfile }) {
   // ── Shared: question block (keyed by qIndex) ───────────────────────────────
   const questionBlock = (
     <div key={qIndex}>
-      {/* Question */}
-      <div style={{background:C.card,borderRadius:22,padding:'22px 20px',marginBottom:16,boxShadow:dark?'0 6px 28px rgba(0,0,0,0.40)':'0 6px 24px rgba(0,0,0,0.08)'}}>
-        <p style={{fontSize:16,fontWeight:700,color:C.navy,lineHeight:1.65,margin:0}}>{currentQ.q}</p>
-      </div>
+      {/* Question — naked text, no card wrapper */}
+      <p style={{fontSize:17,fontWeight:600,color:C.navy,lineHeight:1.65,margin:'0 0 16px'}}>{currentQ.q}</p>
 
       {/* Hint */}
       {!hintShown ? (
         <button
           onClick={() => setHintShown(true)}
           disabled={chosen !== null}
-          style={{width:'100%',background:'transparent',border:`1px dashed ${C.border}`,borderRadius:10,padding:'8px 14px',fontSize:12,color:C.muted,cursor:chosen!==null?'default':'pointer',marginBottom:12,opacity:chosen!==null?0.5:1,touchAction:'manipulation'}}
+          style={{background:'none',border:'none',padding:'0 0 12px',fontSize:13,color:C.primary,cursor:chosen!==null?'default':'pointer',opacity:chosen!==null?0.5:1,touchAction:'manipulation',fontFamily:'Inter,sans-serif',fontWeight:600,textDecoration:'underline',textDecorationStyle:'dotted'}}
         >
           💡 Show hint (−2 XP)
         </button>
       ) : (
-        <div style={{background:(dark?'#C4B5FD':'#FCD34D')+'25',border:`1px solid ${dark?'#C4B5FD':'#FCD34D'}60`,borderRadius:10,padding:'10px 14px',fontSize:13,color:dark?'#DDD6FE':'#92400E',marginBottom:12,fontWeight:600}}>
+        <div style={{background:C.warningBg,border:`1px solid ${C.warning}40`,borderRadius:8,padding:'10px 14px',fontSize:13,color:C.warning,marginBottom:12,fontWeight:600}}>
           💡 {currentQ.hint}
         </div>
       )}
 
       {/* Answer options */}
-      <div style={{display:'grid',gap:9,marginBottom:16}}>
+      <div style={{display:'grid',gap:8,marginBottom:16}}>
         {currentQ.opts.map((opt, i) => {
-          let bg = C.card, border = `1.5px solid ${C.border}50`, col = C.navy, shadow = 'none'
-          if (chosen !== null) {
-            if (i === currentQ.ans)                              { bg = C.success+'22'; border = `2px solid ${C.success}`; col = dark?'#4ADE80':'#166534'; shadow = `0 0 0 3px ${C.success}18` }
-            else if (chosen >= 0 && i === chosen && i !== currentQ.ans) { bg = '#EF444422'; border = '2px solid #EF4444'; col = dark?'#F87171':'#991B1B'; shadow = '0 0 0 3px #EF444418' }
+          let bg = C.card, borderStyle = `1.5px solid ${C.border}`, col = C.navy, borderLeft = 'none', shadow = `0 1px 4px rgba(0,0,0,0.06)`
+          if (chosen === null) {
+            // nothing selected
+          } else if (i === currentQ.ans) {
+            bg = C.successBg; borderStyle = `1.5px solid ${C.success}40`; col = C.success
+            borderLeft = `4px solid ${C.success}`; shadow = 'none'
+          } else if (chosen >= 0 && i === chosen && i !== currentQ.ans) {
+            bg = C.errorBg; borderStyle = `1.5px solid ${C.error}40`; col = C.error
+            borderLeft = `4px solid ${C.error}`; shadow = 'none'
           }
+          const isSelected = chosen === null && false // unused in selected state before answer
           return (
             <button
               key={i} onClick={() => handleAnswer(i)}
               disabled={chosen !== null}
-              style={{background:bg,border,borderRadius:16,padding:'14px 16px',minHeight:56,textAlign:'left',cursor:chosen!==null?'default':'pointer',fontSize:14,fontWeight:600,color:col,touchAction:'manipulation',pointerEvents:inputBlocked?'none':'auto',WebkitTapHighlightColor:'transparent',outline:'none',boxShadow:shadow,transition:'box-shadow 0.2s'}}
+              style={{
+                background:bg, border:borderStyle, borderLeft,
+                borderRadius:8, padding:'13px 16px 13px 14px', minHeight:52, textAlign:'left',
+                cursor:chosen!==null?'default':'pointer', fontSize:14, fontWeight:500, color:col,
+                touchAction:'manipulation', pointerEvents:inputBlocked?'none':'auto',
+                WebkitTapHighlightColor:'transparent', outline:'none',
+                boxShadow:shadow, transition:'all 0.15s',
+                display:'flex', alignItems:'center', gap:12,
+              }}
             >
-              <span style={{fontWeight:900,marginRight:10,opacity:0.4,fontSize:12}}>{['A','B','C','D'][i]}</span>
-              {isDesktop && chosen === null && <span style={{float:'right',fontSize:10,fontWeight:700,opacity:0.3,letterSpacing:'0.05em'}}>{i+1}</span>}
-              {opt}
-              {chosen !== null && i === currentQ.ans && <span style={{float:'right'}}>✓</span>}
-              {chosen !== null && chosen >= 0 && i === chosen && i !== currentQ.ans && <span style={{float:'right'}}>✗</span>}
+              <span style={{
+                width:28, height:28, flexShrink:0, borderRadius:4,
+                background: chosen !== null && i === currentQ.ans ? C.success+'20'
+                  : chosen !== null && chosen >= 0 && i === chosen ? C.error+'20'
+                  : C.bg,
+                border: `1px solid ${C.border}`,
+                display:'flex', alignItems:'center', justifyContent:'center',
+                fontSize:11, fontWeight:800, color: chosen !== null && i === currentQ.ans ? C.success
+                  : chosen !== null && chosen >= 0 && i === chosen ? C.error : C.muted,
+              }}>
+                {chosen !== null && i === currentQ.ans ? '✓'
+                  : chosen !== null && chosen >= 0 && i === chosen ? '✗'
+                  : ['A','B','C','D'][i]}
+              </span>
+              <span>{opt}</span>
             </button>
           )
         })}
@@ -592,7 +666,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
       {chosen !== null && (
         <button
           onClick={handleNext}
-          style={{width:'100%',background:`linear-gradient(135deg,${C.primary},${dark?'#1E1B4B':'#0F766E'})`,color:'white',border:'none',borderRadius:16,padding:'15px',fontSize:15,fontWeight:800,cursor:'pointer',boxShadow:`0 4px 16px ${C.primary}40`,touchAction:'manipulation'}}
+          style={{width:'100%',background:C.primary,color:'white',border:'none',borderRadius:8,padding:'15px',height:52,fontSize:15,fontWeight:700,cursor:'pointer',boxShadow:`0 2px 8px ${C.primary}40`,touchAction:'manipulation',transition:'opacity 0.2s'}}
         >
           {qIndex + 1 < total ? 'Next →' : 'See Results 🎉'}
         </button>
@@ -601,12 +675,13 @@ export default function QuizPage({ user, profile, refreshProfile }) {
   )
 
   return (
-    <Shell C={C} contentMax={isDesktop ? 1100 : undefined}>
+    <Shell C={C} isDark={isDark} contentMax={isDesktop ? 1100 : undefined}>
 
       {isDesktop ? (
         /* ─────────── DESKTOP: 2-column layout ─────────── */
         <>
           {progressRow}
+          {dailyTimerBar}
           {timerBar}
 
           {currentQ.passage ? (
@@ -647,6 +722,7 @@ export default function QuizPage({ user, profile, refreshProfile }) {
         /* ─────────── MOBILE: original single-column layout ─────────── */
         <>
           {progressRow}
+          {dailyTimerBar}
           {timerBar}
 
           {/* Badges */}
@@ -670,45 +746,66 @@ export default function QuizPage({ user, profile, refreshProfile }) {
               question advance, wiping all DOM state (focus, inline styles) from the previous question */}
           <div key={qIndex}>
 
-          {/* Question */}
-          <div style={{background:C.card,borderRadius:22,padding:'22px 20px',marginBottom:16,boxShadow:dark?'0 6px 28px rgba(0,0,0,0.40)':'0 6px 24px rgba(0,0,0,0.08)'}}>
-            <p style={{fontSize:16,fontWeight:700,color:C.navy,lineHeight:1.65,margin:0}}>{currentQ.q}</p>
-          </div>
+          {/* Question — naked text */}
+          <p style={{fontSize:17,fontWeight:600,color:C.navy,lineHeight:1.65,margin:'0 0 16px'}}>{currentQ.q}</p>
 
           {/* Hint */}
           {!hintShown ? (
             <button
               onClick={() => setHintShown(true)}
               disabled={chosen !== null}
-              style={{width:'100%',background:'transparent',border:`1px dashed ${C.border}`,borderRadius:10,padding:'8px 14px',fontSize:12,color:C.muted,cursor:chosen!==null?'default':'pointer',marginBottom:12,opacity:chosen!==null?0.5:1,touchAction:'manipulation'}}
+              style={{background:'none',border:'none',padding:'0 0 12px',fontSize:13,color:C.primary,cursor:chosen!==null?'default':'pointer',opacity:chosen!==null?0.5:1,touchAction:'manipulation',fontFamily:'Inter,sans-serif',fontWeight:600,textDecoration:'underline',textDecorationStyle:'dotted'}}
             >
               💡 Show hint (−2 XP)
             </button>
           ) : (
-            <div style={{background:(dark?'#C4B5FD':'#FCD34D')+'25',border:`1px solid ${dark?'#C4B5FD':'#FCD34D'}60`,borderRadius:10,padding:'10px 14px',fontSize:13,color:dark?'#DDD6FE':'#92400E',marginBottom:12,fontWeight:600}}>
+            <div style={{background:C.warningBg,border:`1px solid ${C.warning}40`,borderRadius:8,padding:'10px 14px',fontSize:13,color:C.warning,marginBottom:12,fontWeight:600}}>
               💡 {currentQ.hint}
             </div>
           )}
 
           {/* Answer options */}
-          <div style={{display:'grid',gap:9,marginBottom:16}}>
+          <div style={{display:'grid',gap:8,marginBottom:16}}>
             {currentQ.opts.map((opt, i) => {
-              let bg = C.card, border = `1.5px solid ${C.border}50`, col = C.navy, shadow = 'none'
-              if (chosen !== null) {
-                if (i === currentQ.ans)                              { bg = C.success+'22'; border = `2px solid ${C.success}`; col = dark?'#4ADE80':'#166534'; shadow = `0 0 0 3px ${C.success}18` }
-                else if (chosen >= 0 && i === chosen && i !== currentQ.ans) { bg = '#EF444422'; border = '2px solid #EF4444'; col = dark?'#F87171':'#991B1B'; shadow = '0 0 0 3px #EF444418' }
+              let bg = C.card, borderStyle = `1.5px solid ${C.border}`, col = C.navy, borderLeft = 'none', shadow = `0 1px 4px rgba(0,0,0,0.06)`
+              if (chosen === null) {
+                // nothing selected
+              } else if (i === currentQ.ans) {
+                bg = C.successBg; borderStyle = `1.5px solid ${C.success}40`; col = C.success
+                borderLeft = `4px solid ${C.success}`; shadow = 'none'
+              } else if (chosen >= 0 && i === chosen && i !== currentQ.ans) {
+                bg = C.errorBg; borderStyle = `1.5px solid ${C.error}40`; col = C.error
+                borderLeft = `4px solid ${C.error}`; shadow = 'none'
               }
               return (
                 <button
                   key={i} onClick={() => handleAnswer(i)}
                   disabled={chosen !== null}
-                  style={{background:bg,border,borderRadius:16,padding:'14px 16px',minHeight:56,textAlign:'left',cursor:chosen!==null?'default':'pointer',fontSize:14,fontWeight:600,color:col,touchAction:'manipulation',pointerEvents:inputBlocked?'none':'auto',WebkitTapHighlightColor:'transparent',outline:'none',boxShadow:shadow,transition:'box-shadow 0.2s'}}
+                  style={{
+                    background:bg, border:borderStyle, borderLeft,
+                    borderRadius:8, padding:'13px 16px 13px 14px', minHeight:52, textAlign:'left',
+                    cursor:chosen!==null?'default':'pointer', fontSize:14, fontWeight:500, color:col,
+                    touchAction:'manipulation', pointerEvents:inputBlocked?'none':'auto',
+                    WebkitTapHighlightColor:'transparent', outline:'none',
+                    boxShadow:shadow, transition:'all 0.15s',
+                    display:'flex', alignItems:'center', gap:12,
+                  }}
                 >
-                  <span style={{fontWeight:900,marginRight:10,opacity:0.4,fontSize:12}}>{['A','B','C','D'][i]}</span>
-                  {isDesktop && chosen === null && <span style={{float:'right',fontSize:10,fontWeight:700,opacity:0.3,letterSpacing:'0.05em'}}>{i+1}</span>}
-                  {opt}
-                  {chosen !== null && i === currentQ.ans && <span style={{float:'right'}}>✓</span>}
-                  {chosen !== null && chosen >= 0 && i === chosen && i !== currentQ.ans && <span style={{float:'right'}}>✗</span>}
+                  <span style={{
+                    width:28, height:28, flexShrink:0, borderRadius:4,
+                    background: chosen !== null && i === currentQ.ans ? C.success+'20'
+                      : chosen !== null && chosen >= 0 && i === chosen ? C.error+'20'
+                      : C.bg,
+                    border:`1px solid ${C.border}`,
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                    fontSize:11, fontWeight:800, color: chosen !== null && i === currentQ.ans ? C.success
+                      : chosen !== null && chosen >= 0 && i === chosen ? C.error : C.muted,
+                  }}>
+                    {chosen !== null && i === currentQ.ans ? '✓'
+                      : chosen !== null && chosen >= 0 && i === chosen ? '✗'
+                      : ['A','B','C','D'][i]}
+                  </span>
+                  <span>{opt}</span>
                 </button>
               )
             })}

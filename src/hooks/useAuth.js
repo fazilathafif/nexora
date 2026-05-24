@@ -78,14 +78,20 @@ export function useAuth() {
 
   async function ensureProfile(u) {
     const defaults = { id: u.id, display_name: 'Student', xp: 0, streak: 0, stream: null, updated_at: new Date().toISOString() }
-    const { data } = await supabase
+    await supabase
       .from('profiles')
       .upsert(defaults, { ignoreDuplicates: true })
-      .select()
+    // ignoreDuplicates:true means the SELECT after upsert returns nothing for existing rows.
+    // Always fetch fresh so an existing profile's stream/data is not wiped.
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', u.id)
       .maybeSingle()
-    // data is the newly-created row, or null if profile already existed (conflict skipped)
-    // Never set profile to null — fall back to known defaults so the app stays functional
-    setProfile(data ?? defaults)
+    if (data) setProfile(data)
+    // If the SELECT also returned null (e.g. RLS temporarily blocked), keep
+    // whatever profile is already in state rather than overwriting with stream:null.
+    // App.jsx would redirect to StreamOnboarding if stream is null.
   }
 
   async function refreshProfile() {

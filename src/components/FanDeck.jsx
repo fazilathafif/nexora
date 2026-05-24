@@ -36,6 +36,23 @@ const EXAM_COLORS = {
   english: { primary:'#D97706', card:'#FFFBEB', navy:'#78350F' },
   science: { primary:'#0F766E', card:'#F0FDFA', navy:'#134E4A' },
   verbal:  { primary:'#DB2777', card:'#FDF2F8', navy:'#500724' },
+  // SAT / PSAT
+  sat_math: { primary:'#EA580C', card:'#FFF7ED', navy:'#431407' },
+  sat_rw:   { primary:'#0891B2', card:'#E0F9FF', navy:'#0A4550' },
+  // ACT
+  act_english: { primary:'#7C3AED', card:'#F3E8FF', navy:'#3B0764' },
+  act_math:    { primary:'#DC2626', card:'#FEF2F2', navy:'#450A0A' },
+  act_science: { primary:'#059669', card:'#ECFDF5', navy:'#064E3B' },
+  // AP
+  ap_calculus: { primary:'#1D4ED8', card:'#EFF6FF', navy:'#1E3A5F' },
+  ap_stats:    { primary:'#7C3AED', card:'#F3E8FF', navy:'#3B0764' },
+  ap_bio:      { primary:'#059669', card:'#ECFDF5', navy:'#064E3B' },
+  ap_chem:     { primary:'#EA580C', card:'#FFF7ED', navy:'#431407' },
+  ap_phys:     { primary:'#0891B2', card:'#E0F9FF', navy:'#0A4550' },
+  ap_ush:      { primary:'#B45309', card:'#FEF3C7', navy:'#451A03' },
+  ap_eng_lang: { primary:'#D97706', card:'#FFFBEB', navy:'#78350F' },
+  ap_cs:       { primary:'#4F46E5', card:'#EDE9FE', navy:'#2E1065' },
+  ap_econ:     { primary:'#0F766E', card:'#F0FDFA', navy:'#134E4A' },
 }
 
 // A-Level exam metadata; GCSE subjects fall back to subject.desc

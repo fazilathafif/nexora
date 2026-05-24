@@ -21,11 +21,11 @@ function fmt(secs) {
     : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
 }
 
-export default function MockPage({ user, profile, refreshProfile }) {
+export default function MockPage({ user, profile, refreshProfile, isDark }) {
   const { stream, subject } = useParams()
   const navigate             = useNavigate()
-  const C                    = getColors(stream, subject)
-  const dark                 = stream === 'alevel'
+  const C                    = getColors(stream, subject, isDark)
+  const dark                 = isDark
   const { isDesktop }        = useBreakpoint()
 
   const cfg = stream === 'gcse'
@@ -109,7 +109,7 @@ export default function MockPage({ user, profile, refreshProfile }) {
 
   if (!cfg || !questions.length) {
     return (
-      <Shell C={C}>
+      <Shell C={C} isDark={isDark}>
         <p style={{color:C.muted,textAlign:'center',marginTop:60}}>Mock exam not available for this subject.</p>
         <button onClick={() => navigate(`/${stream}`)} style={{marginTop:20,color:C.primary,background:'none',border:'none',cursor:'pointer',fontWeight:700}}>← Go back</button>
       </Shell>
@@ -287,7 +287,7 @@ export default function MockPage({ user, profile, refreshProfile }) {
   )
 
   return (
-    <Shell C={C} contentMax={isDesktop ? 1100 : undefined}>
+    <Shell C={C} isDark={isDark} contentMax={isDesktop ? 1100 : undefined}>
 
       {isDesktop ? (
         /* ─────────── DESKTOP: 2-column layout ─────────── */

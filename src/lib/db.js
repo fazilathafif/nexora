@@ -100,6 +100,68 @@ export async function getProfile(userId) {
   return supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
 }
 
+export async function updateProfile(userId, updates) {
+  if (!isSupabaseConfigured) return guestUpsertProfile(updates)
+
+  // The Supabase JS client serialises every query behind a navigator.locks mutex
+  // for token management. On mobile PWAs the lock can be held for many seconds
+  // (background token refresh, ITP, SW lifecycle events), causing queries to hang.
+  // Fix: get the access token with a short timeout and fall back to localStorage,
+  // then fire a plain fetch() so we never contend on the lock at all.
+  let accessToken = null
+  try {
+    const result = await Promise.race([
+      supabase.auth.getSession(),
+      new Promise(resolve => setTimeout(() => resolve({ data: { session: null } }), 2000)),
+    ])
+    accessToken = result?.data?.session?.access_token ?? null
+  } catch {}
+
+  if (!accessToken) {
+    try {
+      const key = Object.keys(localStorage).find(k => /^sb-.+-auth-token$/.test(k))
+      if (key) {
+        const stored = JSON.parse(localStorage.getItem(key) ?? '{}')
+        const exp = stored?.expires_at
+        if (stored?.access_token && (!exp || exp > Date.now() / 1000 + 5)) {
+          accessToken = stored.access_token
+        }
+      }
+    } catch {}
+  }
+
+  if (!accessToken) return { data: null, error: new Error('Session expired — please sign in again') }
+
+  const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=id`
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 8000)
+
+  try {
+    const res = await fetch(url, {
+      method: 'PATCH',
+      signal: controller.signal,
+      headers: {
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+      },
+      body: JSON.stringify({ ...updates, updated_at: new Date().toISOString() }),
+    })
+    clearTimeout(timer)
+    if (!res.ok) {
+      const msg = await res.text().catch(() => `HTTP ${res.status}`)
+      return { data: null, error: new Error(msg) }
+    }
+    const rows = await res.json()
+    return { data: rows[0] ?? null, error: null }
+  } catch (e) {
+    clearTimeout(timer)
+    if (e.name === 'AbortError') return { data: null, error: new Error('Request timed out — please try again') }
+    return { data: null, error: e }
+  }
+}
+
 export async function upsertProfile(userId, updates) {
   if (!isSupabaseConfigured) return guestUpsertProfile(updates)
   const patch = { ...updates }
@@ -213,6 +275,81 @@ export async function getReferralStats(userId) {
   const total     = data?.length ?? 0
   const converted = data?.filter(r => r.status === 'converted').length ?? 0
   return { data: { total, converted }, error }
+}
+
+// ── Accessibility preferences ─────────────────────────────────────────────────
+
+export async function getPreferences(userId) {
+  if (!isSupabaseConfigured) {
+    try { return { data: JSON.parse(localStorage.getItem('nx_prefs') ?? 'null'), error: null } }
+    catch { return { data: null, error: null } }
+  }
+  return supabase.from('user_preferences').select('*').eq('user_id', userId).maybeSingle()
+}
+
+export async function savePreferences(userId, prefs) {
+  if (!isSupabaseConfigured) {
+    try { localStorage.setItem('nx_prefs', JSON.stringify(prefs)) } catch {}
+    return { data: prefs, error: null }
+  }
+  return supabase
+    .from('user_preferences')
+    .upsert({ user_id: userId, ...prefs, updated_at: new Date().toISOString() })
+    .select()
+    .maybeSingle()
+}
+
+// ── Multi-stream enrolment ────────────────────────────────────────────────────
+
+export async function enrollStream(userId, stream) {
+  if (!isSupabaseConfigured) {
+    const p = loadGuestProfile() ?? {}
+    const streams = Array.from(new Set([...(p.streams ?? []), stream]))
+    return guestUpsertProfile({ streams, active_stream: stream, stream })
+  }
+  // Append to streams array (no duplicates) and set as active.
+  // Falls back to a plain UPDATE if the enroll_stream RPC isn't available yet.
+  const { data, error } = await supabase.rpc('enroll_stream', { p_user_id: userId, p_stream: stream })
+  if (error) {
+    const { data: profile } = await supabase.from('profiles').select('streams').eq('id', userId).maybeSingle()
+    const streams = Array.from(new Set([...(profile?.streams ?? []), stream]))
+    return supabase
+      .from('profiles')
+      .update({ streams, active_stream: stream, stream, updated_at: new Date().toISOString() })
+      .eq('id', userId)
+      .select()
+      .maybeSingle()
+  }
+  return { data, error }
+}
+
+export async function switchActiveStream(userId, stream) {
+  if (!isSupabaseConfigured) return guestUpsertProfile({ active_stream: stream, stream })
+  return supabase
+    .from('profiles')
+    .update({ active_stream: stream, stream, updated_at: new Date().toISOString() })
+    .eq('id', userId)
+    .select()
+    .maybeSingle()
+}
+
+export async function getApSubjects(userId) {
+  if (!isSupabaseConfigured) {
+    try { return { data: JSON.parse(localStorage.getItem('nx_ap_subjects') ?? '[]'), error: null } }
+    catch { return { data: [], error: null } }
+  }
+  return supabase.from('user_ap_subjects').select('subject_id').eq('user_id', userId)
+}
+
+export async function saveApSubjects(userId, subjectIds) {
+  if (!isSupabaseConfigured) {
+    try { localStorage.setItem('nx_ap_subjects', JSON.stringify(subjectIds)) } catch {}
+    return { data: subjectIds, error: null }
+  }
+  await supabase.from('user_ap_subjects').delete().eq('user_id', userId)
+  if (!subjectIds.length) return { data: [], error: null }
+  const rows = subjectIds.map(subject_id => ({ user_id: userId, subject_id }))
+  return supabase.from('user_ap_subjects').insert(rows).select()
 }
 
 // ── Sysadmin ──────────────────────────────────────────────────────────────────

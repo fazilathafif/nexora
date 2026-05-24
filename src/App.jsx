@@ -1,6 +1,9 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from './hooks/useAuth.js'
+import { useTheme } from './hooks/useTheme.js'
+import { getPreferences } from './lib/db.js'
+import { applyPreferences, PREF_DEFAULTS } from './lib/preferences.js'
 import { isSupabaseConfigured } from './lib/supabase.js'
 import LandingPage         from './pages/LandingPage.jsx'
 import StreamOnboarding    from './pages/StreamOnboarding.jsx'
@@ -16,6 +19,9 @@ import UpdatePasswordPage  from './pages/UpdatePasswordPage.jsx'
 import StudyPlanPage       from './pages/StudyPlanPage.jsx'
 import FlashcardsPage      from './pages/FlashcardsPage.jsx'
 import MatchPage           from './pages/MatchPage.jsx'
+import LearnPage           from './pages/LearnPage.jsx'
+import WellbeingPage       from './pages/WellbeingPage.jsx'
+import LeaderboardPage     from './pages/LeaderboardPage.jsx'
 import SettingsPage        from './pages/SettingsPage.jsx'
 import TodayPage           from './pages/TodayPage.jsx'
 import PrivacyPage         from './pages/PrivacyPage.jsx'
@@ -26,8 +32,16 @@ import BottomNav           from './components/BottomNav.jsx'
 
 export default function App() {
   const { user, profile, loading, refreshProfile, signOut, isPasswordRecovery } = useAuth()
+  const { isDark } = useTheme()
   const [pomodoroActive, setPomodoroActive] = useState(false)
   const location = useLocation()
+
+  useEffect(() => {
+    if (!user?.id) return
+    getPreferences(user.id).then(({ data }) => {
+      applyPreferences({ ...PREF_DEFAULTS, ...(data ?? {}) })
+    }).catch(() => {})
+  }, [user?.id])
 
   if (loading) return <LoadingSpinner />
 
@@ -42,11 +56,13 @@ export default function App() {
   if (isSupabaseConfigured && !user) return <AuthGate />
 
   // First-time user — no track chosen yet; show onboarding before the app
-  if (user && profile && !profile.stream) {
-    return <StreamOnboarding user={user} refreshProfile={refreshProfile} />
+  if (user && profile && !profile.active_stream && !profile.stream) {
+    return <StreamOnboarding user={user} refreshProfile={refreshProfile} isDark={isDark} />
   }
 
-  const showNav = /^\/(gcse|alevel)(\/|$)/.test(location.pathname)
+  const VALID_STREAMS = ['gcse','alevel','sat','act','ap','psat']
+  const showNav = VALID_STREAMS.some(s => location.pathname.startsWith(`/${s}`))
+  const activeStream = profile?.active_stream ?? profile?.stream
 
   return (
     <>
@@ -57,45 +73,54 @@ export default function App() {
 
         {/* Stream selection */}
         <Route path="/" element={
-          profile?.stream
-            ? <Navigate to={`/${profile.stream}`} replace />
-            : <LandingPage user={user} profile={profile} refreshProfile={refreshProfile} />
+          activeStream
+            ? <Navigate to={`/${activeStream}`} replace />
+            : <LandingPage user={user} profile={profile} refreshProfile={refreshProfile} isDark={isDark} />
         } />
         <Route path="/switch" element={
-          <LandingPage user={user} profile={profile} refreshProfile={refreshProfile} />
+          <LandingPage user={user} profile={profile} refreshProfile={refreshProfile} isDark={isDark} />
         } />
 
         {/* App — stream-aware */}
         <Route path="/:stream" element={
           <HomePage user={user} profile={profile} refreshProfile={refreshProfile} signOut={signOut}
-            startPomodoro={() => setPomodoroActive(true)} />
+            startPomodoro={() => setPomodoroActive(true)} isDark={isDark} />
         } />
         <Route path="/:stream/quiz/:subject" element={
-          <QuizPage user={user} profile={profile} refreshProfile={refreshProfile} />
+          <QuizPage user={user} profile={profile} refreshProfile={refreshProfile} isDark={isDark} />
         } />
         <Route path="/:stream/mock/:subject" element={
-          <MockPage user={user} profile={profile} refreshProfile={refreshProfile} />
+          <MockPage user={user} profile={profile} refreshProfile={refreshProfile} isDark={isDark} />
         } />
         <Route path="/:stream/result" element={
-          <ResultPage user={user} profile={profile} />
+          <ResultPage user={user} profile={profile} isDark={isDark} />
         } />
         <Route path="/:stream/progress" element={
-          <ProgressPage user={user} profile={profile} />
+          <ProgressPage user={user} profile={profile} isDark={isDark} />
         } />
         <Route path="/:stream/plan" element={
-          <StudyPlanPage user={user} profile={profile} refreshProfile={refreshProfile} />
+          <StudyPlanPage user={user} profile={profile} refreshProfile={refreshProfile} isDark={isDark} />
         } />
         <Route path="/:stream/today" element={
-          <TodayPage user={user} profile={profile} />
+          <TodayPage user={user} profile={profile} isDark={isDark} />
         } />
         <Route path="/:stream/flashcards/:subject" element={
-          <FlashcardsPage />
+          <FlashcardsPage isDark={isDark} />
         } />
         <Route path="/:stream/match/:subject" element={
-          <MatchPage />
+          <MatchPage isDark={isDark} />
+        } />
+        <Route path="/:stream/learn/:subject" element={
+          <LearnPage isDark={isDark} />
+        } />
+        <Route path="/:stream/wellbeing" element={
+          <WellbeingPage isDark={isDark} />
+        } />
+        <Route path="/:stream/leaderboard" element={
+          <LeaderboardPage user={user} profile={profile} isDark={isDark} />
         } />
         <Route path="/:stream/settings" element={
-          <SettingsPage user={user} profile={profile} signOut={signOut} refreshProfile={refreshProfile} />
+          <SettingsPage user={user} profile={profile} signOut={signOut} refreshProfile={refreshProfile} isDark={isDark} />
         } />
 
         {/* Catch-all */}
