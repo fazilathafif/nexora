@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { upsertProfile } from '../lib/db.js'
+import { updateProfile } from '../lib/db.js'
 import { STREAM_CONFIG } from '../data/questions.js'
 import { COURSERA_BLUE, TRACK_COLORS } from '../styles/courseraTokens.js'
 import { fetchTrackRecommendation } from '../lib/ai.js'
@@ -299,7 +299,7 @@ export default function LandingPage({ user, profile, refreshProfile }) {
         setTimeout(() => reject(new Error('Request timed out — please try again.')), 8000)
       )
       const { error } = await Promise.race([
-        upsertProfile(user.id, {
+        updateProfile(user.id, {
           streams:       pendingStreams,
           stream:        pendingStreams[0],
           active_stream: pendingStreams[0],
