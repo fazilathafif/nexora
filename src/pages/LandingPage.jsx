@@ -293,17 +293,24 @@ export default function LandingPage({ user, profile, refreshProfile }) {
   async function saveStreams() {
     if (!user || !pendingStreams.length) return
     setSaving(true)
+    setSaveError(null)
     try {
-      const { error } = await upsertProfile(user.id, {
-        streams:       pendingStreams,
-        stream:        pendingStreams[0],
-        active_stream: pendingStreams[0],
-      })
-      if (error) throw error
-      refreshProfile?.().catch(() => {}) // fire and forget
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timed out — please try again.')), 8000)
+      )
+      const { error } = await Promise.race([
+        upsertProfile(user.id, {
+          streams:       pendingStreams,
+          stream:        pendingStreams[0],
+          active_stream: pendingStreams[0],
+        }),
+        timeout,
+      ])
+      if (error) throw new Error(error.message ?? 'Save failed.')
+      refreshProfile?.().catch(() => {})
       setStartModal(true)
-    } catch {
-      // silently ignore — user can retry
+    } catch (err) {
+      setSaveError(err?.message ?? 'Save failed — please try again.')
     } finally {
       setSaving(false)
     }
@@ -442,28 +449,35 @@ export default function LandingPage({ user, profile, refreshProfile }) {
           position:'fixed', bottom:0, left:0, right:0,
           padding:`12px 20px calc(12px + env(safe-area-inset-bottom, 0px))`,
           background:'white', borderTop:'1px solid #E5E7EB',
-          display:'flex', gap:10, zIndex:20,
+          display:'flex', flexDirection:'column', gap:8, zIndex:20,
         }}>
-          <button
-            onClick={() => setPendingStreams(originalStreams)}
-            style={{ background:'none', border:'none', fontSize:13, fontWeight:700, color:'#6B7280', cursor:'pointer', fontFamily:'Inter,sans-serif', padding:'0 8px', flexShrink:0 }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={saveStreams}
-            disabled={saving || pendingStreams.length === 0}
-            style={{
-              flex:1, padding:'13px 0',
-              background: saving || pendingStreams.length === 0 ? '#D1D5DB' : COURSERA_BLUE,
-              color:'white', border:'none', borderRadius:8,
-              fontSize:14, fontWeight:700,
-              cursor: saving || pendingStreams.length === 0 ? 'default' : 'pointer',
-              fontFamily:'Inter,sans-serif',
-            }}
-          >
-            {saving ? 'Saving…' : `Save ${pendingStreams.length} track${pendingStreams.length !== 1 ? 's' : ''}`}
-          </button>
+          {saveError && (
+            <div style={{ fontSize:12, color:'#DC2626', fontWeight:600, textAlign:'center', padding:'4px 0' }}>
+              {saveError}
+            </div>
+          )}
+          <div style={{ display:'flex', gap:10 }}>
+            <button
+              onClick={() => { setPendingStreams(originalStreams); setSaveError(null) }}
+              style={{ background:'none', border:'none', fontSize:13, fontWeight:700, color:'#6B7280', cursor:'pointer', fontFamily:'Inter,sans-serif', padding:'0 8px', flexShrink:0 }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={saveStreams}
+              disabled={saving || pendingStreams.length === 0}
+              style={{
+                flex:1, padding:'13px 0',
+                background: saving || pendingStreams.length === 0 ? '#D1D5DB' : COURSERA_BLUE,
+                color:'white', border:'none', borderRadius:8,
+                fontSize:14, fontWeight:700,
+                cursor: saving || pendingStreams.length === 0 ? 'default' : 'pointer',
+                fontFamily:'Inter,sans-serif',
+              }}
+            >
+              {saving ? 'Saving…' : `Save ${pendingStreams.length} track${pendingStreams.length !== 1 ? 's' : ''}`}
+            </button>
+          </div>
         </div>
       )}
 
