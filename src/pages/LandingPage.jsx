@@ -298,7 +298,7 @@ export default function LandingPage({ user, profile, refreshProfile }) {
       const timeout = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Request timed out — please try again.')), 8000)
       )
-      const { error } = await Promise.race([
+      const { data, error } = await Promise.race([
         updateProfile(user.id, {
           streams:       pendingStreams,
           stream:        pendingStreams[0],
@@ -307,6 +307,7 @@ export default function LandingPage({ user, profile, refreshProfile }) {
         timeout,
       ])
       if (error) throw new Error(error.message ?? 'Save failed.')
+      if (!data) throw new Error('Save failed — no rows updated. Please sign out and back in.')
       refreshProfile?.().catch(() => {})
       setStartModal(true)
     } catch (err) {

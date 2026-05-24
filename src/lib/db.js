@@ -97,7 +97,57 @@ export async function getProfile(userId) {
   if (!isSupabaseConfigured) {
     return { data: loadGuestProfile(), error: null }
   }
-  return supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
+
+  // Use raw fetch to bypass the navigator.locks mutex — same pattern as updateProfile.
+  let accessToken = null
+  try {
+    const result = await Promise.race([
+      supabase.auth.getSession(),
+      new Promise(resolve => setTimeout(() => resolve({ data: { session: null } }), 2000)),
+    ])
+    accessToken = result?.data?.session?.access_token ?? null
+  } catch {}
+
+  if (!accessToken) {
+    try {
+      const key = Object.keys(localStorage).find(k => /^sb-.+-auth-token$/.test(k))
+      if (key) {
+        const stored = JSON.parse(localStorage.getItem(key) ?? '{}')
+        const exp = stored?.expires_at
+        if (stored?.access_token && (!exp || exp > Date.now() / 1000 + 5)) {
+          accessToken = stored.access_token
+        }
+      }
+    } catch {}
+  }
+
+  if (!accessToken) {
+    // Fall back to Supabase client as last resort (may hang, but beats returning null)
+    return supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
+  }
+
+  const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=*`
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 8000)
+
+  try {
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json',
+      },
+    })
+    clearTimeout(timer)
+    if (!res.ok) return { data: null, error: new Error(`HTTP ${res.status}`) }
+    const rows = await res.json()
+    return { data: rows[0] ?? null, error: null }
+  } catch (e) {
+    clearTimeout(timer)
+    // On timeout/network error fall back to Supabase client
+    return supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
+  }
 }
 
 export async function updateProfile(userId, updates) {
