@@ -6,6 +6,15 @@ import { PLANS, getEffectivePlan, trialDaysLeft } from '../lib/subscription.js'
 
 const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL
 
+const ALL_STREAMS = [
+  { id:'gcse',   label:'GCSE'    },
+  { id:'alevel', label:'A-Level' },
+  { id:'sat',    label:'SAT'     },
+  { id:'act',    label:'ACT'     },
+  { id:'ap',     label:'AP'      },
+  { id:'psat',   label:'PSAT'    },
+]
+
 const C = {
   bg:'#0A0A14', card:'#0F172A', border:'#1E293B',
   primary:'#0D9488', navy:'#F8FAFC', muted:'#64748B', muted2:'#94A3B8',
@@ -45,11 +54,22 @@ function StatCard({ icon, label, value, color }) {
 
 function StreamBadge({ stream }) {
   if (!stream) return <span style={{ fontSize:10, color:C.muted }}>—</span>
-  const color = stream === 'gcse' ? C.gcse : C.alevel
+  const STREAM_COLORS = { gcse:'#0D9488', alevel:'#7C3AED', sat:'#0056D2', act:'#059669', ap:'#D97706', psat:'#0891B2' }
+  const color = STREAM_COLORS[stream] ?? C.primary
   return (
     <span style={{ background:color+'20', color, border:`1px solid ${color}40`, borderRadius:20, padding:'2px 8px', fontSize:10, fontWeight:800, textTransform:'uppercase' }}>
-      {stream === 'gcse' ? 'GCSE' : 'A-Level'}
+      {stream.toUpperCase()}
     </span>
+  )
+}
+
+function TrackPills({ user }) {
+  const tracks = user.streams?.length ? user.streams : user.stream ? [user.stream] : []
+  if (!tracks.length) return <span style={{ fontSize:10, color:C.muted }}>—</span>
+  return (
+    <div style={{ display:'flex', gap:3, flexWrap:'wrap', justifyContent:'flex-end' }}>
+      {tracks.map(s => <StreamBadge key={s} stream={s} />)}
+    </div>
   )
 }
 
@@ -64,12 +84,18 @@ function Avatar({ name, email, size = 38 }) {
 // ── Edit modal ────────────────────────────────────────────────────────────────
 
 function EditModal({ user, onClose, onSave, onDelete, defaultTrialDays = 7 }) {
+  const enrolledInit = user.streams?.length
+    ? user.streams
+    : user.stream ? [user.stream] : []
+
   const [form,    setForm]    = useState({
-    display_name: user.display_name ?? '',
-    xp:           user.xp ?? 0,
-    stream:       user.stream ?? '',
-    is_admin:     user.is_admin ?? false,
-    plan:         user.plan ?? 'free',
+    display_name:  user.display_name ?? '',
+    xp:            user.xp ?? 0,
+    streams:       enrolledInit,
+    active_stream: user.active_stream ?? user.stream ?? enrolledInit[0] ?? '',
+    stream:        user.stream ?? '',
+    is_admin:      user.is_admin ?? false,
+    plan:          user.plan ?? 'free',
     trial_ends_at: user.trial_ends_at ? user.trial_ends_at.slice(0, 10) : '',
   })
   const [saving,  setSaving]  = useState(false)
@@ -77,9 +103,30 @@ function EditModal({ user, onClose, onSave, onDelete, defaultTrialDays = 7 }) {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
+  function toggleTrack(id) {
+    setForm(f => {
+      const has = f.streams.includes(id)
+      const next = has ? f.streams.filter(s => s !== id) : [...f.streams, id]
+      // If removing the active stream, reset active to first remaining
+      const active = next.includes(f.active_stream)
+        ? f.active_stream
+        : (next[0] ?? '')
+      return { ...f, streams: next, active_stream: active, stream: active }
+    })
+  }
+
+  function setActive(id) {
+    setForm(f => ({ ...f, active_stream: id, stream: id }))
+  }
+
   async function save() {
     setSaving(true)
-    await onSave(user.id, { ...form, xp: Number(form.xp) })
+    await onSave(user.id, {
+      ...form,
+      xp: Number(form.xp),
+      // Ensure stream stays in sync with active_stream
+      stream: form.active_stream || form.streams[0] || '',
+    })
     setSaving(false)
     onClose()
   }
@@ -120,16 +167,52 @@ function EditModal({ user, onClose, onSave, onDelete, defaultTrialDays = 7 }) {
         ))}
 
         <div style={{ marginBottom:14 }}>
-          <label style={lbl}>STREAM</label>
-          <select value={form.stream} onChange={e => set('stream', e.target.value)} style={{ ...inp, cursor:'pointer' }}>
-            <option value="">— not set —</option>
-            <option value="gcse">GCSE</option>
-            <option value="alevel">A-Level</option>
-            <option value="sat">SAT</option>
-            <option value="act">ACT</option>
-            <option value="ap">AP</option>
-            <option value="psat">PSAT</option>
-          </select>
+          <label style={lbl}>ENROLLED TRACKS</label>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:6, marginBottom:10 }}>
+            {ALL_STREAMS.map(s => {
+              const on = form.streams.includes(s.id)
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => toggleTrack(s.id)}
+                  style={{
+                    padding:'8px 6px', borderRadius:9, border:`1.5px solid ${on ? C.primary : C.border}`,
+                    background: on ? `${C.primary}18` : 'transparent',
+                    color: on ? C.primary : C.muted, fontSize:12, fontWeight:700,
+                    cursor:'pointer', fontFamily:'Inter,sans-serif',
+                    display:'flex', alignItems:'center', justifyContent:'center', gap:5,
+                  }}
+                >
+                  <span style={{ fontSize:14 }}>{on ? '✓' : '○'}</span>
+                  {s.label}
+                </button>
+              )
+            })}
+          </div>
+
+          {form.streams.length > 0 && (
+            <>
+              <label style={{ ...lbl, marginTop:4 }}>ACTIVE TRACK</label>
+              <select
+                value={form.active_stream}
+                onChange={e => setActive(e.target.value)}
+                style={{ ...inp, cursor:'pointer' }}
+              >
+                {form.streams.map(id => {
+                  const s = ALL_STREAMS.find(x => x.id === id)
+                  return <option key={id} value={id}>{s?.label ?? id}</option>
+                })}
+              </select>
+              <div style={{ fontSize:10, color:C.muted, marginTop:4 }}>The track the student sees when they open the app.</div>
+            </>
+          )}
+
+          {form.streams.length === 0 && (
+            <div style={{ fontSize:11, color:C.warn, padding:'8px 10px', background:`${C.warn}12`, borderRadius:8 }}>
+              No tracks selected — student won't have an active stream.
+            </div>
+          )}
         </div>
 
         <div style={{ marginBottom:14 }}>
@@ -450,7 +533,7 @@ export default function SysAdminPage({ user }) {
                     <div style={{ fontSize:12, color:C.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.email}</div>
                   </div>
                   <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:5, flexShrink:0 }}>
-                    <StreamBadge stream={u.stream} />
+                    <TrackPills user={u} />
                     <div style={{ display:'flex', gap:8 }}>
                       <span style={{ fontSize:11, color:C.primary, fontWeight:700 }}>{u.xp ?? 0} XP</span>
                       <span style={{ fontSize:11, color:C.muted }}>🔥{u.streak ?? 0}</span>
