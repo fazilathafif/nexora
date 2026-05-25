@@ -6,8 +6,12 @@ const GCSE_CHIPS = ['📐 Maths', '📚 English', '🔬 Science', '🏛️ Histo
 const US_CHIPS   = ['🇺🇸 SAT Math', '📝 SAT R&W', '🧮 ACT', '🏆 AP Calc', '🏆 AP Bio', '⚗️ AP Chem', '✏️ PSAT', '🏥 UCAT', '⚖️ LNAT', '∑ TMUA', '⚛️ PAT', '🧠 TARA']
 
 const TRACK_GROUPS = [
-  { label: 'GCSE',           chips: ['📐 Maths', '📚 English', '🔬 Science', '🏛️ History', '🌍 Geography', '🇪🇸 Spanish', '🇫🇷 French', '🇩🇪 German', '💻 CS', '☯️ RS', '💼 Business'] },
-  { label: 'A-Level Entrance', chips: ['🏥 UCAT', '⚖️ LNAT', '∑ TMUA', '⚗️ ESAT', '🧠 TARA', '📐 MAT', '⚛️ PAT', '📊 STEP'] },
+  { region: '🇬🇧 United Kingdom', label: 'GCSE',              chips: ['📐 Maths', '📚 English', '🔬 Science', '🏛️ History', '🌍 Geography', '🇪🇸 Spanish', '🇫🇷 French', '🇩🇪 German', '💻 CS', '☯️ RS', '💼 Business'] },
+  { region: '🇬🇧 United Kingdom', label: 'A-Level Entrance',  chips: ['🏥 UCAT', '⚖️ LNAT', '∑ TMUA', '⚗️ ESAT', '🧠 TARA', '📐 MAT', '⚛️ PAT', '📊 STEP'] },
+  { region: '🇺🇸 United States',  label: 'SAT',               chips: ['📐 SAT Math', '📝 SAT Reading & Writing'] },
+  { region: '🇺🇸 United States',  label: 'ACT',               chips: ['🧮 ACT Math', '📖 ACT English', '🔬 ACT Science', '📚 ACT Reading'] },
+  { region: '🇺🇸 United States',  label: 'AP',                chips: ['∫ AP Calculus', '🧬 AP Biology', '⚗️ AP Chemistry', '⚛️ AP Physics', '📜 AP US History', '✍️ AP English Lang', '💻 AP CS', '💰 AP Economics', '📊 AP Statistics'] },
+  { region: '🇺🇸 United States',  label: 'PSAT',              chips: ['📐 PSAT Math', '📝 PSAT R&W'] },
 ]
 
 const AUTH_DISABLED = import.meta.env.VITE_AUTH_DISABLED === 'true'
@@ -432,11 +436,17 @@ export default function AuthGate() {
             </div>
 
             {!compact && (
-              <div className="animate-fade-up" style={{ display:'flex', flexDirection:'column', gap:8, marginTop:20, width:'100%', pointerEvents:'auto' }}>
-                {TRACK_GROUPS.map(group => {
+              <div className="animate-fade-up" style={{ display:'flex', flexDirection:'column', gap:6, marginTop:20, width:'100%', pointerEvents:'auto' }}>
+                {TRACK_GROUPS.map((group, i) => {
                   const open = !!expandedGroups[group.label]
+                  const showRegionHeader = i === 0 || TRACK_GROUPS[i - 1].region !== group.region
                   return (
                     <div key={group.label}>
+                      {showRegionHeader && (
+                        <div style={{ fontSize:10, fontWeight:800, color:'#9CA3AF', letterSpacing:'0.12em', textTransform:'uppercase', padding:'6px 2px 4px' }}>
+                          {group.region}
+                        </div>
+                      )}
                       <button
                         onClick={() => setExpandedGroups(g => ({ ...g, [group.label]: !g[group.label] }))}
                         style={{
