@@ -5,6 +5,7 @@ import { useTheme } from './hooks/useTheme.js'
 import { getPreferences } from './lib/db.js'
 import { applyPreferences, PREF_DEFAULTS } from './lib/preferences.js'
 import { isSupabaseConfigured } from './lib/supabase.js'
+import { trialDaysLeft } from './lib/subscription.js'
 import LandingPage         from './pages/LandingPage.jsx'
 import StreamOnboarding    from './pages/StreamOnboarding.jsx'
 import HomePage            from './pages/HomePage.jsx'
@@ -67,6 +68,15 @@ export default function App() {
   const VALID_STREAMS = ['gcse','alevel','sat','act','ap','psat']
   const showNav = VALID_STREAMS.some(s => location.pathname.startsWith(`/${s}`))
   const activeStream = profile?.active_stream ?? profile?.stream
+
+  // Trial-expired redirect — shown once per session so users can still navigate freely
+  const trialJustExpired = profile?.plan === 'trial' && trialDaysLeft(profile) === 0
+  const onSubscriptionPage = location.pathname.includes('/subscription')
+  const trialRedirectDone  = sessionStorage.getItem('nx_trial_redirect') === '1'
+  if (trialJustExpired && activeStream && !onSubscriptionPage && !trialRedirectDone) {
+    sessionStorage.setItem('nx_trial_redirect', '1')
+    return <Navigate to={`/${activeStream}/subscription?reason=trial_expired`} replace />
+  }
 
   return (
     <>

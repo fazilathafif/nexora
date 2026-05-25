@@ -63,7 +63,7 @@ function Avatar({ name, email, size = 38 }) {
 
 // ── Edit modal ────────────────────────────────────────────────────────────────
 
-function EditModal({ user, onClose, onSave, onDelete }) {
+function EditModal({ user, onClose, onSave, onDelete, defaultTrialDays = 7 }) {
   const [form,    setForm]    = useState({
     display_name: user.display_name ?? '',
     xp:           user.xp ?? 0,
@@ -144,6 +144,34 @@ function EditModal({ user, onClose, onSave, onDelete }) {
         {form.plan === 'trial' && (
           <div style={{ marginBottom:14 }}>
             <label style={lbl}>TRIAL ENDS</label>
+
+            {/* Quick-extend buttons */}
+            <div style={{ display:'flex', gap:6, marginBottom:8, flexWrap:'wrap' }}>
+              {[7, 14, 30].map(days => (
+                <button
+                  key={days}
+                  type="button"
+                  onClick={() => {
+                    const d = new Date()
+                    d.setDate(d.getDate() + days)
+                    set('trial_ends_at', d.toISOString().slice(0, 10))
+                  }}
+                  style={{ flex:1, minWidth:56, background:`${C.primary}15`, border:`1px solid ${C.primary}30`, borderRadius:8, padding:'7px 4px', fontSize:11, fontWeight:700, color:C.primary, cursor:'pointer', fontFamily:'Inter,sans-serif' }}
+                >+{days}d</button>
+              ))}
+              {![7, 14, 30].includes(defaultTrialDays) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const d = new Date()
+                    d.setDate(d.getDate() + defaultTrialDays)
+                    set('trial_ends_at', d.toISOString().slice(0, 10))
+                  }}
+                  style={{ flex:1, minWidth:56, background:`${C.success}15`, border:`1px solid ${C.success}40`, borderRadius:8, padding:'7px 4px', fontSize:11, fontWeight:700, color:C.success, cursor:'pointer', fontFamily:'Inter,sans-serif' }}
+                >+{defaultTrialDays}d ★</button>
+              )}
+            </div>
+
             <input
               type="date"
               value={form.trial_ends_at}
@@ -152,6 +180,7 @@ function EditModal({ user, onClose, onSave, onDelete }) {
               onFocus={e => e.target.style.borderColor = C.primary}
               onBlur={e  => e.target.style.borderColor = C.border}
             />
+            <div style={{ fontSize:10, color:C.muted, marginTop:4 }}>Buttons set end date from today. Or pick a custom date above.</div>
           </div>
         )}
 
@@ -189,6 +218,9 @@ export default function SysAdminPage({ user }) {
   const [loading,      setLoading]      = useState(true)
   const [usersLoading, setUsersLoading] = useState(false)
   const [error,        setError]        = useState(null)
+  const [defaultTrialDays,  setDefaultTrialDays]  = useState(() => parseInt(localStorage.getItem('nx_admin_trial_days') ?? '7', 10))
+  const [trialDaysInput,    setTrialDaysInput]    = useState(() => localStorage.getItem('nx_admin_trial_days') ?? '7')
+  const [trialDaysSaved,    setTrialDaysSaved]    = useState(false)
 
   useEffect(() => {
     if (!user) { navigate('/'); return }
@@ -222,6 +254,14 @@ export default function SysAdminPage({ user }) {
   async function handleDelete(userId) {
     await adminDeleteProfile(userId)
     setUsers(us => us.filter(u => u.id !== userId))
+  }
+
+  function saveTrialDays() {
+    const days = Math.max(1, parseInt(trialDaysInput, 10) || 7)
+    localStorage.setItem('nx_admin_trial_days', String(days))
+    setDefaultTrialDays(days)
+    setTrialDaysSaved(true)
+    setTimeout(() => setTrialDaysSaved(false), 2000)
   }
 
   const filtered = useMemo(() => {
@@ -316,6 +356,44 @@ export default function SysAdminPage({ user }) {
 
                 <div style={{ background:C.primary+'15', border:`1px solid ${C.primary}30`, borderRadius:14, padding:'14px 16px', fontSize:13, color:C.primary, lineHeight:1.6 }}>
                   🚀 <strong>Beta phase</strong> — switch to <strong>Users</strong> to view and manage individual accounts.
+                </div>
+
+                {/* Platform Settings */}
+                <div style={{ background:C.card, border:`1.5px solid ${C.border}`, borderRadius:16, padding:'20px', marginTop:16 }}>
+                  <div style={{ fontSize:13, fontWeight:800, color:C.navy, marginBottom:16 }}>⚙️ Platform Settings</div>
+
+                  <div style={{ marginBottom:8 }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:'0.08em', marginBottom:6 }}>DEFAULT TRIAL PERIOD (DAYS)</div>
+                    <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                      <input
+                        type="number"
+                        min="1"
+                        max="365"
+                        value={trialDaysInput}
+                        onChange={e => setTrialDaysInput(e.target.value)}
+                        style={{ width:100, padding:'9px 12px', borderRadius:10, background:'#1E293B', border:`1.5px solid ${C.border}`, color:C.navy, fontSize:15, fontWeight:700, outline:'none', boxSizing:'border-box', transition:'border-color 0.2s', fontFamily:'Inter,sans-serif' }}
+                        onFocus={e => e.target.style.borderColor = C.primary}
+                        onBlur={e  => e.target.style.borderColor = C.border}
+                      />
+                      <button
+                        onClick={saveTrialDays}
+                        style={{ background: trialDaysSaved ? C.success+'20' : `linear-gradient(135deg,${C.primary},#0F766E)`, border: trialDaysSaved ? `1.5px solid ${C.success}40` : 'none', borderRadius:10, padding:'9px 18px', fontSize:13, fontWeight:800, color: trialDaysSaved ? C.success : 'white', cursor:'pointer', fontFamily:'Inter,sans-serif', transition:'all 0.2s' }}
+                      >
+                        {trialDaysSaved ? '✓ Saved' : 'Save'}
+                      </button>
+                    </div>
+                    <div style={{ fontSize:11, color:C.muted, marginTop:8, lineHeight:1.6 }}>
+                      Sets the default when granting or extending trials from the Users/Subscriptions tabs.
+                      The quick-extend buttons in the edit modal use this value.
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop:14, padding:'10px 12px', background:C.bg, borderRadius:10, fontSize:11, color:C.muted, lineHeight:1.7 }}>
+                    <strong style={{ color:C.muted2 }}>To apply to new signups automatically,</strong> run this in Supabase SQL Editor:
+                    <code style={{ display:'block', marginTop:6, padding:'8px 10px', background:'#0D1117', borderRadius:8, fontSize:10, color:'#7DD3FC', letterSpacing:'0.02em', wordBreak:'break-all' }}>
+                      {`UPDATE profiles SET trial_ends_at = created_at + INTERVAL '${defaultTrialDays} days' WHERE plan = 'trial' AND trial_ends_at IS NULL;`}
+                    </code>
+                  </div>
                 </div>
               </div>
             )}
@@ -480,6 +558,7 @@ export default function SysAdminPage({ user }) {
           onClose={() => setEditUser(null)}
           onSave={handleSave}
           onDelete={handleDelete}
+          defaultTrialDays={defaultTrialDays}
         />
       )}
     </div>

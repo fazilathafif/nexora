@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { Shell, getColors } from './HomePage.jsx'
@@ -94,12 +94,14 @@ function CheckoutForm({ plan, userId, onSuccess, onError, C }) {
 export default function SubscriptionPage({ user, profile, isDark }) {
   const { stream }          = useParams()
   const navigate            = useNavigate()
+  const [searchParams]      = useSearchParams()
   const C                   = getColors(stream, null, isDark)
   const { isMobile }        = useBreakpoint()
   const [selected, setSelected] = useState(null)
   const [success,  setSuccess]  = useState(false)
   const [errMsg,   setErrMsg]   = useState(null)
 
+  const trialExpired   = searchParams.get('reason') === 'trial_expired'
   const trialExpiresAt = profile?.trial_expires_at ?? profile?.trial_ends_at ?? null
   const trialDays      = trialExpiresAt ? Math.max(0, Math.ceil((new Date(trialExpiresAt) - new Date()) / 86400000)) : 0
   const currentPlan    = profile?.plan ?? (trialDays > 0 ? 'trial' : 'free')
@@ -137,7 +139,28 @@ export default function SubscriptionPage({ user, profile, isDark }) {
         <p style={{ fontSize:14, color:C.muted, margin:0 }}>Start free, upgrade when you're ready.</p>
       </div>
 
-      {/* Trial banner */}
+      {/* Trial expired banner */}
+      {trialExpired && (
+        <div style={{ background:'#FFF7ED', border:'1.5px solid #FED7AA', borderRadius:12, padding:'14px 16px', marginBottom:20 }}>
+          <div style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
+            <span style={{ fontSize:20, flexShrink:0 }}>⏰</span>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:14, fontWeight:800, color:'#92400E', marginBottom:3 }}>Your free trial has ended</div>
+              <div style={{ fontSize:12, color:'#B45309', lineHeight:1.55 }}>
+                Upgrade to continue with unlimited practice and AI explanations — or stay on our <strong>free limited plan</strong> with 15 questions/day at no cost.
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate(`/${stream}`)}
+            style={{ marginTop:12, width:'100%', background:'transparent', border:'1.5px solid #FED7AA', borderRadius:10, padding:'10px', fontSize:12, fontWeight:700, color:'#92400E', cursor:'pointer', fontFamily:'Inter,sans-serif' }}
+          >
+            Continue on free plan →
+          </button>
+        </div>
+      )}
+
+      {/* Active trial banner */}
       {trialDays > 0 && (
         <div style={{ background:`${C.primary}12`, border:`1.5px solid ${C.primary}30`, borderRadius:12, padding:'12px 16px', marginBottom:20, display:'flex', alignItems:'center', gap:10 }}>
           <span style={{ fontSize:18 }}>✨</span>
@@ -152,8 +175,9 @@ export default function SubscriptionPage({ user, profile, isDark }) {
         {PLAN_CARDS.map(card => {
           const isSelected  = selected === card.key
           const isCurrent   = currentPlan === card.key || (card.key === 'premium' && currentPlan === 'trial')
-          const cardBorder  = isSelected ? `2px solid ${card.color}` : card.highlight ? `2px solid ${card.color}40` : `1.5px solid #E2E8F0`
-          const cardBg      = isSelected ? `${card.color}08` : card.highlight ? `${card.color}05` : (isDark ? '#1E293B' : 'white')
+          const isFreeFallback = trialExpired && card.key === 'free'
+          const cardBorder  = isSelected ? `2px solid ${card.color}` : isFreeFallback ? `2px solid ${card.color}` : card.highlight ? `2px solid ${card.color}40` : `1.5px solid #E2E8F0`
+          const cardBg      = isSelected ? `${card.color}08` : isFreeFallback ? `${card.color}06` : card.highlight ? `${card.color}05` : (isDark ? '#1E293B' : 'white')
           return (
             <div
               key={card.key}
@@ -163,6 +187,11 @@ export default function SubscriptionPage({ user, profile, isDark }) {
               {card.highlight && (
                 <div style={{ position:'absolute', top:-11, left:'50%', transform:'translateX(-50%)', background:card.color, color:'white', fontSize:10, fontWeight:800, borderRadius:20, padding:'3px 12px', letterSpacing:'0.06em', whiteSpace:'nowrap' }}>
                   MOST POPULAR
+                </div>
+              )}
+              {isFreeFallback && !card.highlight && (
+                <div style={{ position:'absolute', top:-11, left:'50%', transform:'translateX(-50%)', background:card.color, color:'white', fontSize:10, fontWeight:800, borderRadius:20, padding:'3px 12px', letterSpacing:'0.06em', whiteSpace:'nowrap' }}>
+                  ALWAYS FREE
                 </div>
               )}
               {isCurrent && (
