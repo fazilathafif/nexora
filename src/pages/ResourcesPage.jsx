@@ -49,7 +49,8 @@ function Pill({ label, color, bg }) {
   )
 }
 
-function BookCard({ item, C }) {
+function BookCard({ item, C, stream, subject }) {
+  const navigate = useNavigate()
   const meta = TYPE_META[item.type] ?? TYPE_META.revision
   const hasLink = !!item.url
   return (
@@ -72,6 +73,14 @@ function BookCard({ item, C }) {
         >
           Open resource ↗
         </a>
+      )}
+      {item.nexora && stream && subject && (
+        <button
+          onClick={() => navigate(`/${stream}/quiz/${subject}`)}
+          style={{ fontSize: 12, fontWeight: 700, color: C.primary, background: `${C.primary}10`, border: `1px solid ${C.primary}30`, borderRadius: 8, padding: '5px 10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 2, alignSelf: 'flex-start', fontFamily: 'Inter,sans-serif' }}
+        >
+          ✏️ Practice this on Nexora →
+        </button>
       )}
     </div>
   )
@@ -269,7 +278,7 @@ export default function ResourcesPage({ user, profile, isDark }) {
         {currentBooks.length === 0 ? (
           <div style={{ padding: '20px 0', textAlign: 'center', color: C.muted, fontSize: 13 }}>No resources available for this subject yet.</div>
         ) : (
-          currentBooks.map((item, i) => <BookCard key={i} item={item} C={C} />)
+          currentBooks.map((item, i) => <BookCard key={i} item={item} C={C} stream={stream} subject={activeSubject} />)
         )}
       </div>
     </div>
