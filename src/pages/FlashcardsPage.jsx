@@ -4,6 +4,7 @@ import { getQuestions } from '../data/questions.js'
 import { scheduleReview } from '../lib/srs.js'
 import { getColors, Shell } from './HomePage.jsx'
 import { useBreakpoint } from '../hooks/useBreakpoint.js'
+import { useTheme } from '../hooks/useTheme.js'
 import FlashcardDeck from '../components/FlashcardDeck.jsx'
 
 // ── Rating config ─────────────────────────────────────────────────────────────
@@ -54,6 +55,7 @@ function incrementEasyCount(id) {
 export default function FlashcardsPage() {
   const { stream, subject } = useParams()
   const navigate  = useNavigate()
+  const { isDark } = useTheme()
   const C         = getColors(stream, subject, isDark)
   const dark      = isDark
   const allQs     = getQuestions(stream, subject)
