@@ -5,6 +5,10 @@ import { loadGuestProfile, defaultGuestProfile } from '../lib/guest.js'
 
 const GUEST_USER = { id: 'guest_local', email: null, isGuest: true }
 
+function exploreProfile() {
+  return { id: 'guest_local', xp: 0, streak: 0, stream: null, streams: [], active_stream: null, display_name: 'Explorer' }
+}
+
 export function useAuth() {
   const [user,               setUser]               = useState(null)
   const [profile,            setProfile]            = useState(null)
@@ -12,6 +16,14 @@ export function useAuth() {
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
 
   useEffect(() => {
+    // Explore mode: user clicked "Explore first" — bypass auth entirely
+    if (isSupabaseConfigured && sessionStorage.getItem('nx_explore') === '1') {
+      setUser(null)
+      setProfile(exploreProfile())
+      setLoading(false)
+      return
+    }
+
     // No Supabase — local guest mode (dev / offline)
     if (!isSupabaseConfigured) {
       setUser(GUEST_USER)
@@ -95,6 +107,10 @@ export function useAuth() {
   }
 
   async function refreshProfile() {
+    if (sessionStorage.getItem('nx_explore') === '1') {
+      setProfile(exploreProfile())
+      return
+    }
     if (!isSupabaseConfigured) {
       setProfile({ ...(loadGuestProfile() ?? defaultGuestProfile()) })
       return

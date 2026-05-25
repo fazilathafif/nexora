@@ -23,6 +23,8 @@ import LearnPage           from './pages/LearnPage.jsx'
 import WellbeingPage       from './pages/WellbeingPage.jsx'
 import LeaderboardPage     from './pages/LeaderboardPage.jsx'
 import SettingsPage        from './pages/SettingsPage.jsx'
+import SubscriptionPage    from './pages/SubscriptionPage.jsx'
+import ResourcesPage      from './pages/ResourcesPage.jsx'
 import TodayPage           from './pages/TodayPage.jsx'
 import PrivacyPage         from './pages/PrivacyPage.jsx'
 import TermsPage           from './pages/TermsPage.jsx'
@@ -52,11 +54,13 @@ export default function App() {
   // Password reset flow — show update form regardless of auth state
   if (isPasswordRecovery) return <UpdatePasswordPage />
 
-  // Require sign-in when Supabase is configured
-  if (isSupabaseConfigured && !user) return <AuthGate />
+  // Require sign-in when Supabase is configured (explore mode bypasses auth gate)
+  if (isSupabaseConfigured && !user && sessionStorage.getItem('nx_explore') !== '1') return <AuthGate />
 
   // First-time user — no track chosen yet; show onboarding before the app
-  if (user && profile && !profile.active_stream && !profile.stream) {
+  // Explore mode users skip onboarding (stream is set via AuthGate stream picker)
+  const isExplore = sessionStorage.getItem('nx_explore') === '1'
+  if (!isExplore && user && profile && !profile.active_stream && !profile.stream) {
     return <StreamOnboarding user={user} refreshProfile={refreshProfile} isDark={isDark} />
   }
 
@@ -121,6 +125,12 @@ export default function App() {
         } />
         <Route path="/:stream/settings" element={
           <SettingsPage user={user} profile={profile} signOut={signOut} refreshProfile={refreshProfile} isDark={isDark} />
+        } />
+        <Route path="/:stream/subscription" element={
+          <SubscriptionPage user={user} profile={profile} isDark={isDark} />
+        } />
+        <Route path="/:stream/resources" element={
+          <ResourcesPage user={user} profile={profile} isDark={isDark} />
         } />
 
         {/* Catch-all */}

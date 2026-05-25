@@ -1,15 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import { Shell, getColors } from './HomePage.jsx'
 import { useBreakpoint } from '../hooks/useBreakpoint.js'
 import { getNotes, deleteNote, exportNotesText, NOTES_MAX } from '../lib/notes.js'
-import { updateProfile } from '../lib/db.js'
+import { getExamDates, setExamDate } from '../lib/db.js'
 import { STREAM_CONFIG } from '../data/questions.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import { useTheme } from '../hooks/useTheme.js'
 
 const APP_VERSION = '1.0.0-beta'
+
+const STREAM_LABELS = { gcse:'GCSE', alevel:'A-Level', sat:'SAT', act:'ACT', ap:'AP', psat:'PSAT' }
 
 const ACHIEVEMENTS = [
   { id:'first_q', icon:'🎯', label:'First Step',   desc:'Answered first question',  check:(p)=>(p?.xp??0)>0 },
@@ -280,10 +282,7 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
   const [expandedNote, setExpandedNote] = useState(null)
   const [copyAllDone,  setCopyAllDone]  = useState(false)
   const { prefs, updatePref } = usePreferences(user?.id)
-  const [examYear, setExamYear] = useState(() => {
-    if (profile?.exam_date) return new Date(profile.exam_date).getFullYear().toString()
-    return localStorage.getItem('nx_exam_target') || ''
-  })
+  const [examDates,  setExamDates]  = useState({})
   const [examSaving, setExamSaving] = useState(false)
 
   const email   = user?.email ?? ''
@@ -305,6 +304,19 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
 
   function handleDeleteNote(id) { deleteNote(id); setNotes(getNotes()) }
 
+  useEffect(() => {
+    if (!user?.id) return
+    getExamDates(user.id).then(({ data }) => { if (data) setExamDates(data) })
+  }, [user?.id])
+
+  async function handleSetExamDate(s, date) {
+    setExamDates(prev => ({ ...prev, [s]: date }))
+    if (!user?.id) return
+    setExamSaving(true)
+    try { await setExamDate(user.id, s, date) } catch { /* localStorage already updated */ }
+    finally { setExamSaving(false) }
+  }
+
   function handleCopyAll() {
     navigator.clipboard.writeText(exportNotesText(notes)).then(() => {
       setCopyAllDone(true); setTimeout(() => setCopyAllDone(false), 2500)
@@ -319,22 +331,6 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
     URL.revokeObjectURL(url)
   }
 
-  const daysLeft = examYear ? Math.max(0, Math.ceil((new Date(`${examYear}-06-01`) - new Date()) / 86400000)) : null
-
-  async function handleExamYearChange(year) {
-    setExamYear(year)
-    localStorage.setItem('nx_exam_target', year)
-    if (!year || isGuest || !user?.id) return
-    setExamSaving(true)
-    try {
-      const examDate = `${year}-06-01`
-      const { error } = await updateProfile(user.id, { exam_date: examDate })
-      if (!error) await refreshProfile?.()
-    } catch { /* localStorage already updated — silent fail */ }
-    finally { setExamSaving(false) }
-  }
-
-  // ── Hero profile content ─────────────────────────────────────────────────────
   const heroEl = (
     <div style={{padding:`max(18px, env(safe-area-inset-top, 18px)) ${isDesktop ? 32 : 16}px 0`}}>
       <div style={{display:'flex', alignItems:'center', gap:12, marginBottom: isMobile ? 20 : 16}}>
@@ -440,31 +436,40 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
   )
 
   // ── Exam target card ─────────────────────────────────────────────────────────
+  const enrolledStreams = profile?.streams?.length ? profile.streams : profile?.stream ? [profile.stream] : []
   const examTargetCard = (
     <Card C={C}>
-      <div style={{fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:12}}>Exam Target</div>
-      <select
-        value={examYear}
-        onChange={e => handleExamYearChange(e.target.value)}
-        style={{width:'100%', padding:'9px 12px', borderRadius:10, border:`1.5px solid ${C.border}`, fontSize:13, fontWeight:700, color:C.navy, background:C.card, cursor:'pointer', outline:'none'}}
-      >
-        <option value=''>Select exam year</option>
-        <option value='2025'>June 2025</option>
-        <option value='2026'>June 2026</option>
-        <option value='2027'>June 2027</option>
-        <option value='2028'>June 2028</option>
-      </select>
-      {examSaving && <div style={{marginTop:6, fontSize:11, color:'#94A3B8'}}>Saving…</div>}
-      {daysLeft !== null && !examSaving && (
-        <div style={{marginTop:10, display:'flex', alignItems:'center', gap:6}}>
-          <div style={{flex:1, background:C.border, borderRadius:6, height:5}}>
-            <div style={{width:`${Math.min(100, Math.max(0, 100 - (daysLeft / 365 * 100)))}%`, height:'100%', borderRadius:6, background: C.primary}} />
+      <div style={{fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:12}}>Exam Dates</div>
+      {enrolledStreams.length === 0 ? (
+        <div style={{fontSize:13, color:C.muted}}>Enrol in a track to set an exam date.</div>
+      ) : enrolledStreams.map(s => {
+        const dateVal  = examDates[s] ?? ''
+        const dl = dateVal ? Math.max(0, Math.ceil((new Date(dateVal) - new Date()) / 86400000)) : null
+        return (
+          <div key={s} style={{marginBottom:14}}>
+            <div style={{fontSize:12, fontWeight:700, color:C.navy, marginBottom:6}}>
+              {STREAM_LABELS[s] ?? s.toUpperCase()} exam date
+            </div>
+            <input
+              type="date"
+              value={dateVal}
+              onChange={e => handleSetExamDate(s, e.target.value)}
+              style={{width:'100%', padding:'9px 12px', borderRadius:10, border:`1.5px solid ${C.border}`, fontSize:13, fontWeight:600, color:C.navy, background:C.card, cursor:'pointer', outline:'none', boxSizing:'border-box'}}
+            />
+            {dl !== null && (
+              <div style={{marginTop:6, display:'flex', alignItems:'center', gap:8}}>
+                <div style={{flex:1, background:C.border, borderRadius:6, height:4}}>
+                  <div style={{width:`${Math.min(100, Math.max(0, 100 - (dl / 365 * 100)))}%`, height:'100%', borderRadius:6, background:C.primary}} />
+                </div>
+                <span style={{fontSize:11, fontWeight:700, color: dl < 60 ? '#EF4444' : dl < 180 ? '#F59E0B' : C.primary, flexShrink:0}}>
+                  {dl > 0 ? `${dl}d` : 'Soon!'}
+                </span>
+              </div>
+            )}
           </div>
-          <span style={{fontSize:11, fontWeight:700, color: daysLeft < 60 ? '#EF4444' : daysLeft < 180 ? '#F59E0B' : C.primary}}>
-            {daysLeft > 0 ? `${daysLeft}d` : 'Soon!'}
-          </span>
-        </div>
-      )}
+        )
+      })}
+      {examSaving && <div style={{marginTop:4, fontSize:11, color:'#94A3B8'}}>Saving…</div>}
     </Card>
   )
 

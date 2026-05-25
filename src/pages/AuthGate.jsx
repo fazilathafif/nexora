@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { COURSERA_BLUE } from '../styles/courseraTokens.js'
+import { useBreakpoint } from '../hooks/useBreakpoint.js'
 
 const GCSE_CHIPS = ['📐 Maths', '📚 English', '🔬 Science', '🏛️ History', '🌍 Geography', '🇪🇸 Spanish', '🇫🇷 French', '🇩🇪 German', '💻 CS', '☯️ RS', '💼 Business']
 const US_CHIPS   = ['🇺🇸 SAT Math', '📝 SAT R&W', '🧮 ACT', '🏆 AP Calc', '🏆 AP Bio', '⚗️ AP Chem', '✏️ PSAT', '🏥 UCAT', '⚖️ LNAT', '∑ TMUA', '⚛️ PAT', '🧠 TARA']
@@ -171,6 +173,8 @@ export default function AuthGate() {
   )
   const [dragOffset, setDragOffset] = useState(0)
   const dragRef = useRef({ startX:0, dx:0, active:false })
+  const navigate = useNavigate()
+  const { isDesktop } = useBreakpoint()
 
   async function signInWithGoogle() {
     await supabase.auth.signInWithOAuth({
@@ -381,6 +385,17 @@ export default function AuthGate() {
             )}
           </form>
         )}
+
+        {!AUTH_DISABLED && (
+          <div style={{ textAlign:'center', marginTop:14 }}>
+            <button
+              onClick={() => { sessionStorage.setItem('nx_explore', '1'); navigate('/') }}
+              style={{ background:'none', border:'none', color: COURSERA_BLUE, fontSize:12, cursor:'pointer', textDecoration:'underline', fontFamily:'Inter,sans-serif', fontWeight:600 }}
+            >
+              Explore 3 free questions first →
+            </button>
+          </div>
+        )}
       </>
     )
   }
@@ -415,94 +430,133 @@ export default function AuthGate() {
         </div>
 
         {/* Screen 2 — Sign-in */}
-        <div style={{ width:'33.333%', height:'100%', position:'relative', flexShrink:0 }}>
-          <div style={{
-            position:'absolute', top:0, left:0, right:0,
-            bottom: compact ? '66%' : '46%',
-            display:'flex', flexDirection:'column',
-            alignItems:'center', justifyContent:'flex-end',
-            padding:'0 24px 28px',
-            transition:'bottom 0.38s cubic-bezier(0.25,0.46,0.45,0.94)',
-            pointerEvents:'none',
-          }}>
-            <div className="animate-fade-up" style={{ textAlign:'center' }}>
-              <div style={{ fontSize:38, fontWeight:900, color: COURSERA_BLUE, letterSpacing:'-1.5px', marginBottom:6 }}>
-                Nexora
-                <span style={{ marginLeft:8, background:`${COURSERA_BLUE}15`, border:`1px solid ${COURSERA_BLUE}30`, color: COURSERA_BLUE, fontSize:9, fontWeight:800, letterSpacing:'0.08em', padding:'2px 7px', borderRadius:6, verticalAlign:'middle' }}>BETA</span>
+        <div style={{ width:'33.333%', height:'100%', position:'relative', flexShrink:0, overflowY: isDesktop ? 'auto' : 'hidden' }}>
+
+          {isDesktop ? (
+            /* ── Desktop: two-column layout ── */
+            <div style={{ display:'flex', gap:36, padding:'40px 48px', alignItems:'flex-start', minHeight:'100%' }}>
+              {/* Left column: logo + scrollable accordion */}
+              <div style={{ flex:1, maxHeight:'85vh', overflowY:'auto', paddingRight:4 }}>
+                <div style={{ marginBottom:22 }}>
+                  <div style={{ fontSize:36, fontWeight:900, color: COURSERA_BLUE, letterSpacing:'-1.5px', marginBottom:6 }}>
+                    Nexora
+                    <span style={{ marginLeft:8, background:`${COURSERA_BLUE}15`, border:`1px solid ${COURSERA_BLUE}30`, color: COURSERA_BLUE, fontSize:9, fontWeight:800, letterSpacing:'0.08em', padding:'2px 7px', borderRadius:6, verticalAlign:'middle' }}>BETA</span>
+                  </div>
+                  <p style={{ color:'#6B7280', fontSize:11, fontWeight:700, margin:0, letterSpacing:'0.16em' }}>
+                    ACE YOUR ENTRANCE EXAMS
+                  </p>
+                </div>
+                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                  {TRACK_GROUPS.map((group, i) => {
+                    const open = !!expandedGroups[group.label]
+                    const showRegionHeader = i === 0 || TRACK_GROUPS[i - 1].region !== group.region
+                    return (
+                      <div key={group.label}>
+                        {showRegionHeader && (
+                          <div style={{ fontSize:10, fontWeight:800, color:'#9CA3AF', letterSpacing:'0.12em', textTransform:'uppercase', padding:'6px 2px 4px' }}>
+                            {group.region}
+                          </div>
+                        )}
+                        <button
+                          onClick={() => setExpandedGroups(g => ({ ...g, [group.label]: !g[group.label] }))}
+                          style={{ display:'flex', alignItems:'center', justifyContent:'space-between', width:'100%', background:'white', border:'1px solid #E5E7EB', borderRadius: open ? '10px 10px 0 0' : 10, padding:'9px 13px', cursor:'pointer', fontFamily:'Inter,sans-serif', transition:'border-radius 0.22s ease' }}
+                        >
+                          <span style={{ fontSize:10, fontWeight:800, color:'#374151', letterSpacing:'0.12em', textTransform:'uppercase' }}>{group.label}</span>
+                          <span style={{ fontSize:13, color:'#9CA3AF', transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition:'transform 0.25s ease', display:'block', lineHeight:1 }}>▾</span>
+                        </button>
+                        {open && (
+                          <div style={{ background:'white', borderRadius:'0 0 10px 10px', border:'1px solid #E5E7EB', borderTop:'none', padding:'10px 10px 12px' }}>
+                            <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
+                              {group.chips.map(chip => (
+                                <span key={chip} style={{ background:`${COURSERA_BLUE}10`, border:`1px solid ${COURSERA_BLUE}25`, borderRadius:20, padding:'4px 10px', fontSize:11, fontWeight:700, color: COURSERA_BLUE }}>{chip}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
-              <p style={{ color:'#6B7280', fontSize:11, fontWeight:700, margin:0, letterSpacing:'0.16em' }}>
-                ACE YOUR ENTRANCE EXAMS
-              </p>
+
+              {/* Right column: sign-in card (sticky) */}
+              <div style={{ width:360, flexShrink:0, position:'sticky', top:0, background:'white', borderRadius:20, padding:'28px 24px', boxShadow:'0 4px 24px rgba(0,0,0,0.1)', border:'1px solid #E5E7EB', maxHeight:'90vh', overflowY:'auto' }}>
+                <div style={{ width:32, height:4, borderRadius:2, background:'#E5E7EB', margin:'0 auto 20px' }} />
+                {sheetBody()}
+              </div>
             </div>
 
-            {!compact && (
-              <div className="animate-fade-up" style={{ display:'flex', flexDirection:'column', gap:6, marginTop:20, width:'100%', pointerEvents:'auto' }}>
-                {TRACK_GROUPS.map((group, i) => {
-                  const open = !!expandedGroups[group.label]
-                  const showRegionHeader = i === 0 || TRACK_GROUPS[i - 1].region !== group.region
-                  return (
-                    <div key={group.label}>
-                      {showRegionHeader && (
-                        <div style={{ fontSize:10, fontWeight:800, color:'#9CA3AF', letterSpacing:'0.12em', textTransform:'uppercase', padding:'6px 2px 4px' }}>
-                          {group.region}
-                        </div>
-                      )}
-                      <button
-                        onClick={() => setExpandedGroups(g => ({ ...g, [group.label]: !g[group.label] }))}
-                        style={{
-                          display:'flex', alignItems:'center', justifyContent:'space-between',
-                          width:'100%', background:'white',
-                          border:'1px solid #E5E7EB',
-                          borderRadius: open ? '10px 10px 0 0' : 10,
-                          padding:'9px 13px', cursor:'pointer',
-                          fontFamily:'Inter,sans-serif',
-                          transition:'border-radius 0.22s ease',
-                        }}
-                      >
-                        <span style={{ fontSize:10, fontWeight:800, color:'#374151', letterSpacing:'0.12em', textTransform:'uppercase' }}>
-                          {group.label}
-                        </span>
-                        <span style={{
-                          fontSize:13, color:'#9CA3AF',
-                          transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-                          transition:'transform 0.25s ease', display:'block', lineHeight:1,
-                        }}>▾</span>
-                      </button>
-                      {open && (
-                        <div style={{
-                          background:'white',
-                          borderRadius:'0 0 10px 10px',
-                          border:'1px solid #E5E7EB', borderTop:'none',
-                          padding:'10px 10px 12px',
-                        }}>
-                          <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
-                            {group.chips.map(chip => (
-                              <span key={chip} style={{ background:`${COURSERA_BLUE}10`, border:`1px solid ${COURSERA_BLUE}25`, borderRadius:20, padding:'4px 10px', fontSize:11, fontWeight:700, color: COURSERA_BLUE }}>
-                                {chip}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+          ) : (
+            /* ── Mobile: original bottom-sheet layout ── */
+            <>
+              <div style={{
+                position:'absolute', top:0, left:0, right:0,
+                bottom: compact ? '66%' : '46%',
+                display:'flex', flexDirection:'column',
+                alignItems:'center', justifyContent:'flex-end',
+                padding:'0 24px 28px',
+                transition:'bottom 0.38s cubic-bezier(0.25,0.46,0.45,0.94)',
+                pointerEvents:'none',
+              }}>
+                <div className="animate-fade-up" style={{ textAlign:'center' }}>
+                  <div style={{ fontSize:38, fontWeight:900, color: COURSERA_BLUE, letterSpacing:'-1.5px', marginBottom:6 }}>
+                    Nexora
+                    <span style={{ marginLeft:8, background:`${COURSERA_BLUE}15`, border:`1px solid ${COURSERA_BLUE}30`, color: COURSERA_BLUE, fontSize:9, fontWeight:800, letterSpacing:'0.08em', padding:'2px 7px', borderRadius:6, verticalAlign:'middle' }}>BETA</span>
+                  </div>
+                  <p style={{ color:'#6B7280', fontSize:11, fontWeight:700, margin:0, letterSpacing:'0.16em' }}>
+                    ACE YOUR ENTRANCE EXAMS
+                  </p>
+                </div>
 
-          {/* Bottom sheet */}
-          <div style={{
-            position:'absolute', bottom:0, left:0, right:0,
-            background:'#FFFFFF', borderRadius:'24px 24px 0 0',
-            padding:`24px 24px calc(40px + env(safe-area-inset-bottom, 0px))`,
-            boxShadow:'0 -4px 24px rgba(0,0,0,0.08)',
-            border:'1px solid #E5E7EB',
-            maxHeight:'78dvh', overflowY:'auto',
-          }}>
-            <div style={{ width:32, height:4, borderRadius:2, background:'#E5E7EB', margin:'0 auto 20px' }} />
-            {sheetBody()}
-          </div>
+                {!compact && (
+                  <div className="animate-fade-up" style={{ display:'flex', flexDirection:'column', gap:6, marginTop:20, width:'100%', pointerEvents:'auto' }}>
+                    {TRACK_GROUPS.map((group, i) => {
+                      const open = !!expandedGroups[group.label]
+                      const showRegionHeader = i === 0 || TRACK_GROUPS[i - 1].region !== group.region
+                      return (
+                        <div key={group.label}>
+                          {showRegionHeader && (
+                            <div style={{ fontSize:10, fontWeight:800, color:'#9CA3AF', letterSpacing:'0.12em', textTransform:'uppercase', padding:'6px 2px 4px' }}>
+                              {group.region}
+                            </div>
+                          )}
+                          <button
+                            onClick={() => setExpandedGroups(g => ({ ...g, [group.label]: !g[group.label] }))}
+                            style={{ display:'flex', alignItems:'center', justifyContent:'space-between', width:'100%', background:'white', border:'1px solid #E5E7EB', borderRadius: open ? '10px 10px 0 0' : 10, padding:'9px 13px', cursor:'pointer', fontFamily:'Inter,sans-serif', transition:'border-radius 0.22s ease' }}
+                          >
+                            <span style={{ fontSize:10, fontWeight:800, color:'#374151', letterSpacing:'0.12em', textTransform:'uppercase' }}>{group.label}</span>
+                            <span style={{ fontSize:13, color:'#9CA3AF', transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition:'transform 0.25s ease', display:'block', lineHeight:1 }}>▾</span>
+                          </button>
+                          {open && (
+                            <div style={{ background:'white', borderRadius:'0 0 10px 10px', border:'1px solid #E5E7EB', borderTop:'none', padding:'10px 10px 12px' }}>
+                              <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
+                                {group.chips.map(chip => (
+                                  <span key={chip} style={{ background:`${COURSERA_BLUE}10`, border:`1px solid ${COURSERA_BLUE}25`, borderRadius:20, padding:'4px 10px', fontSize:11, fontWeight:700, color: COURSERA_BLUE }}>{chip}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Bottom sheet */}
+              <div style={{
+                position:'absolute', bottom:0, left:0, right:0,
+                background:'#FFFFFF', borderRadius:'24px 24px 0 0',
+                padding:`24px 24px calc(40px + env(safe-area-inset-bottom, 0px))`,
+                boxShadow:'0 -4px 24px rgba(0,0,0,0.08)',
+                border:'1px solid #E5E7EB',
+                maxHeight:'78dvh', overflowY:'auto',
+              }}>
+                <div style={{ width:32, height:4, borderRadius:2, background:'#E5E7EB', margin:'0 auto 20px' }} />
+                {sheetBody()}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

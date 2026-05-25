@@ -18,9 +18,10 @@ function useActiveTab(stream) {
   const { pathname } = useLocation()
   if (!stream) return null
   if (pathname === `/${stream}`) return 'home'
-  if (pathname.includes('/progress'))  return 'learn'
-  if (pathname.includes('/plan'))      return 'learn'
-  if (pathname.includes('/settings'))  return 'me'
+  if (pathname.includes('/resources'))  return 'resources'
+  if (pathname.includes('/progress'))   return 'learn'
+  if (pathname.includes('/plan'))       return 'learn'
+  if (pathname.includes('/settings'))   return 'me'
   if (pathname.includes('/today') ||
     pathname.includes('/quiz/') ||
     pathname.includes('/mock/') ||
@@ -74,6 +75,16 @@ function MeIcon({ color, size = 24 }) {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <circle cx="12" cy="8" r="4" stroke={color} strokeWidth={1.9} strokeLinecap="round"/>
       <path d="M4 20c0-3.314 3.582-6 8-6s8 2.686 8 6" stroke={color} strokeWidth={1.9} strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function ResourcesIcon({ color, size = 24 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="4" y="3" width="11" height="15" rx="2" stroke={color} strokeWidth={1.9}/>
+      <path d="M8 7h5M8 10h5M8 13h3" stroke={color} strokeWidth={1.9} strokeLinecap="round"/>
+      <path d="M15 7h1a2 2 0 012 2v9a2 2 0 01-2 2H8a2 2 0 01-2-2" stroke={color} strokeWidth={1.9} strokeLinecap="round"/>
     </svg>
   )
 }
@@ -230,10 +241,11 @@ export default function BottomNav() {
   const C = getColors(stream, null, isDark)
 
   const tabs = [
-    { id:'home',     label:'Home',        Icon:HomeIcon,     action:() => navigate(`/${stream}`) },
-    { id:'practice', label:'Practice',    Icon:PracticeIcon, action:() => navigate(`/${stream}/today`) },
-    { id:'learn',    label:'My Learning', Icon:LearnIcon,    action:() => navigate(`/${stream}/progress`) },
-    { id:'me',       label:'Profile',     Icon:MeIcon,       action:() => navigate(`/${stream}/settings`) },
+    { id:'home',      label:'Home',        Icon:HomeIcon,      action:() => navigate(`/${stream}`) },
+    { id:'practice',  label:'Practice',    Icon:PracticeIcon,  action:() => navigate(`/${stream}/today`) },
+    { id:'learn',     label:'My Learning', Icon:LearnIcon,     action:() => navigate(`/${stream}/progress`) },
+    { id:'resources', label:'Resources',   Icon:ResourcesIcon, action:() => navigate(`/${stream}/resources`) },
+    { id:'me',        label:'Profile',     Icon:MeIcon,        action:() => navigate(`/${stream}/settings`) },
   ]
 
   // ── Desktop sidebar ─────────────────────────────────────────────────────────

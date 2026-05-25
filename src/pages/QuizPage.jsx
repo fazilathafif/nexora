@@ -101,6 +101,7 @@ export default function QuizPage({ user, profile, refreshProfile, isDark }) {
   const [aiNoteSaved,   setAiNoteSaved]   = useState(false)
   const aiPanelRef                        = useRef(null)
   const [breakCard,     setBreakCard]     = useState(null)  // null | { type, emoji, text, nextIndex }
+  const [showTrialWall, setShowTrialWall] = useState(false)
 
   // Synchronous ghost-tap blocker: a full-screen transparent overlay that's activated
   // via direct DOM mutation (no React render cycle) the moment the user taps Next/Continue.
@@ -249,6 +250,9 @@ export default function QuizPage({ user, profile, refreshProfile, isDark }) {
     setAnswers(prev => [...prev, entry])
     if (correct) setScore(s => s + 1)
     submitAnswer({ questionId: currentQ.id, topic: currentQ.topic, chosenIndex: idx, correctIndex: currentQ.ans, hintUsed: hintShown, stream })
+    if (sessionStorage.getItem('nx_explore') === '1' && answers.length + 1 >= 3) {
+      setShowTrialWall(true)
+    }
   }
 
   async function handleNext() {
@@ -881,8 +885,51 @@ export default function QuizPage({ user, profile, refreshProfile, isDark }) {
         onTouchEnd={e=>{e.stopPropagation();e.preventDefault()}}
       />
 
-      {/* Brain Break overlay */}
-      {breakCard && (
+      {/* Explore mode: trial wall after 3 questions */}
+      {showTrialWall && (
+        <div style={{
+          position:'fixed', inset:0, zIndex:210,
+          background:'rgba(0,0,0,0.55)',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          padding:'24px',
+        }}>
+          <div style={{
+            background:'#FFFFFF', borderRadius:20, padding:'32px 28px',
+            maxWidth:380, width:'100%', textAlign:'center',
+            boxShadow:'0 16px 48px rgba(0,0,0,0.25)',
+          }}>
+            <div style={{fontSize:48, marginBottom:16}}>🎯</div>
+            <h2 style={{margin:'0 0 10px', fontSize:22, fontWeight:800, color:'#1E293B'}}>
+              You've tried 3 free questions!
+            </h2>
+            <p style={{margin:'0 0 24px', fontSize:14, color:'#64748B', lineHeight:1.65}}>
+              Create a free account to keep your progress and unlock unlimited practice.
+            </p>
+            <button
+              onClick={() => { sessionStorage.removeItem('nx_explore'); navigate('/') }}
+              style={{
+                width:'100%', background:'#0056D2', color:'white', border:'none',
+                borderRadius:12, padding:'14px', fontSize:15, fontWeight:700,
+                cursor:'pointer', marginBottom:12, fontFamily:'Inter,sans-serif',
+              }}
+            >
+              Create account →
+            </button>
+            <button
+              onClick={() => setShowTrialWall(false)}
+              style={{
+                width:'100%', background:'none', border:'1.5px solid #E2E8F0', color:'#64748B',
+                borderRadius:12, padding:'13px', fontSize:14, fontWeight:600,
+                cursor:'pointer', fontFamily:'Inter,sans-serif',
+              }}
+            >
+              Keep exploring
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Brain Break overlay */}      {breakCard && (
         <div style={{
           position:'fixed', inset:0, zIndex:200,
           background: 'rgba(255,255,255,0.97)',

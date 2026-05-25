@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useParams }       from 'react-router-dom'
-import { getTopicStats, updateProfile }      from '../lib/db.js'
+import { getTopicStats, getExamDates, setExamDate } from '../lib/db.js'
 import { STREAM_CONFIG, getQuestions }  from '../data/questions.js'
 import { getColors, Shell, SectionLabel, Badge } from './HomePage.jsx'
 
@@ -114,28 +114,43 @@ export default function StudyPlanPage({ user, profile, refreshProfile, isDark })
   const navigate   = useNavigate()
   const C          = getColors(stream, null, isDark)
   const dark       = isDark
-  const cfg        = STREAM_CONFIG[stream]
+
+  const enrolledStreams = profile?.streams?.length ? profile.streams : profile?.stream ? [profile.stream] : [stream]
+  const [activeTab,   setActiveTab]   = useState(() => {
+    const def = profile?.active_stream ?? profile?.stream ?? stream
+    return enrolledStreams.includes(def) ? def : (enrolledStreams[0] ?? stream)
+  })
+  const activeCfg = STREAM_CONFIG[activeTab] ?? STREAM_CONFIG[stream]
 
   const [topics,      setTopics]      = useState([])
   const [loading,     setLoading]     = useState(true)
   const [editingDate, setEditingDate] = useState(false)
-  const [savedDate,   setSavedDate]   = useState(null)
-  const [dateInput,   setDateInput]   = useState(profile?.exam_date ?? '')
+  const [examDates,   setExamDates]   = useState({})
+  const [dateInput,   setDateInput]   = useState('')
   const [dateError,   setDateError]   = useState(null)
   const [dateSaving,  setDateSaving]  = useState(false)
 
-  const examDate = savedDate ?? profile?.exam_date
+  const examDate = examDates[activeTab] ?? null
   const days = daysUntil(examDate)
 
-  // Sync dateInput when profile loads or updates
+  // Keep dateInput in sync with the selected tab's stored date
   useEffect(() => {
-    if (profile?.exam_date && !savedDate) setDateInput(profile.exam_date)
-  }, [profile?.exam_date])
+    setDateInput(examDates[activeTab] ?? '')
+    setEditingDate(false)
+    setDateError(null)
+  }, [activeTab, examDates])
 
+  // Load per-track exam dates
+  useEffect(() => {
+    if (!user?.id) return
+    getExamDates(user.id).then(({ data }) => { if (data) setExamDates(data) })
+  }, [user?.id])
+
+  // Load topic stats for the active tab's stream
   useEffect(() => {
     if (!user?.id) { setLoading(false); return }
     setLoading(true)
-    getTopicStats(user.id, stream)
+    getTopicStats(user.id, activeTab)
       .then(({ data }) => {
         const map = {}
         ;(data ?? []).forEach(a => {
@@ -152,16 +167,31 @@ export default function StudyPlanPage({ user, profile, refreshProfile, isDark })
       })
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [user?.id, stream])
+  }, [user?.id, activeTab])
+
+  async function saveExamDate(date) {
+    if (!date) { setDateError('Please select a date first.'); return }
+    setDateError(null)
+    setDateSaving(true)
+    try {
+      const { error } = await setExamDate(user.id, activeTab, date)
+      if (error) throw error
+      setExamDates(prev => ({ ...prev, [activeTab]: date }))
+      setEditingDate(false)
+    } catch (e) {
+      setDateError(`Could not save — ${e?.message ?? 'please try again.'}`)
+    } finally {
+      setDateSaving(false)
+    }
+  }
 
   // Determine which subject a topic belongs to
   function subjectForTopic(topic) {
-    const t = topic.toLowerCase()
-    for (const s of cfg.subjects) {
-      const qs = getQuestions(stream, s.id)
+    for (const s of activeCfg.subjects) {
+      const qs = getQuestions(activeTab, s.id)
       if (qs.some(q => q.topic === topic)) return s
     }
-    return cfg.subjects[0]
+    return activeCfg.subjects[0]
   }
 
   const weakTopics   = topics.filter(t => t.pct < 70)
@@ -169,7 +199,7 @@ export default function StudyPlanPage({ user, profile, refreshProfile, isDark })
   const avgAccuracy  = topics.length
     ? Math.round(topics.reduce((s, t) => s + t.pct, 0) / topics.length)
     : null
-  const schedule = useMemo(() => buildSchedule(days, weakTopics, cfg.subjects), [days, weakTopics.length])
+  const schedule = useMemo(() => buildSchedule(days, weakTopics, activeCfg.subjects), [days, weakTopics.length, activeTab]) // eslint-disable-line
   const rec      = dailyRec(days, weakTopics.length)
 
   const readinessColor = avgAccuracy == null ? C.muted
@@ -181,31 +211,38 @@ export default function StudyPlanPage({ user, profile, refreshProfile, isDark })
     : avgAccuracy >= 50 ? 'Needs Work'
     : 'At Risk'
 
-  async function saveExamDate(date) {
-    if (!date) { setDateError('Please select a date first.'); return }
-    setDateError(null)
-    setDateSaving(true)
-    try {
-      const { data, error } = await updateProfile(user.id, { exam_date: date })
-      if (error) throw error
-      if (!data) throw new Error('Profile not found — please reload the page')
-      setSavedDate(date)
-      setEditingDate(false)
-      refreshProfile?.()
-    } catch (e) {
-      setDateError(`Could not save — ${e?.message ?? 'please try again.'}`)
-    } finally {
-      setDateSaving(false)
-    }
-  }
-
   return (
     <Shell C={C} isDark={isDark}>
       {/* Header */}
-      <div style={{marginBottom:22}}>
+      <div style={{marginBottom:16}}>
         <div style={{fontSize:26,fontWeight:900,color:C.navy,fontFamily:"'Playfair Display', Georgia, serif",letterSpacing:'-0.4px'}}>Study Plan</div>
         <div style={{fontSize:11,color:C.muted,marginTop:1}}>Personalised to your performance</div>
       </div>
+
+      {/* Track tab pills — only shown if enrolled in 2+ streams */}
+      {enrolledStreams.length > 1 && (
+        <div style={{display:'flex',gap:8,marginBottom:18,overflowX:'auto',paddingBottom:2,scrollbarWidth:'none'}}>
+          {enrolledStreams.map(s => {
+            const cfg = STREAM_CONFIG[s]
+            return (
+              <button
+                key={s}
+                onClick={() => setActiveTab(s)}
+                style={{
+                  flexShrink:0, padding:'7px 16px',
+                  background: activeTab === s ? C.primary : 'transparent',
+                  border:`1.5px solid ${activeTab === s ? C.primary : C.border}`,
+                  borderRadius:20, fontSize:12, fontWeight:700,
+                  color: activeTab === s ? 'white' : C.muted,
+                  cursor:'pointer', fontFamily:'Inter,sans-serif', transition:'all 0.15s',
+                }}
+              >
+                {cfg?.emoji ?? ''} {cfg?.label ?? s.toUpperCase()}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* Exam date hero */}
       <div style={{
@@ -242,7 +279,7 @@ export default function StudyPlanPage({ user, profile, refreshProfile, isDark })
         ) : (
           <div style={{color:'white'}}>
             <div style={{fontSize:13,opacity:0.8,marginBottom:4}}>
-              {formatDate(examDate)} · {cfg.label}
+              {formatDate(examDate)} · {activeCfg.label}
             </div>
             <div style={{fontSize:42,fontWeight:900,lineHeight:1,marginBottom:6}}>
               {days > 0 ? days : 0}
@@ -345,7 +382,7 @@ export default function StudyPlanPage({ user, profile, refreshProfile, isDark })
                     <div style={{fontSize:11,color:C.muted,marginTop:1}}>{t.pct}% accuracy · {t.total} answer{t.total>1?'s':''}</div>
                   </div>
                   <button
-                    onClick={() => navigate(`/${stream}/quiz/${subj.id}?topic=${encodeURIComponent(t.topic)}`)}
+                    onClick={() => navigate(`/${activeTab}/quiz/${subj.id}?topic=${encodeURIComponent(t.topic)}`)}
                     style={{background:C.primary,color:'white',border:'none',borderRadius:9,padding:'6px 13px',fontWeight:700,cursor:'pointer',fontSize:12,flexShrink:0}}
                   >
                     Drill →
@@ -408,7 +445,7 @@ export default function StudyPlanPage({ user, profile, refreshProfile, isDark })
                   <div style={{display:'flex',alignItems:'center',gap:8}}>
                     {t.pct < 70 && (
                       <button
-                        onClick={() => navigate(`/${stream}/quiz/${subj.id}?topic=${encodeURIComponent(t.topic)}`)}
+                        onClick={() => navigate(`/${activeTab}/quiz/${subj.id}?topic=${encodeURIComponent(t.topic)}`)}
                         style={{background:'#EF444418',border:'1px solid #EF444440',borderRadius:6,padding:'2px 8px',fontSize:10,fontWeight:700,color:'#EF4444',cursor:'pointer'}}
                       >Drill</button>
                     )}
@@ -437,7 +474,7 @@ export default function StudyPlanPage({ user, profile, refreshProfile, isDark })
             Complete a few quiz sessions and your personalised plan will appear here, showing your weak spots and exactly what to study each day.
           </div>
           <button
-            onClick={() => navigate(`/${stream}`)}
+            onClick={() => navigate(`/${activeTab}`)}
             style={{background:C.primary,color:'white',border:'none',borderRadius:12,padding:'11px 24px',fontWeight:700,cursor:'pointer',fontSize:14}}
           >
             Start Practising →
@@ -455,7 +492,7 @@ export default function StudyPlanPage({ user, profile, refreshProfile, isDark })
       {/* Go to full mock */}
       {days != null && days > 0 && days <= 30 && (
         <button
-          onClick={() => navigate(`/${stream}/mock/${cfg.subjects[0].id}`)}
+          onClick={() => navigate(`/${activeTab}/mock/${activeCfg.subjects[0].id}`)}
           style={{width:'100%',background:`linear-gradient(135deg,${C.primary},${dark?'#312E81':'#0F766E'})`,color:'white',border:'none',borderRadius:14,padding:'14px',fontSize:14,fontWeight:800,cursor:'pointer',boxShadow:`0 4px 16px ${C.primary}40`}}
         >
           📋 Take a Full Mock Exam

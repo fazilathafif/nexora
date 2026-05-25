@@ -19,3 +19,11 @@ export const supabase = isSupabaseConfigured
       },
     })
   : null
+
+// Returns true when all DB operations should use localStorage instead of Supabase.
+// This covers both offline/dev mode (Supabase not configured) and explore mode
+// (user chose "Explore first" without signing in).
+export function isGuestSession() {
+  if (!isSupabaseConfigured) return true
+  try { return sessionStorage.getItem('nx_explore') === '1' } catch { return false }
+}

@@ -4,7 +4,7 @@
  * When Supabase is not configured, guest mode uses localStorage instead.
  */
 
-import { supabase, isSupabaseConfigured } from './supabase.js'
+import { supabase, isSupabaseConfigured, isGuestSession } from './supabase.js'
 import { loadGuestProfile, saveGuestProfile } from './guest.js'
 
 // ── Guest-mode helpers ────────────────────────────────────────────────────────
@@ -94,7 +94,7 @@ export function onAuthChange(callback) {
 // ── Profile ───────────────────────────────────────────────────────────────────
 
 export async function getProfile(userId) {
-  if (!isSupabaseConfigured) {
+  if (isGuestSession()) {
     return { data: loadGuestProfile(), error: null }
   }
 
@@ -151,7 +151,7 @@ export async function getProfile(userId) {
 }
 
 export async function updateProfile(userId, updates) {
-  if (!isSupabaseConfigured) return guestUpsertProfile(updates)
+  if (isGuestSession()) return guestUpsertProfile(updates)
 
   // The Supabase JS client serialises every query behind a navigator.locks mutex
   // for token management. On mobile PWAs the lock can be held for many seconds
@@ -213,7 +213,7 @@ export async function updateProfile(userId, updates) {
 }
 
 export async function upsertProfile(userId, updates) {
-  if (!isSupabaseConfigured) return guestUpsertProfile(updates)
+  if (isGuestSession()) return guestUpsertProfile(updates)
   const patch = { ...updates }
   // Only generate a referral_code during initial profile creation (when stream is first set).
   // Partial updates (e.g. exam_date) must not overwrite an existing code.
@@ -228,14 +228,14 @@ export async function upsertProfile(userId, updates) {
 }
 
 export async function addXp(userId, amount) {
-  if (!isSupabaseConfigured) return guestAddXp(amount)
+  if (isGuestSession()) return guestAddXp(amount)
   return supabase.rpc('increment_xp', { user_id: userId, amount })
 }
 
 // ── Sessions ──────────────────────────────────────────────────────────────────
 
 export async function createSession({ userId, stream, subject, totalQuestions }) {
-  if (!isSupabaseConfigured) return { data: { id: `local_${Date.now()}` }, error: null }
+  if (isGuestSession()) return { data: { id: `local_${Date.now()}` }, error: null }
   return supabase
     .from('sessions')
     .insert({ user_id: userId, stream, subject, total_questions: totalQuestions, started_at: new Date().toISOString() })
@@ -244,7 +244,7 @@ export async function createSession({ userId, stream, subject, totalQuestions })
 }
 
 export async function completeSession(sessionId, { score, durationSeconds }) {
-  if (!isSupabaseConfigured) return noop()
+  if (isGuestSession()) return noop()
   return supabase
     .from('sessions')
     .update({ score, duration_seconds: durationSeconds, completed_at: new Date().toISOString() })
@@ -254,7 +254,7 @@ export async function completeSession(sessionId, { score, durationSeconds }) {
 // ── Answers ───────────────────────────────────────────────────────────────────
 
 export async function recordAnswer({ sessionId, userId, questionId, topic, chosenIndex, correctIndex, hintUsed, stream }) {
-  if (!isSupabaseConfigured) {
+  if (isGuestSession()) {
     return guestRecordAnswer({ topic, is_correct: chosenIndex === correctIndex, stream: stream ?? 'gcse', answered_at: new Date().toISOString() })
   }
   return supabase.from('answers').insert({
@@ -268,7 +268,7 @@ export async function recordAnswer({ sessionId, userId, questionId, topic, chose
 // ── Daily activity ────────────────────────────────────────────────────────────
 
 export async function touchDailyActivity(userId) {
-  if (!isSupabaseConfigured) return guestTouchDailyActivity()
+  if (isGuestSession()) return guestTouchDailyActivity()
   const today = new Date().toISOString().split('T')[0]
   return supabase
     .from('daily_activity')
@@ -276,7 +276,7 @@ export async function touchDailyActivity(userId) {
 }
 
 export async function getWeeklyActivity(userId) {
-  if (!isSupabaseConfigured) return guestGetWeeklyActivity()
+  if (isGuestSession()) return guestGetWeeklyActivity()
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]
   return supabase
     .from('daily_activity')
@@ -289,14 +289,14 @@ export async function getWeeklyActivity(userId) {
 // ── Progress ──────────────────────────────────────────────────────────────────
 
 export async function getTopicStats(userId, stream) {
-  if (!isSupabaseConfigured) return guestGetTopicStats(stream)
+  if (isGuestSession()) return guestGetTopicStats(stream)
   return supabase.from('answers').select('topic, is_correct').eq('user_id', userId).eq('stream', stream)
 }
 
 // ── AI usage ─────────────────────────────────────────────────────────────────
 
 export async function getAiUsageToday(userId) {
-  if (!isSupabaseConfigured) {
+  if (isGuestSession()) {
     try { return { data: Number(localStorage.getItem('nx_ai_usage') ?? 0), error: null } } catch { return { data: 0, error: null } }
   }
   const today = new Date().toISOString().split('T')[0]
@@ -306,7 +306,7 @@ export async function getAiUsageToday(userId) {
 }
 
 export async function incrementAiUsage(userId) {
-  if (!isSupabaseConfigured) {
+  if (isGuestSession()) {
     try {
       const n = Number(localStorage.getItem('nx_ai_usage') ?? 0) + 1
       localStorage.setItem('nx_ai_usage', String(n))
@@ -320,7 +320,7 @@ export async function incrementAiUsage(userId) {
 // ── Referral helpers ──────────────────────────────────────────────────────────
 
 export async function getReferralStats(userId) {
-  if (!isSupabaseConfigured) return { data: { total: 0, converted: 0 }, error: null }
+  if (isGuestSession()) return { data: { total: 0, converted: 0 }, error: null }
   const { data, error } = await supabase.from('referrals').select('status').eq('referrer_id', userId)
   const total     = data?.length ?? 0
   const converted = data?.filter(r => r.status === 'converted').length ?? 0
@@ -330,7 +330,7 @@ export async function getReferralStats(userId) {
 // ── Accessibility preferences ─────────────────────────────────────────────────
 
 export async function getPreferences(userId) {
-  if (!isSupabaseConfigured) {
+  if (isGuestSession()) {
     try { return { data: JSON.parse(localStorage.getItem('nx_prefs') ?? 'null'), error: null } }
     catch { return { data: null, error: null } }
   }
@@ -338,7 +338,7 @@ export async function getPreferences(userId) {
 }
 
 export async function savePreferences(userId, prefs) {
-  if (!isSupabaseConfigured) {
+  if (isGuestSession()) {
     try { localStorage.setItem('nx_prefs', JSON.stringify(prefs)) } catch {}
     return { data: prefs, error: null }
   }
@@ -352,7 +352,7 @@ export async function savePreferences(userId, prefs) {
 // ── Multi-stream enrolment ────────────────────────────────────────────────────
 
 export async function enrollStream(userId, stream) {
-  if (!isSupabaseConfigured) {
+  if (isGuestSession()) {
     const p = loadGuestProfile() ?? {}
     const streams = Array.from(new Set([...(p.streams ?? []), stream]))
     return guestUpsertProfile({ streams, active_stream: stream, stream })
@@ -374,7 +374,7 @@ export async function enrollStream(userId, stream) {
 }
 
 export async function switchActiveStream(userId, stream) {
-  if (!isSupabaseConfigured) return guestUpsertProfile({ active_stream: stream, stream })
+  if (isGuestSession()) return guestUpsertProfile({ active_stream: stream, stream })
   return supabase
     .from('profiles')
     .update({ active_stream: stream, stream, updated_at: new Date().toISOString() })
@@ -384,7 +384,7 @@ export async function switchActiveStream(userId, stream) {
 }
 
 export async function getApSubjects(userId) {
-  if (!isSupabaseConfigured) {
+  if (isGuestSession()) {
     try { return { data: JSON.parse(localStorage.getItem('nx_ap_subjects') ?? '[]'), error: null } }
     catch { return { data: [], error: null } }
   }
@@ -392,7 +392,7 @@ export async function getApSubjects(userId) {
 }
 
 export async function saveApSubjects(userId, subjectIds) {
-  if (!isSupabaseConfigured) {
+  if (isGuestSession()) {
     try { localStorage.setItem('nx_ap_subjects', JSON.stringify(subjectIds)) } catch {}
     return { data: subjectIds, error: null }
   }
@@ -400,6 +400,30 @@ export async function saveApSubjects(userId, subjectIds) {
   if (!subjectIds.length) return { data: [], error: null }
   const rows = subjectIds.map(subject_id => ({ user_id: userId, subject_id }))
   return supabase.from('user_ap_subjects').insert(rows).select()
+}
+
+// ── Per-track exam dates ──────────────────────────────────────────────────────
+
+export async function getExamDates(userId) {
+  if (isGuestSession()) {
+    try { return { data: JSON.parse(localStorage.getItem('nx_exam_dates') ?? '{}'), error: null } }
+    catch { return { data: {}, error: null } }
+  }
+  const { data, error } = await getProfile(userId)
+  return { data: data?.exam_dates ?? {}, error }
+}
+
+export async function setExamDate(userId, stream, date) {
+  if (isGuestSession()) {
+    try {
+      const current = JSON.parse(localStorage.getItem('nx_exam_dates') ?? '{}')
+      current[stream] = date
+      localStorage.setItem('nx_exam_dates', JSON.stringify(current))
+    } catch {}
+    return { data: null, error: null }
+  }
+  // Use the set_exam_date RPC for atomic JSONB merge
+  return supabase.rpc('set_exam_date', { p_user_id: userId, p_stream: stream, p_date: date })
 }
 
 // ── Sysadmin ──────────────────────────────────────────────────────────────────
