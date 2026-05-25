@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { adminGetAllUsers, adminUpdateProfile, adminDeleteProfile } from '../lib/db.js'
+import { PLANS, getEffectivePlan, trialDaysLeft } from '../lib/subscription.js'
 
 const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL
 
@@ -63,7 +64,14 @@ function Avatar({ name, email, size = 38 }) {
 // ── Edit modal ────────────────────────────────────────────────────────────────
 
 function EditModal({ user, onClose, onSave, onDelete }) {
-  const [form,    setForm]    = useState({ display_name: user.display_name ?? '', xp: user.xp ?? 0, stream: user.stream ?? '', is_admin: user.is_admin ?? false })
+  const [form,    setForm]    = useState({
+    display_name: user.display_name ?? '',
+    xp:           user.xp ?? 0,
+    stream:       user.stream ?? '',
+    is_admin:     user.is_admin ?? false,
+    plan:         user.plan ?? 'free',
+    trial_ends_at: user.trial_ends_at ? user.trial_ends_at.slice(0, 10) : '',
+  })
   const [saving,  setSaving]  = useState(false)
   const [confirm, setConfirm] = useState(false)
 
@@ -117,8 +125,35 @@ function EditModal({ user, onClose, onSave, onDelete }) {
             <option value="">— not set —</option>
             <option value="gcse">GCSE</option>
             <option value="alevel">A-Level</option>
+            <option value="sat">SAT</option>
+            <option value="act">ACT</option>
+            <option value="ap">AP</option>
+            <option value="psat">PSAT</option>
           </select>
         </div>
+
+        <div style={{ marginBottom:14 }}>
+          <label style={lbl}>PLAN</label>
+          <select value={form.plan} onChange={e => set('plan', e.target.value)} style={{ ...inp, cursor:'pointer' }}>
+            {Object.entries(PLANS).map(([key, p]) => (
+              <option key={key} value={key}>{p.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {form.plan === 'trial' && (
+          <div style={{ marginBottom:14 }}>
+            <label style={lbl}>TRIAL ENDS</label>
+            <input
+              type="date"
+              value={form.trial_ends_at}
+              onChange={e => set('trial_ends_at', e.target.value)}
+              style={inp}
+              onFocus={e => e.target.style.borderColor = C.primary}
+              onBlur={e  => e.target.style.borderColor = C.border}
+            />
+          </div>
+        )}
 
         <label style={{ display:'flex', alignItems:'center', gap:10, marginBottom:22, cursor:'pointer' }}>
           <input type="checkbox" checked={form.is_admin} onChange={e => set('is_admin', e.target.checked)} style={{ width:16, height:16, accentColor:C.primary }} />
@@ -148,6 +183,8 @@ export default function SysAdminPage({ user }) {
   const [stats,        setStats]        = useState(null)
   const [users,        setUsers]        = useState([])
   const [search,       setSearch]       = useState('')
+  const [subSearch,    setSubSearch]    = useState('')
+  const [planFilter,   setPlanFilter]   = useState('all')
   const [editUser,     setEditUser]     = useState(null)
   const [loading,      setLoading]      = useState(true)
   const [usersLoading, setUsersLoading] = useState(false)
@@ -173,9 +210,11 @@ export default function SysAdminPage({ user }) {
     setUsersLoading(false)
   }
 
-  function switchTab(t) { setTab(t); if (t === 'users') loadUsers() }
+  function switchTab(t) { setTab(t); if (t === 'users' || t === 'subscriptions') loadUsers() }
 
   async function handleSave(userId, updates) {
+    // Convert trial_ends_at empty string to null
+    if (updates.trial_ends_at === '') updates.trial_ends_at = null
     await adminUpdateProfile(userId, updates)
     setUsers(us => us.map(u => u.id === userId ? { ...u, ...updates } : u))
   }
@@ -189,6 +228,13 @@ export default function SysAdminPage({ user }) {
     const q = search.toLowerCase()
     return users.filter(u => !q || (u.email ?? '').toLowerCase().includes(q) || (u.display_name ?? '').toLowerCase().includes(q))
   }, [users, search])
+
+  const subFiltered = useMemo(() => {
+    const q = subSearch.toLowerCase()
+    return users
+      .filter(u => planFilter === 'all' || getEffectivePlan(u) === planFilter)
+      .filter(u => !q || (u.email ?? '').toLowerCase().includes(q) || (u.display_name ?? '').toLowerCase().includes(q))
+  }, [users, subSearch, planFilter])
 
   const statCards = stats ? [
     { icon:'👩‍🎓', label:'Total users',       value:stats.total_users,        color:C.primary  },
@@ -219,7 +265,7 @@ export default function SysAdminPage({ user }) {
 
       {/* Tab bar */}
       <div style={{ background:C.card, borderBottom:`1px solid ${C.border}`, display:'flex', padding:'0 20px' }}>
-        {[['stats','📊 Overview'],['users','👥 Users']].map(([key, label]) => (
+        {[['stats','📊 Overview'],['users','👥 Users'],['subscriptions','💳 Subscriptions']].map(([key, label]) => (
           <button key={key} onClick={() => switchTab(key)}
             style={{ background:'transparent', border:'none', borderBottom: tab === key ? `2px solid ${C.primary}` : '2px solid transparent', padding:'12px 16px', fontSize:13, fontWeight:700, color: tab === key ? C.primary : C.muted, cursor:'pointer', transition:'all 0.2s' }}>
             {label}
@@ -336,6 +382,94 @@ export default function SysAdminPage({ user }) {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* ── SUBSCRIPTIONS TAB ── */}
+        {tab === 'subscriptions' && (
+          <div style={{ animation:'fadeUp 0.3s ease both' }}>
+
+            {/* Plan summary row */}
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))', gap:8, marginBottom:20 }}>
+              {Object.entries(PLANS).map(([key, p]) => {
+                const count = users.filter(u => getEffectivePlan(u) === key).length
+                return (
+                  <div key={key} onClick={() => setPlanFilter(f => f === key ? 'all' : key)}
+                    style={{ background: planFilter === key ? `${C.primary}20` : C.card, border:`1.5px solid ${planFilter === key ? C.primary : C.border}`, borderRadius:12, padding:'12px 14px', cursor:'pointer', textAlign:'center', transition:'all 0.15s' }}>
+                    <div style={{ fontSize:22, fontWeight:900, color:C.primary }}>{count}</div>
+                    <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>{p.name}</div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Search */}
+            <div style={{ display:'flex', gap:10, alignItems:'center', marginBottom:16 }}>
+              <input
+                placeholder="Search by email or name…"
+                value={subSearch} onChange={e => setSubSearch(e.target.value)}
+                style={{ flex:1, padding:'10px 14px', borderRadius:10, background:C.card, border:`1.5px solid ${C.border}`, color:C.navy, fontSize:14, outline:'none' }}
+                onFocus={e => e.target.style.borderColor = C.primary}
+                onBlur={e  => e.target.style.borderColor = C.border}
+              />
+              {planFilter !== 'all' && (
+                <button onClick={() => setPlanFilter('all')} style={{ background:C.card, border:`1.5px solid ${C.border}`, borderRadius:8, padding:'8px 12px', color:C.muted, cursor:'pointer', fontSize:12, fontWeight:700 }}>
+                  Clear filter ×
+                </button>
+              )}
+              {!usersLoading && <span style={{ fontSize:12, color:C.muted, whiteSpace:'nowrap' }}>{subFiltered.length} user{subFiltered.length !== 1 ? 's' : ''}</span>}
+            </div>
+
+            {usersLoading && (
+              <div style={{ textAlign:'center', padding:'48px 0' }}>
+                <div style={{ fontSize:28, animation:'pulse 1.5s infinite', marginBottom:8 }}>💳</div>
+                <div style={{ color:C.muted, fontSize:13 }}>Loading…</div>
+              </div>
+            )}
+
+            <div style={{ display:'grid', gap:8 }}>
+              {subFiltered.map(u => {
+                const plan      = getEffectivePlan(u)
+                const planMeta  = PLANS[plan] ?? PLANS.free
+                const days      = trialDaysLeft(u)
+                const trialBadge = u.plan === 'trial' && days > 0
+                  ? `${days}d left`
+                  : u.plan === 'trial' ? 'Expired' : null
+                const planColor = planMeta.badgeColor ?? C.muted
+                return (
+                  <div key={u.id} onClick={() => setEditUser(u)}
+                    style={{ background:C.card, border:`1.5px solid ${C.border}`, borderRadius:14, padding:'14px 16px', display:'flex', alignItems:'center', gap:12, cursor:'pointer', transition:'border-color 0.15s' }}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = C.primary}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
+                  >
+                    <Avatar name={u.display_name} email={u.email} />
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontWeight:800, color:C.navy, fontSize:14, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        {u.display_name ?? 'Student'}
+                      </div>
+                      <div style={{ fontSize:12, color:C.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.email}</div>
+                    </div>
+                    <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:5, flexShrink:0 }}>
+                      <span style={{ background:`${planColor}20`, color:planColor, border:`1px solid ${planColor}40`, borderRadius:20, padding:'2px 8px', fontSize:10, fontWeight:800 }}>
+                        {planMeta.badge}
+                      </span>
+                      {trialBadge && (
+                        <span style={{ fontSize:10, color: days > 3 ? C.primary : C.warn, fontWeight:700 }}>{trialBadge}</span>
+                      )}
+                      {u.trial_ends_at && u.plan === 'trial' && (
+                        <span style={{ fontSize:10, color:C.muted }}>
+                          {new Date(u.trial_ends_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'2-digit' })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {!usersLoading && subFiltered.length === 0 && users.length > 0 && (
+              <div style={{ textAlign:'center', padding:'32px', color:C.muted, fontSize:13 }}>No users match this filter.</div>
+            )}
           </div>
         )}
       </div>

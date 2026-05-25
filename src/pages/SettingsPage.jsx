@@ -8,6 +8,7 @@ import { getExamDates, setExamDate } from '../lib/db.js'
 import { STREAM_CONFIG } from '../data/questions.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import { useTheme } from '../hooks/useTheme.js'
+import { trialDaysLeft, getEffectivePlan, PLANS } from '../lib/subscription.js'
 
 const APP_VERSION = '1.0.0-beta'
 
@@ -290,6 +291,13 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
   const initial = (profile?.display_name || email || 'U')[0].toUpperCase()
   const level   = Math.floor((profile?.xp ?? 0) / 150) + 1
 
+  const effectivePlan = getEffectivePlan(profile)
+  const trialDays     = trialDaysLeft(profile)
+  const planName      = PLANS[effectivePlan]?.name ?? 'Free'
+  const planSublabel  = trialDays > 0
+    ? `Trial · ${trialDays} day${trialDays === 1 ? '' : 's'} left`
+    : planName
+
   const statsData = [
     { icon:'🔥', val: profile?.streak ?? 0, label:'Day Streak', color:'#F97316' },
     { icon:'⚡', val: profile?.xp ?? 0,     label:'Total XP',   color: C.primary },
@@ -506,7 +514,18 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
         {!isGuest && (
           <>
             <Divider C={C} />
-            <SettingsRow C={C} icon="⭐" label="Manage Subscription" sublabel="Plan · billing · cancel" onClick={() => window.open('https://nexoralearn.app/billing', '_blank')} />
+            <SettingsRow
+              C={C}
+              icon="⭐"
+              label="Subscription"
+              sublabel={planSublabel}
+              onClick={() => navigate(`/${stream}/subscription`)}
+              right={
+                <span style={{ fontSize:10, fontWeight:800, background:`${C.primary}15`, color:C.primary, border:`1px solid ${C.primary}30`, borderRadius:20, padding:'2px 8px', whiteSpace:'nowrap' }}>
+                  {planName}
+                </span>
+              }
+            />
             <Divider C={C} />
             <SettingsRow C={C} icon="🚪" label="Sign Out" sublabel="You can sign back in at any time" onClick={() => { signOut?.(); navigate('/') }} danger right={null} />
           </>
