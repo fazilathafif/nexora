@@ -1014,7 +1014,7 @@ function GcseSubjectGrid({ subjects, navigate, stream, C }) {
   const [collapsed, setCollapsed] = useState({})
   const { isTablet, isDesktop } = useBreakpoint()
   const segments = buildSegments(subjects)
-  const cols = isDesktop ? 4 : isTablet ? 3 : 2
+  const cols = isDesktop ? 4 : isTablet ? 3 : 1
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
