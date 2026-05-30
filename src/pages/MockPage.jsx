@@ -30,7 +30,9 @@ export default function MockPage({ user, profile, refreshProfile, isDark }) {
 
   const cfg = stream === 'gcse'
     ? MOCK_CONFIG.gcse
-    : MOCK_CONFIG.alevel?.[subject]
+    : stream === 'alevel'
+      ? MOCK_CONFIG.alevel?.[subject]
+      : MOCK_CONFIG[stream]
 
   const questions = getQuestions(stream, subject)
   const { startQuizSession, submitAnswer, finishQuizSession } = useProgress(user, profile, refreshProfile)
