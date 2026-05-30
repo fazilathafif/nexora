@@ -27,6 +27,7 @@ import SettingsPage        from './pages/SettingsPage.jsx'
 import SubscriptionPage    from './pages/SubscriptionPage.jsx'
 import ResourcesPage      from './pages/ResourcesPage.jsx'
 import TodayPage           from './pages/TodayPage.jsx'
+import SwitchTrackPage     from './pages/SwitchTrackPage.jsx'
 import PrivacyPage         from './pages/PrivacyPage.jsx'
 import TermsPage           from './pages/TermsPage.jsx'
 import LoadingSpinner      from './components/LoadingSpinner.jsx'
@@ -91,8 +92,11 @@ export default function App() {
             ? <Navigate to={`/${activeStream}`} replace />
             : <LandingPage user={user} profile={profile} refreshProfile={refreshProfile} isDark={isDark} />
         } />
-        <Route path="/switch" element={
+        <Route path="/landing" element={
           <LandingPage user={user} profile={profile} refreshProfile={refreshProfile} isDark={isDark} />
+        } />
+        <Route path="/switch" element={
+          <SwitchTrackPage profile={profile} />
         } />
 
         {/* App — stream-aware */}
