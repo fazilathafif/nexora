@@ -276,24 +276,22 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
               ? <HeroIconBtn onClick={signOut} title="Sign Out"><SignOutIcon color="white" size={18} /></HeroIconBtn>
               : null
           }
-          {(profile?.streams?.length > 1) && (
-            <button
-              onClick={switchStream}
-              style={{
-                display:'flex', alignItems:'center', gap:5,
-                background:'rgba(255,255,255,0.18)', backdropFilter:'blur(6px)',
-                border:'1px solid rgba(255,255,255,0.35)',
-                borderRadius:20, padding:'5px 12px',
-                fontSize:11, fontWeight:800, color:'white',
-                cursor:'pointer', fontFamily:'Inter,sans-serif',
-                letterSpacing:'0.03em',
-                WebkitTapHighlightColor:'transparent',
-              }}
-            >
-              <SwitchIcon color="white" size={13} />
-              Switch track
-            </button>
-          )}
+          <button
+            onClick={switchStream}
+            style={{
+              display:'flex', alignItems:'center', gap:5,
+              background:'rgba(255,255,255,0.18)', backdropFilter:'blur(6px)',
+              border:'1px solid rgba(255,255,255,0.35)',
+              borderRadius:20, padding:'5px 12px',
+              fontSize:11, fontWeight:800, color:'white',
+              cursor:'pointer', fontFamily:'Inter,sans-serif',
+              letterSpacing:'0.03em',
+              WebkitTapHighlightColor:'transparent',
+            }}
+          >
+            <SwitchIcon color="white" size={13} />
+            Switch track
+          </button>
         </div>
       </div>
 
