@@ -276,22 +276,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
               ? <HeroIconBtn onClick={signOut} title="Sign Out"><SignOutIcon color="white" size={18} /></HeroIconBtn>
               : null
           }
-          <button
-            onClick={switchStream}
-            style={{
-              display:'flex', alignItems:'center', gap:5,
-              background:'rgba(255,255,255,0.18)', backdropFilter:'blur(6px)',
-              border:'1px solid rgba(255,255,255,0.35)',
-              borderRadius:20, padding:'5px 12px',
-              fontSize:11, fontWeight:800, color:'white',
-              cursor:'pointer', fontFamily:'Inter,sans-serif',
-              letterSpacing:'0.03em',
-              WebkitTapHighlightColor:'transparent',
-            }}
-          >
-            <SwitchIcon color="white" size={13} />
-            Switch track
-          </button>
+          <HeroIconBtn onClick={switchStream} title="Switch track"><SwitchIcon color="white" size={18} /></HeroIconBtn>
         </div>
       </div>
 
@@ -953,42 +938,91 @@ function SubjectCard({ subject, C, dark, stream, onClick, onMock, onFlashcards }
   const questions = stream ? getQuestions(stream, subject.id) : []
   const { badge } = useMastery(questions)
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:5, position:'relative' }}>
+    <div style={{ position:'relative' }}>
       <MasteryBadge badge={badge} />
-      <button
-        onClick={onClick}
-        onPointerDown={() => setPressed(true)}
-        onPointerUp={() => setPressed(false)}
-        onPointerLeave={() => setPressed(false)}
+      <div
         style={{
-          background: `linear-gradient(145deg, ${SC.primary}, ${SC.secondary ?? SC.primary}cc)`,
-          border:'none', borderRadius:20, padding:'18px 14px 16px',
-          cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'flex-start', gap:8,
-          boxShadow: pressed ? `0 2px 8px ${SC.primary}40` : `0 6px 20px ${SC.primary}38`,
-          transform: pressed ? 'scale(0.96)' : 'scale(1)',
+          background:'white',
+          border:`1.5px solid ${SC.primary}22`,
+          borderRadius:16,
+          boxShadow: pressed ? `0 2px 8px ${SC.primary}20` : `0 4px 16px ${SC.primary}18`,
+          transform: pressed ? 'scale(0.98)' : 'scale(1)',
           transition:'transform 0.12s ease, box-shadow 0.12s ease',
-          WebkitTapHighlightColor:'transparent', width:'100%',
+          overflow:'hidden',
         }}
       >
-        <span style={{ fontSize:34, lineHeight:1 }}>{subject.emoji}</span>
-        <div>
-          <div style={{ fontSize:13, fontWeight:900, color:'white', lineHeight:1.2, letterSpacing:'-0.2px' }}>{subject.label}</div>
-          {subject.desc && <div style={{ fontSize:9, color:'rgba(255,255,255,0.68)', lineHeight:1.35, marginTop:3 }}>{subject.desc}</div>}
+        {/* Main tap area */}
+        <button
+          onClick={onClick}
+          onPointerDown={() => setPressed(true)}
+          onPointerUp={() => setPressed(false)}
+          onPointerLeave={() => setPressed(false)}
+          style={{
+            width:'100%', background:'none', border:'none',
+            padding:'14px 16px', cursor:'pointer',
+            display:'flex', alignItems:'center', gap:14,
+            fontFamily:'Inter,sans-serif',
+            WebkitTapHighlightColor:'transparent',
+          }}
+        >
+          {/* Emoji bubble */}
+          <div style={{
+            width:52, height:52, flexShrink:0, borderRadius:14,
+            background:`linear-gradient(145deg, ${SC.primary}, ${SC.secondary ?? SC.primary}cc)`,
+            display:'flex', alignItems:'center', justifyContent:'center',
+            fontSize:26, boxShadow:`0 4px 12px ${SC.primary}40`,
+          }}>
+            {subject.emoji}
+          </div>
+
+          {/* Text */}
+          <div style={{ flex:1, textAlign:'left' }}>
+            <div style={{ fontSize:15, fontWeight:800, color:'#1E293B', letterSpacing:'-0.2px', lineHeight:1.2 }}>
+              {subject.label}
+            </div>
+            {subject.desc && (
+              <div style={{ fontSize:12, color:'#64748B', marginTop:3, lineHeight:1.4 }}>
+                {subject.desc}
+              </div>
+            )}
+          </div>
+
+          {/* Chevron */}
+          <span style={{ fontSize:18, color:`${SC.primary}`, flexShrink:0 }}>›</span>
+        </button>
+
+        {/* Action buttons strip */}
+        <div style={{
+          display:'flex', gap:0,
+          borderTop:`1px solid ${SC.primary}12`,
+        }}>
+          <button
+            onClick={onFlashcards}
+            style={{
+              flex:1, padding:'10px 0',
+              background:`${SC.primary}08`,
+              border:'none', borderRight:`1px solid ${SC.primary}12`,
+              fontSize:12, fontWeight:700, color:SC.primary,
+              cursor:'pointer', fontFamily:'Inter,sans-serif',
+              WebkitTapHighlightColor:'transparent',
+            }}
+          >
+            🃏 Flashcards
+          </button>
+          <button
+            onClick={onMock}
+            style={{
+              flex:1, padding:'10px 0',
+              background:`${SC.primary}08`,
+              border:'none',
+              fontSize:12, fontWeight:700, color:SC.primary,
+              cursor:'pointer', fontFamily:'Inter,sans-serif',
+              WebkitTapHighlightColor:'transparent',
+            }}
+          >
+            📝 Mock
+          </button>
         </div>
-      </button>
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:5 }}>
-        <button
-          onClick={onFlashcards}
-          style={{ background:`${SC.primary}10`, border:`1.5px solid ${SC.primary}28`, borderRadius:10, padding:'7px 0', fontSize:10, fontWeight:700, color:SC.primary, cursor:'pointer', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}
-        >
-          Cards 🃏
-        </button>
-        <button
-          onClick={onMock}
-          style={{ background:`${SC.primary}10`, border:`1.5px solid ${SC.primary}28`, borderRadius:10, padding:'7px 0', fontSize:10, fontWeight:700, color:SC.primary, cursor:'pointer', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}
-        >
-          Mock
-        </button>
       </div>
     </div>
   )
