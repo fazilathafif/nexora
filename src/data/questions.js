@@ -33,6 +33,15 @@ import { SAT_RW_BATCH }   from './batch_sat_rw.js'
 import { ACT_ENGLISH_BATCH } from './batch_act_english.js'
 import { ACT_MATH_BATCH }    from './batch_act_math.js'
 import { ACT_SCIENCE_BATCH } from './batch_act_science.js'
+import { AP_CALCULUS_BATCH }   from './batch_ap_calculus.js'
+import { AP_STATISTICS_BATCH } from './batch_ap_statistics.js'
+import { AP_BIOLOGY_BATCH }    from './batch_ap_biology.js'
+import { AP_CHEMISTRY_BATCH }  from './batch_ap_chemistry.js'
+import { AP_PHYSICS1_BATCH }   from './batch_ap_physics1.js'
+import { AP_US_HISTORY_BATCH } from './batch_ap_us_history.js'
+import { AP_ENGLISH_LANG_BATCH } from './batch_ap_english_lang.js'
+import { AP_CS_A_BATCH }       from './batch_ap_cs_a.js'
+import { AP_ECONOMICS_BATCH }  from './batch_ap_economics.js'
 
 // ── GCSE STREAM ───────────────────────────────────────────────────────────────
 
@@ -643,8 +652,18 @@ export const ACT = {
   act_science: [...ACT_SCIENCE_BATCH],
 }
 
-// AP and PSAT share SAT content for now; Phase 4 will add dedicated AP batches
-export const AP   = {}
+// AP question banks — 30 questions per subject
+export const AP = {
+  ap_calculus:  [ ...AP_CALCULUS_BATCH   ],
+  ap_stats:     [ ...AP_STATISTICS_BATCH ],
+  ap_bio:       [ ...AP_BIOLOGY_BATCH    ],
+  ap_chem:      [ ...AP_CHEMISTRY_BATCH  ],
+  ap_phys:      [ ...AP_PHYSICS1_BATCH   ],
+  ap_ush:       [ ...AP_US_HISTORY_BATCH ],
+  ap_eng_lang:  [ ...AP_ENGLISH_LANG_BATCH ],
+  ap_cs:        [ ...AP_CS_A_BATCH       ],
+  ap_econ:      [ ...AP_ECONOMICS_BATCH  ],
+}
 export const PSAT = { sat_math: [...SAT_MATH_BATCH], sat_rw: [...SAT_RW_BATCH] }
 
 // ── Helper: get questions for a subject ──────────────────────────────────────
