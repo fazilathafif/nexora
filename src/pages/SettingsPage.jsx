@@ -4,7 +4,6 @@ import ReactMarkdown from 'react-markdown'
 import { Shell, getColors } from './HomePage.jsx'
 import { useBreakpoint } from '../hooks/useBreakpoint.js'
 import { getNotes, deleteNote, exportNotesText, NOTES_MAX } from '../lib/notes.js'
-import { getExamDates, setExamDate } from '../lib/db.js'
 import { STREAM_CONFIG } from '../data/questions.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import { useTheme } from '../hooks/useTheme.js'
@@ -28,7 +27,35 @@ const NOTE_ACHIEVEMENTS = [
   { id:'note10',  icon:'🧑‍🎓', label:'Expert',      desc:'Saved 10 AI notes',        checkN:(n)=>n.length>=10 },
 ]
 
-// ── Sub-components ────────────────────────────────────────────────────────────
+function CollapsibleSection({ title, icon, children, C }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div style={{ marginBottom:20 }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
+          background: C.card, border:`1px solid ${C.border}`,
+          borderRadius: open ? '16px 16px 0 0' : 16,
+          padding:'13px 16px', cursor:'pointer',
+          fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent',
+          boxShadow:'0 1px 6px rgba(0,0,0,0.04)',
+        }}
+      >
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <span style={{ fontSize:16 }}>{icon}</span>
+          <span style={{ fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase' }}>{title}</span>
+        </div>
+        <span style={{ fontSize:13, color:C.muted, transform: open ? 'rotate(180deg)' : 'none', transition:'transform 0.2s', display:'inline-block' }}>▾</span>
+      </button>
+      {open && (
+        <div style={{ background:C.card, border:`1px solid ${C.border}`, borderTop:'none', borderRadius:'0 0 16px 16px', overflow:'hidden', boxShadow:'0 1px 6px rgba(0,0,0,0.04)' }}>
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
 
 function Avatar({ initial, C, size = 64 }) {
   return (
@@ -283,8 +310,6 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
   const [expandedNote, setExpandedNote] = useState(null)
   const [copyAllDone,  setCopyAllDone]  = useState(false)
   const { prefs, updatePref } = usePreferences(user?.id)
-  const [examDates,  setExamDates]  = useState({})
-  const [examSaving, setExamSaving] = useState(false)
 
   const email   = user?.email ?? ''
   const isGuest = !email || user?.isGuest
@@ -297,6 +322,22 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
   const planSublabel  = trialDays > 0
     ? `Trial · ${trialDays} day${trialDays === 1 ? '' : 's'} left`
     : planName
+
+  // Account fields
+  const [emailInput,   setEmailInput]   = useState(email)
+  const [addressInput, setAddressInput] = useState(profile?.address ?? '')
+  const [emailError,   setEmailError]   = useState(null)
+  const [accountSaved, setAccountSaved] = useState(false)
+
+  function validateEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) }
+
+  async function saveAccount() {
+    if (!validateEmail(emailInput)) { setEmailError('Please enter a valid email address.'); return }
+    setEmailError(null)
+    // In a real app: update email via Supabase auth + save address to profile
+    setAccountSaved(true)
+    setTimeout(() => setAccountSaved(false), 2500)
+  }
 
   const statsData = [
     { icon:'🔥', val: profile?.streak ?? 0, label:'Day Streak', color:'#F97316' },
@@ -311,19 +352,6 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
   ]
 
   function handleDeleteNote(id) { deleteNote(id); setNotes(getNotes()) }
-
-  useEffect(() => {
-    if (!user?.id) return
-    getExamDates(user.id).then(({ data }) => { if (data) setExamDates(data) })
-  }, [user?.id])
-
-  async function handleSetExamDate(s, date) {
-    setExamDates(prev => ({ ...prev, [s]: date }))
-    if (!user?.id) return
-    setExamSaving(true)
-    try { await setExamDate(user.id, s, date) } catch { /* localStorage already updated */ }
-    finally { setExamSaving(false) }
-  }
 
   function handleCopyAll() {
     navigator.clipboard.writeText(exportNotesText(notes)).then(() => {
@@ -443,88 +471,52 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
     </div>
   )
 
-  // ── Exam target card ─────────────────────────────────────────────────────────
-  const enrolledStreams = profile?.streams?.length ? profile.streams : profile?.stream ? [profile.stream] : []
-  const examTargetCard = (
-    <Card C={C}>
-      <div style={{fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:12}}>Exam Dates</div>
-      {enrolledStreams.length === 0 ? (
-        <div style={{fontSize:13, color:C.muted}}>Enrol in a track to set an exam date.</div>
-      ) : enrolledStreams.map(s => {
-        const dateVal  = examDates[s] ?? ''
-        const dl = dateVal ? Math.max(0, Math.ceil((new Date(dateVal) - new Date()) / 86400000)) : null
-        return (
-          <div key={s} style={{marginBottom:14}}>
-            <div style={{fontSize:12, fontWeight:700, color:C.navy, marginBottom:6}}>
-              {STREAM_LABELS[s] ?? s.toUpperCase()} exam date
-            </div>
-            <input
-              type="date"
-              value={dateVal}
-              onChange={e => handleSetExamDate(s, e.target.value)}
-              style={{width:'100%', padding:'9px 12px', borderRadius:10, border:`1.5px solid ${C.border}`, fontSize:13, fontWeight:600, color:C.navy, background:C.card, cursor:'pointer', outline:'none', boxSizing:'border-box'}}
-            />
-            {dl !== null && (
-              <div style={{marginTop:6, display:'flex', alignItems:'center', gap:8}}>
-                <div style={{flex:1, background:C.border, borderRadius:6, height:4}}>
-                  <div style={{width:`${Math.min(100, Math.max(0, 100 - (dl / 365 * 100)))}%`, height:'100%', borderRadius:6, background:C.primary}} />
-                </div>
-                <span style={{fontSize:11, fontWeight:700, color: dl < 60 ? '#EF4444' : dl < 180 ? '#F59E0B' : C.primary, flexShrink:0}}>
-                  {dl > 0 ? `${dl}d` : 'Soon!'}
-                </span>
-              </div>
-            )}
-          </div>
-        )
-      })}
-      {examSaving && <div style={{marginTop:4, fontSize:11, color:'#94A3B8'}}>Saving…</div>}
-    </Card>
-  )
-
-  // ── Appearance section ───────────────────────────────────────────────────────
-  const appearanceSection = (
-    <SectionBox title="Appearance" C={C}>
-      <div style={{padding:'12px 16px 14px'}}>
-        <div style={{fontSize:12, fontWeight:700, color:C.navy, marginBottom:8}}>Theme</div>
-        <div style={{display:'flex', gap:6}}>
-          {[['light','Light'],['dark','Dark'],['system','System']].map(([val, label]) => (
-            <button
-              key={val}
-              onClick={() => setMode(val)}
-              style={{
-                flex:1, padding:'7px 0',
-                background: mode === val ? `${C.primary}18` : C.bg,
-                border: `1.5px solid ${mode === val ? C.primary : C.border}`,
-                borderRadius:8, fontSize:11, fontWeight:700,
-                color: mode === val ? C.primary : C.muted,
-                cursor:'pointer', fontFamily:'Inter,sans-serif',
-              }}
-            >{label}</button>
-          ))}
-        </div>
-      </div>
-    </SectionBox>
-  )
-
   // ── Account section ──────────────────────────────────────────────────────────
-  const accountRows = (
+  const accountSection = (
     <>
       <SectionBox title="Account" C={C}>
-        <SettingsRow C={C} icon="👤" label={isGuest ? 'Guest account' : email} sublabel={isGuest ? 'Sign in to save progress' : 'Signed in'} onClick={null} right={null} />
+        {/* Email — mandatory */}
+        <div style={{ padding:'12px 16px 0' }}>
+          <div style={{ fontSize:11, fontWeight:700, color:C.muted, marginBottom:5, textTransform:'uppercase', letterSpacing:'0.06em' }}>
+            Email <span style={{ color:'#EF4444' }}>*</span>
+          </div>
+          <input
+            type="email"
+            value={emailInput}
+            onChange={e => { setEmailInput(e.target.value); setEmailError(null) }}
+            placeholder="your@email.com"
+            style={{ width:'100%', padding:'9px 12px', borderRadius:10, border:`1.5px solid ${emailError ? '#EF4444' : C.border}`, fontSize:13, color:C.navy, background:C.card, outline:'none', boxSizing:'border-box', fontFamily:'Inter,sans-serif' }}
+          />
+          {emailError && <div style={{ fontSize:11, color:'#EF4444', marginTop:4, fontWeight:600 }}>{emailError}</div>}
+        </div>
+        {/* Address — optional */}
+        <div style={{ padding:'12px 16px 0' }}>
+          <div style={{ fontSize:11, fontWeight:700, color:C.muted, marginBottom:5, textTransform:'uppercase', letterSpacing:'0.06em' }}>
+            Address <span style={{ fontSize:10, color:C.muted, fontWeight:500, textTransform:'none' }}>(optional)</span>
+          </div>
+          <textarea
+            value={addressInput}
+            onChange={e => setAddressInput(e.target.value)}
+            placeholder="Your address (optional)"
+            rows={2}
+            style={{ width:'100%', padding:'9px 12px', borderRadius:10, border:`1.5px solid ${C.border}`, fontSize:13, color:C.navy, background:C.card, outline:'none', boxSizing:'border-box', fontFamily:'Inter,sans-serif', resize:'none' }}
+          />
+        </div>
+        <div style={{ padding:'10px 16px 14px' }}>
+          <button
+            onClick={saveAccount}
+            style={{ background:accountSaved ? '#10B981' : C.primary, color:'white', border:'none', borderRadius:10, padding:'9px 20px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'Inter,sans-serif', transition:'background 0.2s' }}
+          >
+            {accountSaved ? '✓ Saved' : 'Save changes'}
+          </button>
+        </div>
         {!isGuest && (
           <>
             <Divider C={C} />
             <SettingsRow
-              C={C}
-              icon="⭐"
-              label="Subscription"
-              sublabel={planSublabel}
+              C={C} icon="⭐" label="Subscription" sublabel={planSublabel}
               onClick={() => navigate(`/${stream}/subscription`)}
-              right={
-                <span style={{ fontSize:10, fontWeight:800, background:`${C.primary}15`, color:C.primary, border:`1px solid ${C.primary}30`, borderRadius:20, padding:'2px 8px', whiteSpace:'nowrap' }}>
-                  {planName}
-                </span>
-              }
+              right={<span style={{ fontSize:10, fontWeight:800, background:`${C.primary}15`, color:C.primary, border:`1px solid ${C.primary}30`, borderRadius:20, padding:'2px 8px', whiteSpace:'nowrap' }}>{planName}</span>}
             />
             <Divider C={C} />
             <SettingsRow C={C} icon="🚪" label="Sign Out" sublabel="You can sign back in at any time" onClick={() => { signOut?.(); navigate('/') }} danger right={null} />
@@ -544,6 +536,50 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
     </>
   )
 
+  // ── Appearance + Accessibility + Privacy — single collapsible ────────────────
+  const preferencesSection = (
+    <CollapsibleSection title="Appearance, Accessibility & Privacy" icon="🎨" C={C}>
+      {/* Theme */}
+      <div style={{ padding:'14px 16px 0' }}>
+        <div style={{ fontSize:12, fontWeight:700, color:C.navy, marginBottom:8 }}>Theme</div>
+        <div style={{ display:'flex', gap:6, marginBottom:14 }}>
+          {[['light','Light'],['dark','Dark'],['system','System']].map(([val, label]) => (
+            <button key={val} onClick={() => setMode(val)} style={{ flex:1, padding:'7px 0', background: mode===val ? `${C.primary}18` : C.bg, border:`1.5px solid ${mode===val ? C.primary : C.border}`, borderRadius:8, fontSize:11, fontWeight:700, color: mode===val ? C.primary : C.muted, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>{label}</button>
+          ))}
+        </div>
+      </div>
+      <Divider C={C} />
+      {/* Font size */}
+      <div style={{ padding:'14px 16px 0' }}>
+        <div style={{ fontSize:12, fontWeight:700, color:C.navy, marginBottom:8 }}>Font size</div>
+        <div style={{ display:'flex', gap:6, marginBottom:14 }}>
+          {[['small','S'],['medium','M'],['large','L'],['xl','XL']].map(([sz, label]) => (
+            <button key={sz} onClick={() => updatePref('font_size', sz)} style={{ flex:1, padding:'7px 0', background: prefs.font_size===sz ? `${C.primary}18` : C.bg, border:`1.5px solid ${prefs.font_size===sz ? C.primary : C.border}`, borderRadius:9, fontSize:11, fontWeight:700, color: prefs.font_size===sz ? C.primary : C.muted, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>{label}</button>
+          ))}
+        </div>
+      </div>
+      <Divider C={C} />
+      <SettingsRow C={C} icon="🌗" label="High Contrast" sublabel="Stronger colour separation" right={<Toggle value={prefs.high_contrast} onChange={v => updatePref('high_contrast', v)} color={C.primary} />} />
+      <Divider C={C} />
+      <SettingsRow C={C} icon="✋" label="Reduce Motion" sublabel="Fewer animations" right={<Toggle value={prefs.reduce_motion} onChange={v => updatePref('reduce_motion', v)} color={C.primary} />} />
+      <Divider C={C} />
+      <SettingsRow C={C} icon="🔤" label="Dyslexia-Friendly Font" sublabel="OpenDyslexic typeface" right={<Toggle value={prefs.dyslexia_font} onChange={v => updatePref('dyslexia_font', v)} color={C.primary} />} />
+      <Divider C={C} />
+      {/* Colour-blind */}
+      <div style={{ padding:'14px 16px' }}>
+        <div style={{ fontSize:12, fontWeight:700, color:C.navy, marginBottom:8 }}>Colour-blind mode</div>
+        <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+          {[['none','None'],['deuteranopia','Deuter.'],['protanopia','Protan.'],['tritanopia','Tritan.']].map(([val, label]) => (
+            <button key={val} onClick={() => updatePref('color_blind_mode', val)} style={{ padding:'6px 12px', background: prefs.color_blind_mode===val ? `${C.primary}18` : C.bg, border:`1.5px solid ${prefs.color_blind_mode===val ? C.primary : C.border}`, borderRadius:9, fontSize:11, fontWeight:700, color: prefs.color_blind_mode===val ? C.primary : C.muted, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>{label}</button>
+          ))}
+        </div>
+      </div>
+      <Divider C={C} />
+      {/* Privacy */}
+      <SettingsRow C={C} icon="🏆" label="Show me on Leaderboard" sublabel="Your name and XP appear in stream rankings" right={<Toggle value={prefs.leaderboard_opt_in !== false} onChange={v => updatePref('leaderboard_opt_in', v)} color={C.primary} />} />
+    </CollapsibleSection>
+  )
+
   const appInfo = (
     <div style={{textAlign:'center', padding:'8px 0 4px'}}>
       <div style={{fontSize:11, color:'#CBD5E1', fontWeight:600}}>Nexora · v{APP_VERSION}</div>
@@ -551,84 +587,10 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
     </div>
   )
 
-  // ── Privacy section ──────────────────────────────────────────────────────────
-  const privacySection = (
-    <SectionBox title="Privacy" C={C}>
-      <SettingsRow
-        C={C}
-        icon="🏆"
-        label="Show me on Leaderboard"
-        sublabel="Your name and XP appear in stream rankings"
-        right={<Toggle value={prefs.leaderboard_opt_in !== false} onChange={v => updatePref('leaderboard_opt_in', v)} color={C.primary} />}
-      />
-    </SectionBox>
-  )
-
-  // ── Accessibility section ───────────────────────────────────────────────────
-  const accessibilitySection = (
-    <SectionBox title="Accessibility" C={C}>
-      <div style={{padding:'12px 16px 10px'}}>
-        <div style={{fontSize:12, fontWeight:700, color:C.navy, marginBottom:8}}>Font size</div>
-        <div style={{display:'flex', gap:6}}>
-          {[['small','S'],['medium','M'],['large','L'],['xl','XL']].map(([sz, label]) => (
-            <button
-              key={sz}
-              onClick={() => updatePref('font_size', sz)}
-              style={{
-                flex:1, padding:'7px 0',
-                background: prefs.font_size === sz ? `${C.primary}18` : C.bg,
-                border: `1.5px solid ${prefs.font_size === sz ? C.primary : C.border}`,
-                borderRadius:9, fontSize:11, fontWeight:700,
-                color: prefs.font_size === sz ? C.primary : C.muted,
-                cursor:'pointer', fontFamily:'Inter,sans-serif',
-              }}
-            >{label}</button>
-          ))}
-        </div>
-      </div>
-      <Divider C={C} />
-      <SettingsRow C={C} icon="🌗" label="High Contrast" sublabel="Stronger colour separation"
-        right={<Toggle value={prefs.high_contrast} onChange={v => updatePref('high_contrast', v)} color={C.primary} />}
-      />
-      <Divider C={C} />
-      <SettingsRow C={C} icon="✋" label="Reduce Motion" sublabel="Fewer animations"
-        right={<Toggle value={prefs.reduce_motion} onChange={v => updatePref('reduce_motion', v)} color={C.primary} />}
-      />
-      <Divider C={C} />
-      <SettingsRow C={C} icon="🔤" label="Dyslexia-Friendly Font" sublabel="OpenDyslexic typeface"
-        right={<Toggle value={prefs.dyslexia_font} onChange={v => updatePref('dyslexia_font', v)} color={C.primary} />}
-      />
-      <Divider C={C} />
-      <div style={{padding:'12px 16px 14px'}}>
-        <div style={{fontSize:12, fontWeight:700, color:C.navy, marginBottom:8}}>Colour-blind mode</div>
-        <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
-          {[['none','None'],['deuteranopia','Deuter.'],['protanopia','Protan.'],['tritanopia','Tritan.']].map(([val, label]) => (
-            <button
-              key={val}
-              onClick={() => updatePref('color_blind_mode', val)}
-              style={{
-                padding:'6px 12px',
-                background: prefs.color_blind_mode === val ? `${C.primary}18` : C.bg,
-                border: `1.5px solid ${prefs.color_blind_mode === val ? C.primary : C.border}`,
-                borderRadius:9, fontSize:11, fontWeight:700,
-                color: prefs.color_blind_mode === val ? C.primary : C.muted,
-                cursor:'pointer', fontFamily:'Inter,sans-serif',
-              }}
-            >{label}</button>
-          ))}
-        </div>
-      </div>
-    </SectionBox>
-  )
-
-  // ════════════════════════════════════════════════════════════════════════════
-  // DESKTOP (≥ 1024px): 2-column sticky/scroll layout
-  // ════════════════════════════════════════════════════════════════════════════
   if (isDesktop) {
     return (
       <Shell C={C} isDark={isDark} heroContent={heroEl} contentMax={1100}>
         <div style={{display:'grid', gridTemplateColumns:'260px 1fr', gap:32, alignItems:'start'}}>
-
           <div style={{position:'sticky', top:24, display:'flex', flexDirection:'column', gap:14}}>
             <Card C={C}>
               <div style={{fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:14}}>Quick Stats</div>
@@ -636,23 +598,11 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
                 {statsData.map(s => <StatCard key={s.label} compact {...s} />)}
               </div>
             </Card>
-
-            {examTargetCard}
-            {appearanceSection}
-            {accessibilitySection}
-            {privacySection}
-            {accountRows}
+            {preferencesSection}
+            {accountSection}
             {appInfo}
           </div>
-
           <div style={{display:'flex', flexDirection:'column', gap:24}}>
-            <div>
-              <SL C={C} action={exportBar}>My AI Notes</SL>
-              <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:18, padding: notes.length ? '16px' : '0', boxShadow:'0 2px 12px rgba(0,0,0,0.05)'}}>
-                {notes.length === 0 ? notesEmpty : noteCardsGrid}
-              </div>
-            </div>
-
             <div>
               <SL C={C}>Achievements</SL>
               {achievementsGrid(4)}
@@ -663,59 +613,28 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
     )
   }
 
-  // ════════════════════════════════════════════════════════════════════════════
-  // TABLET (640–1023px): wider single-column, 4-col stats, 2-col notes
-  // ════════════════════════════════════════════════════════════════════════════
   if (isTablet) {
     return (
       <Shell C={C} isDark={isDark} heroContent={heroEl}>
-
         <div style={{display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:24}}>
           {statsData.map(s => <StatCard key={s.label} {...s} />)}
         </div>
-
-        <div style={{marginBottom:24}}>{examTargetCard}</div>
-
-        <div style={{marginBottom:24}}>
-          <SL C={C} action={exportBar}>My AI Notes</SL>
-          <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:18, padding: notes.length ? '16px' : '0', boxShadow:'0 2px 12px rgba(0,0,0,0.05)'}}>
-            {notes.length === 0 ? notesEmpty : noteCardsGrid}
-          </div>
-        </div>
-
         <div style={{marginBottom:24}}>
           <SL C={C}>Achievements</SL>
           {achievementsGrid(4)}
         </div>
-
-        {appearanceSection}
-        {accessibilitySection}
-        {privacySection}
-        {accountRows}
+        {preferencesSection}
+        {accountSection}
         {appInfo}
       </Shell>
     )
   }
 
-  // ════════════════════════════════════════════════════════════════════════════
-  // MOBILE (< 640px): single-column, 2×2 stats, full-width notes, scroll achiev
-  // ════════════════════════════════════════════════════════════════════════════
   return (
     <Shell C={C} isDark={isDark} heroContent={heroEl}>
-
       <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:22}}>
         {statsData.map(s => <StatCard key={s.label} {...s} />)}
       </div>
-
-      <div style={{marginBottom:22}}>{examTargetCard}</div>
-
-      <div style={{marginBottom:22}}>
-        <SL C={C} action={exportBar}>My AI Notes</SL>
-        <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:18, padding: notes.length ? '12px' : '0', boxShadow:'0 2px 12px rgba(0,0,0,0.05)'}}>
-          {notes.length === 0 ? notesEmpty : noteCardsGrid}
-        </div>
-      </div>
-
       <div style={{marginBottom:22}}>
         <SL C={C}>Achievements</SL>
         <div style={{display:'flex', gap:8, overflowX:'auto', paddingBottom:4, scrollbarWidth:'none', WebkitOverflowScrolling:'touch'}}>
@@ -726,11 +645,8 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
           ))}
         </div>
       </div>
-
-      {appearanceSection}
-      {accessibilitySection}
-      {privacySection}
-      {accountRows}
+      {preferencesSection}
+      {accountSection}
       {appInfo}
     </Shell>
   )

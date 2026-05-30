@@ -1,0 +1,1219 @@
+/**
+ * LearnHubPage — merges Today + Progress + Study Plan into one hub
+ * Route: /:stream/learn-hub
+ *
+ * Mobile/Tablet : 3-tab bar — Today | Progress | Plan
+ * Desktop       : 3-column split — all panels visible simultaneously
+ */
+
+import { useState, useEffect, useMemo } from 'react'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { getTopicStats, getWeeklyActivity, addXp, updateProfile, getExamDates, setExamDate } from '../lib/db.js'
+import { STREAM_CONFIG, getQuestions } from '../data/questions.js'
+import { getDueCount } from '../lib/srs.js'
+import { getNotes, deleteNote, exportNotesText, NOTES_MAX } from '../lib/notes.js'
+import { getColors, Shell, SectionLabel } from './HomePage.jsx'
+import { useBreakpoint } from '../hooks/useBreakpoint.js'
+import { useMastery } from '../hooks/useMastery.js'
+import { TRACK_COLORS, COURSERA_BLUE } from '../styles/courseraTokens.js'
+
+// ── Shared helpers ────────────────────────────────────────────────────────────
+
+function daysUntil(dateStr) {
+  if (!dateStr) return null
+  const diff = new Date(dateStr).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)
+  return Math.ceil(diff / 86400000)
+}
+
+function dailyRec(days) {
+  if (!days || days <= 0) return { sessions:2, minutes:20 }
+  if (days > 60) return { sessions:1, minutes:20 }
+  if (days > 30) return { sessions:2, minutes:25 }
+  if (days > 14) return { sessions:2, minutes:30 }
+  if (days > 7)  return { sessions:3, minutes:30 }
+  return { sessions:4, minutes:20 }
+}
+
+function getTodayStr() { return new Date().toISOString().split('T')[0] }
+
+function readDailyChallenge(stream) {
+  try {
+    const raw = localStorage.getItem(`nx_daily_${stream}`)
+    if (!raw) return null
+    const d = JSON.parse(raw)
+    return d.date === getTodayStr() ? d : null
+  } catch { return null }
+}
+
+function getDailySubject(subjects) {
+  const start = new Date(new Date().getFullYear(), 0, 0).getTime()
+  const day   = Math.floor((Date.now() - start) / 86400000)
+  return subjects[day % subjects.length]
+}
+
+function guessSubjectForTopic(topic, cfg) {
+  const t = topic.toLowerCase()
+  for (const s of cfg.subjects) {
+    if (t.includes(s.label.toLowerCase()) || t.includes(s.id)) return s.id
+  }
+  return cfg.subjects[0]?.id
+}
+
+// ── Shared card shell ─────────────────────────────────────────────────────────
+
+function Card({ children, accent, C, style }) {
+  return (
+    <div style={{
+      background:'white',
+      border:`1.5px solid ${accent ? accent+'28' : C.border}`,
+      borderRadius:18,
+      padding:'16px 18px',
+      boxShadow:'0 2px 12px rgba(0,0,0,0.05)',
+      ...style,
+    }}>
+      {children}
+    </div>
+  )
+}
+
+function SH({ label, C }) {
+  return (
+    <div style={{
+      fontSize:11, fontWeight:800, color:C.muted,
+      letterSpacing:'0.08em', textTransform:'uppercase',
+      marginBottom:10, marginTop:4,
+    }}>
+      {label}
+    </div>
+  )
+}
+
+function Skeleton({ C, height=60 }) {
+  return <div style={{ background:C.border, borderRadius:8, height, animation:'pulse 1.5s ease infinite' }} />
+}
+
+// ── TODAY sub-components ──────────────────────────────────────────────────────
+
+function DailyChallengeCard({ stream, subjects, C, navigate }) {
+  const data      = readDailyChallenge(stream)
+  const completed = !!data
+  const subject   = getDailySubject(subjects)
+  return (
+    <div style={{
+      marginBottom:12,
+      background: completed
+        ? 'linear-gradient(135deg,#DCFCE7,#F0FDF4)'
+        : `linear-gradient(135deg,${C.primary}15,${C.primary}08)`,
+      border:`1.5px solid ${completed ? '#10B98140' : C.primary+'40'}`,
+      borderRadius:18, padding:'16px 18px',
+      display:'flex', alignItems:'center', gap:14,
+    }}>
+      <div style={{
+        width:48, height:48, borderRadius:13, flexShrink:0,
+        background: completed ? '#10B98120' : `${C.primary}20`,
+        display:'flex', alignItems:'center', justifyContent:'center', fontSize:24,
+      }}>
+        {completed ? '✅' : '🎯'}
+      </div>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ fontSize:14, fontWeight:900, color: completed ? '#065F46' : C.navy, letterSpacing:'-0.2px' }}>
+          Daily Challenge
+        </div>
+        <div style={{ fontSize:12, color: completed ? '#059669' : C.muted, marginTop:2 }}>
+          {completed
+            ? `Completed · ${data.score}/${data.total} correct — come back tomorrow!`
+            : `Today: ${subject.emoji} ${subject.label} · 10 questions`}
+        </div>
+      </div>
+      {!completed && (
+        <button
+          onClick={() => navigate(`/${stream}/quiz/${subject.id}?daily=1`)}
+          style={{
+            background:`linear-gradient(135deg,${C.primary},${C.secondary ?? C.primary})`,
+            color:'white', border:'none', borderRadius:11,
+            padding:'9px 16px', fontSize:13, fontWeight:800,
+            cursor:'pointer', fontFamily:'Inter,sans-serif', flexShrink:0,
+          }}
+        >Start →</button>
+      )}
+    </div>
+  )
+}
+
+function GoalCard({ rec, days, studiedToday, C }) {
+  const urgency = days !== null && days <= 7 ? '#EF4444' : days !== null && days <= 30 ? '#F59E0B' : C.primary
+  return (
+    <Card C={C} accent={urgency} style={{ marginBottom:12 }}>
+      <div style={{ display:'flex', alignItems:'stretch', gap:0 }}>
+        <div style={{ textAlign:'center', flex:1 }}>
+          <div style={{ fontSize:40, fontWeight:900, lineHeight:1, color:urgency }}>{rec.sessions}</div>
+          <div style={{ fontSize:10, color:C.muted, fontWeight:600, marginTop:3 }}>session{rec.sessions>1?'s':''}</div>
+        </div>
+        <div style={{ width:1, background:C.border, margin:'4px 14px', flexShrink:0 }} />
+        <div style={{ textAlign:'center', flex:1 }}>
+          <div style={{ fontSize:40, fontWeight:900, lineHeight:1, color:urgency }}>{rec.minutes}</div>
+          <div style={{ fontSize:10, color:C.muted, fontWeight:600, marginTop:3 }}>mins each</div>
+        </div>
+        <div style={{ width:1, background:C.border, margin:'4px 14px', flexShrink:0 }} />
+        <div style={{ flex:2, display:'flex', flexDirection:'column', justifyContent:'center', gap:3 }}>
+          <div style={{ fontSize:13, fontWeight:800, color:urgency }}>
+            {days !== null && days > 0 ? `${days} day${days===1?'':'s'} to go` : days===0 ? 'Exam day! 🎯' : 'Keep going'}
+          </div>
+          <div style={{ fontSize:11, color:C.muted, lineHeight:1.4 }}>
+            {days !== null && days > 0 ? 'Based on your exam date' : 'Set exam date in Settings'}
+          </div>
+        </div>
+      </div>
+      {!studiedToday && (
+        <div style={{
+          marginTop:12, padding:'9px 12px',
+          background:'linear-gradient(135deg,#FEF3C7,#FFFBEB)',
+          border:'1px solid #F59E0B40', borderRadius:11,
+          fontSize:12, color:'#92400E', fontWeight:600,
+          display:'flex', alignItems:'center', gap:8,
+        }}>
+          <span>🔥</span><span>Start a session today to keep your streak alive!</span>
+        </div>
+      )}
+    </Card>
+  )
+}
+
+function PriorityDrillCard({ topics, stream, C, navigate }) {
+  if (!topics.length) return null
+  return (
+    <div style={{ marginBottom:12 }}>
+      <SH label="Priority Drill" C={C} />
+      <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+        {topics.map(t => (
+          <div key={t.topic} style={{
+            display:'flex', alignItems:'center', gap:12,
+            background:'white', border:`1px solid ${C.border}`,
+            borderRadius:14, padding:'12px 14px',
+            boxShadow:'0 1px 6px rgba(0,0,0,0.05)',
+          }}>
+            <div style={{
+              width:36, height:36, borderRadius:10, flexShrink:0,
+              background: t.pct < 40 ? '#EF444415' : '#F59E0B15',
+              display:'flex', alignItems:'center', justifyContent:'center', fontSize:18,
+            }}>{t.emoji}</div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize:13, fontWeight:700, color:'#1E293B', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                {t.topic}
+              </div>
+              <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:4 }}>
+                <div style={{ width:72, height:4, background:'#F1F5F9', borderRadius:2, overflow:'hidden' }}>
+                  <div style={{ width:`${t.pct}%`, height:'100%', borderRadius:2, background: t.pct<40?'#EF4444':'#F59E0B' }} />
+                </div>
+                <span style={{ fontSize:11, fontWeight:700, color: t.pct<40?'#EF4444':'#F59E0B' }}>{t.pct}%</span>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate(`/${stream}/quiz/${t.subjectId}`)}
+              style={{
+                background:C.primary, color:'white', border:'none',
+                borderRadius:10, padding:'7px 14px',
+                fontSize:12, fontWeight:800, cursor:'pointer',
+                fontFamily:'Inter,sans-serif', flexShrink:0,
+              }}
+            >Drill →</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function SrsDueCard({ srsData, totalDue, stream, C, navigate }) {
+  if (!totalDue) return null
+  return (
+    <div style={{ marginBottom:12 }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+        <SH label="Review Due" C={C} />
+        <span style={{ fontSize:12, fontWeight:800, color:C.primary, background:`${C.primary}15`, borderRadius:20, padding:'2px 10px', marginBottom:10 }}>
+          {totalDue} due
+        </span>
+      </div>
+      <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+        {srsData.map(s => (
+          <div key={s.id} style={{
+            display:'flex', alignItems:'center', gap:10,
+            background:'white', border:`1px solid ${C.border}`,
+            borderRadius:12, padding:'10px 14px',
+            boxShadow:'0 1px 4px rgba(0,0,0,0.04)',
+          }}>
+            <span style={{ fontSize:18 }}>{s.emoji}</span>
+            <div style={{ flex:1, fontSize:13, fontWeight:700, color:'#1E293B' }}>{s.label}</div>
+            <span style={{ fontSize:11, fontWeight:700, color:C.primary, background:`${C.primary}12`, borderRadius:20, padding:'2px 8px', marginRight:6 }}>
+              {s.dueCount}
+            </span>
+            <button
+              onClick={() => navigate(`/${stream}/flashcards/${s.id}?review=1`)}
+              style={{
+                background:'none', border:`1.5px solid ${C.primary}40`,
+                color:C.primary, borderRadius:8, padding:'5px 11px',
+                fontSize:11, fontWeight:800, cursor:'pointer', fontFamily:'Inter,sans-serif',
+              }}
+            >Review →</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function QuickStartGrid({ subjects, stream, C, cols }) {
+  const navigate = useNavigate()
+  return (
+    <div style={{ marginBottom:12 }}>
+      <SH label="Quick Start" C={C} />
+      <div style={{ display:'grid', gridTemplateColumns:`repeat(${cols}, 1fr)`, gap:8 }}>
+        {subjects.map(s => (
+          <div key={s.id} style={{
+            background:'white', border:`1px solid ${C.border}`,
+            borderRadius:16, padding:'12px 10px',
+            boxShadow:'0 1px 6px rgba(0,0,0,0.05)',
+          }}>
+            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:9 }}>
+              <div style={{
+                width:30, height:30, borderRadius:9, flexShrink:0,
+                background:`${C.primary}18`,
+                display:'flex', alignItems:'center', justifyContent:'center', fontSize:15,
+              }}>{s.emoji}</div>
+              <div style={{ fontSize:11, fontWeight:800, color:'#1E293B', lineHeight:1.2 }}>{s.label}</div>
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:4 }}>
+              {[
+                { label:'Quiz',  path:`/${stream}/quiz/${s.id}` },
+                { label:'Cards', path:`/${stream}/flashcards/${s.id}` },
+                { label:'Mock',  path:`/${stream}/mock/${s.id}` },
+                { label:'Learn', path:`/${stream}/learn/${s.id}` },
+              ].map(m => (
+                <button
+                  key={m.label}
+                  onClick={() => navigate(m.path)}
+                  style={{
+                    background:`${C.primary}10`, border:`1px solid ${C.primary}25`,
+                    borderRadius:7, padding:'5px 2px',
+                    fontSize:10, fontWeight:700, color:C.primary,
+                    cursor:'pointer', fontFamily:'Inter,sans-serif',
+                  }}
+                >{m.label}</button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function BrainBreakRow({ stream, C, navigate }) {
+  return (
+    <button
+      onClick={() => navigate(`/${stream}/wellbeing`)}
+      style={{
+        width:'100%', display:'flex', alignItems:'center', gap:12,
+        background:'white', border:`1.5px solid ${C.border}`,
+        borderRadius:14, padding:'12px 16px', marginBottom:12,
+        cursor:'pointer', fontFamily:'Inter,sans-serif', textAlign:'left',
+        boxShadow:'0 1px 6px rgba(0,0,0,0.05)',
+        WebkitTapHighlightColor:'transparent',
+      }}
+    >
+      <div style={{
+        width:36, height:36, borderRadius:10, flexShrink:0,
+        background:'#A7F3D015', border:'1px solid #10B98130',
+        display:'flex', alignItems:'center', justifyContent:'center', fontSize:19,
+      }}>🧘</div>
+      <div style={{ flex:1 }}>
+        <div style={{ fontSize:13, fontWeight:700, color:C.navy }}>Brain Break</div>
+        <div style={{ fontSize:11, color:C.muted, marginTop:1 }}>Box breathing · music · wellbeing tips</div>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <path d="M9 18l6-6-6-6" stroke={C.muted} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </button>
+  )
+}
+
+// ── PROGRESS sub-components ───────────────────────────────────────────────────
+
+function StatStrip({ streak, xp, level, C }) {
+  const stats = [
+    { icon:'🔥', val:streak, label:'Streak'  },
+    { icon:'⚡', val:xp,     label:'XP'      },
+    { icon:'🎓', val:level,  label:'Level'   },
+  ]
+  return (
+    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:12 }}>
+      {stats.map(s => (
+        <div key={s.label} style={{
+          background:'white', border:`1.5px solid ${C.border}`,
+          borderRadius:14, padding:'12px 8px', textAlign:'center',
+          boxShadow:'0 2px 8px rgba(0,0,0,0.04)',
+        }}>
+          <div style={{ fontSize:18, marginBottom:3 }}>{s.icon}</div>
+          <div style={{ fontSize:26, fontWeight:900, color:C.primary, lineHeight:1 }}>{s.val}</div>
+          <div style={{ fontSize:10, color:C.muted, marginTop:3 }}>{s.label}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function WeeklyHeatmap({ heatmap, maxSessions, loading, C }) {
+  return (
+    <Card C={C} style={{ marginBottom:12 }}>
+      <SH label="This Week" C={C} />
+      {loading ? <Skeleton C={C} height={80} /> : (
+        <div style={{ display:'flex', gap:6, alignItems:'flex-end', height:80 }}>
+          {heatmap.map((d,i) => (
+            <div key={i} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+              <div style={{
+                width:'100%',
+                height: d.sessions > 0 ? Math.max(10, (d.sessions/maxSessions)*64) : 8,
+                borderRadius:4,
+                background: d.sessions > 0 ? C.primary : C.border,
+                transition:'height 0.5s ease',
+              }} />
+              <div style={{ fontSize:10, color:C.muted }}>{d.label.slice(0,1)}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  )
+}
+
+const UK_STREAMS = ['gcse','alevel']
+const US_STREAMS = ['sat','act','ap','psat']
+
+function SubjectMasteryStrip({ streams, C }) {
+  const [collapsed, setCollapsed] = useState({})
+  const norm = Array.isArray(streams) ? streams : [streams]
+  const uk   = norm.filter(s => UK_STREAMS.includes(s))
+  const us   = norm.filter(s => US_STREAMS.includes(s))
+  const total = norm.length
+
+  function renderGroup(regionLabel, regionStreams) {
+    if (!regionStreams.length) return null
+    return (
+      <div key={regionLabel} style={{ marginBottom:8 }}>
+        {total > 1 && (
+          <div style={{ fontSize:10, fontWeight:800, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:8 }}>
+            {regionLabel}
+          </div>
+        )}
+        {regionStreams.map(s => {
+          const cfg    = STREAM_CONFIG[s]
+          if (!cfg) return null
+          const accent = TRACK_COLORS[s] ?? C.primary
+          const isCollapsed = collapsed[s]
+          return (
+            <div key={s} style={{ marginBottom:10 }}>
+              {total > 1 && (
+                <button
+                  onClick={() => setCollapsed(p => ({ ...p, [s]:!p[s] }))}
+                  style={{
+                    display:'flex', alignItems:'center', gap:8, width:'100%',
+                    background:'none', border:'none', cursor:'pointer', padding:'4px 0 6px',
+                    textAlign:'left', fontFamily:'Inter,sans-serif',
+                  }}
+                >
+                  <div style={{ width:10, height:10, borderRadius:5, background:accent, flexShrink:0 }} />
+                  <span style={{ fontSize:12, fontWeight:700, color:C.navy, flex:1 }}>
+                    {cfg.label?.replace(' Track','').replace(' Prep','') ?? s.toUpperCase()}
+                  </span>
+                  <span style={{ fontSize:11, color:C.muted }}>{isCollapsed ? '▸' : '▾'}</span>
+                </button>
+              )}
+              {!isCollapsed && (
+                <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                  {cfg.subjects.filter(sub => !sub.deprecated).map(sub => (
+                    <MasteryDot key={sub.id} stream={s} subject={sub} C={C} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  return (
+    <Card C={C} style={{ marginBottom:12 }}>
+      <SH label="Subject Mastery" C={C} />
+      {renderGroup('🇬🇧 United Kingdom', uk)}
+      {renderGroup('🇺🇸 United States', us)}
+    </Card>
+  )
+}
+
+function MasteryDot({ stream, subject, C }) {
+  const questions = getQuestions(stream, subject.id)
+  const { pct, badge } = useMastery(questions)
+  const badgeLabel = badge==='gold'?'🥇':badge==='silver'?'🥈':badge==='bronze'?'🥉':null
+  const barColor   = badge==='gold'?'#FBBF24':badge==='silver'?'#9CA3AF':badge==='bronze'?'#CD7F32':C.primary
+  return (
+    <div style={{ textAlign:'center', minWidth:52 }}>
+      <div style={{
+        width:42, height:42, borderRadius:21, margin:'0 auto 4px',
+        background:`${barColor}18`, border:`2px solid ${barColor}40`,
+        display:'flex', alignItems:'center', justifyContent:'center',
+        fontSize:19, position:'relative',
+      }}>
+        {subject.emoji}
+        {badgeLabel && <div style={{ position:'absolute', top:-4, right:-4, fontSize:13 }}>{badgeLabel}</div>}
+      </div>
+      <div style={{ fontSize:9, fontWeight:700, color:C.navy, lineHeight:1.2 }}>{subject.label.replace(' & ','\n& ')}</div>
+      <div style={{ fontSize:10, fontWeight:800, color:barColor, marginTop:2 }}>{pct}%</div>
+    </div>
+  )
+}
+
+function TopicBar({ topic, pct, C, onDrill }) {
+  return (
+    <div style={{ marginBottom:12 }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:12, fontWeight:700, color:C.navy, marginBottom:5 }}>
+        <span style={{ flex:1, marginRight:8 }}>{topic}</span>
+        {pct < 70 && onDrill && (
+          <button
+            onClick={onDrill}
+            style={{ background:'#EF444418', border:'1px solid #EF444440', borderRadius:6, padding:'2px 8px', fontSize:10, fontWeight:700, color:'#EF4444', cursor:'pointer', marginRight:8, fontFamily:'Inter,sans-serif' }}
+          >Drill</button>
+        )}
+        <span style={{ color: pct>=75?C.success:pct>=50?C.primary:'#EF4444' }}>{pct}%</span>
+      </div>
+      <div style={{ background:C.border, borderRadius:4, height:6 }}>
+        <div style={{ width:`${pct}%`, background:C.primary, height:'100%', borderRadius:4, transition:'width 0.6s ease' }} />
+      </div>
+    </div>
+  )
+}
+
+// ── Plan helpers ──────────────────────────────────────────────────────────────
+
+function formatDate(dateStr) {
+  if (!dateStr) return ''
+  return new Date(dateStr).toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' })
+}
+
+function buildSchedule(days, weakTopics, subjects) {
+  if (!days || days <= 0) return []
+  const phases = []
+  if (days >= 21) {
+    const drilling = Math.round(days * 0.6)
+    const mixed    = Math.round(days * 0.3)
+    const mock     = days - drilling - mixed
+    phases.push({ phase:'Phase 1 — Targeted Drilling', duration:`${drilling} days`, icon:'🎯', color:'#EF4444', goal:'Eliminate weak spots', description:'Focus exclusively on your lowest-scoring topics. Short, intensive sessions of 15–20 questions.', subjects:weakTopics.slice(0,3).map(t => t.topic) })
+    phases.push({ phase:'Phase 2 — Mixed Practice',    duration:`${mixed} days`,    icon:'🔄', color:'#F59E0B', goal:'Build fluency',       description:'Rotate through all subjects. Aim for at least one session per subject per week.',          subjects:subjects.map(s => s.label) })
+    phases.push({ phase:'Phase 3 — Mock Exams',        duration:`${mock} day${mock===1?'':'s'}`, icon:'📋', color:'#10B981', goal:'Simulate exam conditions', description:'Take full timed mock papers. Review every wrong answer immediately after.',   subjects:['Full timed mock papers'] })
+  } else if (days >= 7) {
+    const drilling = Math.round(days * 0.5)
+    const mock     = days - drilling
+    phases.push({ phase:'Intensive Revision', duration:`${drilling} days`,            icon:'🎯', color:'#EF4444', goal:'Drill weak areas', description:'You have limited time — hit your weakest topics every day.', subjects:weakTopics.slice(0,3).map(t => t.topic) })
+    phases.push({ phase:'Mock & Review',      duration:`${mock} day${mock===1?'':'s'}`, icon:'📋', color:'#10B981', goal:'Exam simulation',  description:'One full mock per day. Review wrong answers immediately.',   subjects:['Full timed mock papers'] })
+  } else {
+    phases.push({ phase:'Final Sprint', duration:`${days} day${days===1?'':'s'}`, icon:'🚀', color:'#F59E0B', goal:'Consolidate', description:"Light review of your best topics — don't cram new material. Stay calm.", subjects:weakTopics.slice(0,2).map(t => t.topic) })
+  }
+  return phases
+}
+
+// ── Tab bar ───────────────────────────────────────────────────────────────────
+
+function TabBar({ active, onChange, C }) {
+  return (
+    <div style={{
+      display:'flex', gap:4,
+      background:'#F1F5F9', borderRadius:14,
+      padding:4, marginBottom:20,
+    }}>
+      {[
+        { id:'today',    label:'Today',    icon:'🎯' },
+        { id:'progress', label:'Progress', icon:'📈' },
+        { id:'plan',     label:'Study Plan', icon:'📅' },
+      ].map(t => (
+        <button
+          key={t.id}
+          onClick={() => onChange(t.id)}
+          style={{
+            flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:5,
+            padding:'9px 0',
+            background: active===t.id ? 'white' : 'transparent',
+            border:'none',
+            borderRadius:10,
+            fontSize:12, fontWeight: active===t.id ? 800 : 600,
+            color: active===t.id ? C.primary : '#94A3B8',
+            cursor:'pointer',
+            fontFamily:'Inter,sans-serif',
+            boxShadow: active===t.id ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+            transition:'all 0.18s ease',
+            WebkitTapHighlightColor:'transparent',
+          }}
+        >
+          <span style={{ fontSize:14 }}>{t.icon}</span>
+          {t.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+
+export default function LearnHubPage({ user, profile, isDark }) {
+  const { stream }             = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const navigate               = useNavigate()
+  const { isDesktop, isTablet } = useBreakpoint()
+
+  const enrolledStreams = profile?.streams?.length ? profile.streams : profile?.stream ? [profile.stream] : [stream]
+
+  // Active track — can be switched independently of URL
+  const [activeTrack, setActiveTrack] = useState(() =>
+    enrolledStreams.includes(stream) ? stream : (enrolledStreams[0] ?? stream)
+  )
+
+  const C   = getColors(activeTrack, null, isDark)
+  const cfg = STREAM_CONFIG[activeTrack]
+
+  const validTabs = ['today','progress','plan']
+  const initialTab = validTabs.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'today'
+  const [tab,      setTab]      = useState(initialTab)
+  const [topics,   setTopics]   = useState([])
+  const [weekly,   setWeekly]   = useState([])
+  const [loading,  setLoading]  = useState(true)
+
+  // Notes — all notes, filtered by active track for display
+  const [allNotes,      setAllNotes]      = useState(() => getNotes())
+  const [expandedNote,  setExpandedNote]  = useState(null)
+  const [notesCopyDone, setNotesCopyDone] = useState(false)
+  const trackNotes = allNotes.filter(n => n.stream === activeTrack)
+
+  // Plan state
+  const [examDates,   setExamDates]   = useState({})
+  const [editingDate, setEditingDate] = useState(false)
+  const [dateInput,   setDateInput]   = useState('')
+  const [dateError,   setDateError]   = useState(null)
+  const [dateSaving,  setDateSaving]  = useState(false)
+
+  const examDate = examDates[activeTrack] ?? profile?.exam_date ?? null
+  const days  = daysUntil(examDate)
+  const rec   = dailyRec(days)
+  const xp    = profile?.xp    ?? 0
+  const streak = profile?.streak ?? 0
+  const level  = Math.floor(xp / 150) + 1
+
+  // Reset data when active track changes
+  useEffect(() => {
+    setTopics([]); setWeekly([]); setLoading(true)
+    setEditingDate(false); setDateError(null)
+  }, [activeTrack])
+
+  const srsData = useMemo(() => {
+    if (!cfg) return []
+    return cfg.subjects
+      .map(s => ({ ...s, dueCount: getDueCount(getQuestions(activeTrack, s.id)) }))
+      .filter(s => s.dueCount > 0)
+  }, [activeTrack, cfg])
+  const totalDue = srsData.reduce((n,s) => n + s.dueCount, 0)
+
+  useEffect(() => {
+    if (!user?.id) { setLoading(false); return }
+    setLoading(true)
+    const timeout = new Promise(resolve => setTimeout(() => resolve([{data:[]},{data:[]}]), 8000))
+    Promise.race([
+      Promise.all([getTopicStats(user.id, activeTrack), getWeeklyActivity(user.id)]),
+      timeout,
+    ]).then(([tRes, aRes]) => {
+      const map = {}
+      ;(tRes.data ?? []).forEach(a => {
+        if (!map[a.topic]) map[a.topic] = { correct:0, total:0 }
+        map[a.topic].total++
+        if (a.is_correct) map[a.topic].correct++
+      })
+      const list = Object.entries(map).map(([topic, v]) => {
+        let subjectId = cfg.subjects[0].id
+        let emoji     = cfg.subjects[0].emoji
+        for (const s of cfg.subjects) {
+          if (getQuestions(activeTrack, s.id).some(q => q.topic === topic)) {
+            subjectId = s.id; emoji = s.emoji; break
+          }
+        }
+        return { topic, pct: Math.round((v.correct/v.total)*100), total:v.total, subjectId, emoji }
+      }).sort((a,b) => a.pct - b.pct)
+      setTopics(list)
+      setWeekly(aRes.data ?? [])
+    }).catch(() => {}).finally(() => setLoading(false))
+  }, [user?.id, activeTrack])
+
+  // Load per-track exam dates
+  useEffect(() => {
+    if (!user?.id) return
+    getExamDates(user.id).then(({ data }) => { if (data) setExamDates(data) })
+  }, [user?.id])
+
+  // Keep dateInput in sync with selected track's exam date
+  useEffect(() => {
+    setDateInput(examDates[activeTrack] ?? profile?.exam_date ?? '')
+    setEditingDate(false); setDateError(null)
+  }, [activeTrack, examDates])
+
+  if (!cfg) { navigate('/'); return null }
+
+  async function savePlanDate(date) {
+    if (!date) { setDateError('Please select a date.'); return }
+    setDateError(null); setDateSaving(true)
+    try {
+      const { error } = await setExamDate(user.id, activeTrack, date)
+      if (error) throw error
+      setExamDates(prev => ({ ...prev, [activeTrack]: date }))
+      setEditingDate(false)
+    } catch (e) {
+      setDateError(`Could not save — ${e?.message ?? 'please try again.'}`)
+    } finally { setDateSaving(false) }
+  }
+
+  function subjectForTopic(topic) {
+    for (const s of cfg.subjects) {
+      if (getQuestions(activeTrack, s.id).some(q => q.topic === topic)) return s
+    }
+    return cfg.subjects[0]
+  }
+
+  // Heatmap
+  const dayLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+  const heatmap = dayLabels.map((label, i) => {
+    const date  = new Date(Date.now() - (6-i)*86400000).toISOString().split('T')[0]
+    const found = weekly.find(w => w.date === date)
+    return { label, sessions: found?.sessions ?? 0 }
+  })
+  const maxSessions = Math.max(...heatmap.map(h => h.sessions), 1)
+
+  const today             = new Date().toISOString().split('T')[0]
+  const yesterday         = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+  const studiedToday      = weekly.some(a => a.date === today)
+  const weakTopics        = topics.filter(t => t.pct < 70).slice(0, 3)
+
+  const hour     = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  const firstName = profile?.display_name?.split(' ')[0] ?? 'Scholar'
+
+  // ── Hero ────────────────────────────────────────────────────────────────────
+  const heroEl = (
+    <div style={{ padding:'max(18px, env(safe-area-inset-top, 18px)) 16px 4px' }}>
+      {!isDesktop && (
+        <div style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.5)', letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:2 }}>
+          Learn · {cfg?.label?.replace(' Track','').replace(' Prep','') ?? activeTrack.toUpperCase()}
+        </div>
+      )}
+      <div style={{ fontSize: isDesktop ? 22 : 24, fontWeight:900, color:'white', letterSpacing:'-0.5px', fontFamily:"'Playfair Display', Georgia, serif" }}>
+        {greeting}, {firstName}
+      </div>
+      <div style={{ fontSize:13, color:'rgba(255,255,255,0.65)', marginTop:4, fontWeight:500 }}>
+        {days !== null && days > 0
+          ? `${days} day${days===1?'':'s'} until your exam · ${rec.sessions} session${rec.sessions>1?'s':''} today`
+          : "Let's make today count"}
+      </div>
+      {/* Stat pills in hero */}
+      <div style={{ display:'flex', gap:8, marginTop:12, flexWrap:'wrap' }}>
+        {[
+          { icon:'🔥', val:streak, label:'streak' },
+          { icon:'⚡', val:xp,     label:'XP'     },
+          { icon:'🎓', val:level,  label:'level'  },
+        ].map(s => (
+          <div key={s.label} style={{
+            display:'flex', alignItems:'center', gap:5,
+            background:'rgba(255,255,255,0.18)', backdropFilter:'blur(6px)',
+            border:'1px solid rgba(255,255,255,0.25)',
+            borderRadius:20, padding:'4px 10px',
+          }}>
+            <span style={{ fontSize:13 }}>{s.icon}</span>
+            <span style={{ fontSize:12, fontWeight:800, color:'white' }}>{s.val}</span>
+            <span style={{ fontSize:10, color:'rgba(255,255,255,0.7)' }}>{s.label}</span>
+          </div>
+        ))}
+      </div>
+      {/* Track switcher pills — only when enrolled in 2+ tracks */}
+      {enrolledStreams.length > 1 && (
+        <div style={{ display:'flex', gap:6, marginTop:12, flexWrap:'wrap' }}>
+          {enrolledStreams.map(s => {
+            const sc     = STREAM_CONFIG[s]
+            const accent = TRACK_COLORS[s] ?? COURSERA_BLUE
+            const active = s === activeTrack
+            return (
+              <button
+                key={s}
+                onClick={() => setActiveTrack(s)}
+                style={{
+                  display:'flex', alignItems:'center', gap:5,
+                  background: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.18)',
+                  border: `1px solid ${active ? 'transparent' : 'rgba(255,255,255,0.3)'}`,
+                  borderRadius:20, padding:'5px 12px',
+                  fontSize:11, fontWeight:800,
+                  color: active ? accent : 'white',
+                  cursor:'pointer', fontFamily:'Inter,sans-serif',
+                  WebkitTapHighlightColor:'transparent',
+                  transition:'all 0.15s',
+                }}
+              >
+                {sc?.label?.replace(' Track','').replace(' Prep','') ?? s.toUpperCase()}
+                {active && <span style={{ fontSize:8, marginLeft:2 }}>●</span>}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+
+  // ── Content panels ──────────────────────────────────────────────────────────
+
+  const todayPanel = (
+    <div>
+      <DailyChallengeCard stream={activeTrack} subjects={cfg.subjects} C={C} navigate={navigate} />
+      <GoalCard rec={rec} days={days} studiedToday={studiedToday} C={C} />
+      <PriorityDrillCard topics={weakTopics} stream={activeTrack} C={C} navigate={navigate} />
+      {!loading && !weakTopics.length && (
+        <div style={{ marginBottom:12, background:'#F0FDF4', border:'1px solid #10B98130', borderRadius:16, padding:'14px 18px' }}>
+          <div style={{ fontSize:14, fontWeight:800, color:'#065F46' }}>Strong across the board! 🎉</div>
+          <div style={{ fontSize:12, color:'#64748B', marginTop:4 }}>No weak spots — keep drilling to maintain your scores.</div>
+        </div>
+      )}
+      <SrsDueCard srsData={srsData} totalDue={totalDue} stream={activeTrack} C={C} navigate={navigate} />
+      <BrainBreakRow stream={activeTrack} C={C} navigate={navigate} />
+      <QuickStartGrid
+        subjects={cfg.subjects} stream={activeTrack} C={C}
+        cols={isDesktop ? 3 : isTablet ? 3 : 2}
+      />
+    </div>
+  )
+
+  const progressPanel = (
+    <div>
+      <StatStrip streak={streak} xp={xp} level={level} C={C} />
+      <WeeklyHeatmap heatmap={heatmap} maxSessions={maxSessions} loading={loading} C={C} />
+      <SubjectMasteryStrip streams={enrolledStreams} C={C} />
+      <Card C={C} style={{ marginBottom:12 }}>
+        <SH label={['sat','act','ap','psat'].includes(stream) ? 'Topic Performance' : 'Subject Strength'} C={C} />
+        {loading ? <Skeleton C={C} height={120} /> : topics.length === 0
+          ? cfg.subjects.slice(0,4).map((s,i) => (
+              <TopicBar key={s.id} topic={s.label} pct={[72,58,85,64][i]} C={C} />
+            ))
+          : topics.map(t => (
+              <TopicBar
+                key={t.topic} topic={t.topic} pct={t.pct} C={C}
+                onDrill={() => navigate(`/${activeTrack}/quiz/${guessSubjectForTopic(t.topic, cfg)}?topic=${encodeURIComponent(t.topic)}`)}
+              />
+            ))
+        }
+      </Card>
+      <button
+        onClick={() => navigate(`/${activeTrack}/plan`)}
+        style={{
+          width:'100%', padding:'13px 0',
+          background:C.primary, color:'white',
+          border:'none', borderRadius:12,
+          fontSize:14, fontWeight:800, cursor:'pointer',
+          fontFamily:'Inter,sans-serif', marginBottom:12,
+          display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+        }}
+      >
+        📅 View Full Study Plan
+      </button>
+      <div style={{ padding:'14px 16px', background:`${C.primary}12`, border:`1.5px solid ${C.primary}28`, borderRadius:14, fontSize:13, color:C.primary, lineHeight:1.5 }}>
+        🏫 <strong>Share with your teacher</strong> — ask them about Nexora School Edition for the whole class!
+      </div>
+
+      {/* AI Notes — filtered to active track */}
+      <div style={{ marginTop:4 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+          <div style={{ fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase' }}>
+            My AI Notes · {trackNotes.length}/{NOTES_MAX}
+          </div>
+          {trackNotes.length > 0 && (
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(exportNotesText(trackNotes)).then(() => {
+                  setNotesCopyDone(true); setTimeout(() => setNotesCopyDone(false), 2000)
+                })
+              }}
+              style={{ background: notesCopyDone ? '#DCFCE7' : 'transparent', border:`1px solid ${notesCopyDone ? '#16A34A40' : '#7C3AED30'}`, borderRadius:8, padding:'4px 10px', fontSize:11, fontWeight:700, color: notesCopyDone ? '#16A34A' : '#7C3AED', cursor:'pointer', fontFamily:'Inter,sans-serif' }}
+            >
+              {notesCopyDone ? '✓ Copied' : '📋 Copy All'}
+            </button>
+          )}
+        </div>
+        {trackNotes.length === 0 ? (
+          <Card C={C} style={{ textAlign:'center', padding:'24px' }}>
+            <div style={{ fontSize:28, marginBottom:8 }}>📝</div>
+            <div style={{ fontSize:13, fontWeight:700, color:C.navy, marginBottom:4 }}>No notes for this track yet</div>
+            <div style={{ fontSize:11, color:C.muted, lineHeight:1.6 }}>After the AI tutor explains a question, tap <strong style={{ color:'#7C3AED' }}>✦ Save</strong> to add it here.</div>
+          </Card>
+        ) : (
+          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+            {trackNotes.map(note => {
+              const savedDate = new Date(note.savedAt).toLocaleDateString('en-GB', {day:'numeric', month:'short'})
+              const expanded  = expandedNote === note.id
+              return (
+                <div key={note.id} style={{ background:'white', border:`1px solid ${C.border}`, borderLeft:'3px solid #7C3AED', borderRadius:14, overflow:'hidden' }}>
+                  <div style={{ padding:'12px 14px 10px', display:'flex', alignItems:'flex-start', gap:8 }}>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:6, alignItems:'center' }}>
+                        <span style={{ background:'#7C3AED12', border:'1px solid #7C3AED25', borderRadius:20, padding:'2px 8px', fontSize:9, fontWeight:700, color:'#7C3AED' }}>
+                          {note.topic || note.subject || 'Note'}
+                        </span>
+                        <span style={{ marginLeft:'auto', fontSize:10, color:'#94A3B8', fontWeight:600 }}>{savedDate}</span>
+                      </div>
+                      <p style={{ fontSize:12, fontWeight:600, color:C.navy, margin:0, lineHeight:1.55, ...(!expanded ? { display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' } : {}) }}>
+                        {note.question}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => { deleteNote(note.id); setAllNotes(getNotes()) }}
+                      style={{ background:'none', border:'none', cursor:'pointer', color:'#CBD5E1', fontSize:18, padding:'0 2px', flexShrink:0, lineHeight:1 }}
+                    >×</button>
+                  </div>
+                  <button
+                    onClick={() => setExpandedNote(p => p === note.id ? null : note.id)}
+                    style={{ width:'100%', background:C.bg, border:'none', borderTop:`1px solid ${C.border}`, padding:'7px 14px', display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', fontSize:11, fontWeight:700, color:'#7C3AED', fontFamily:'Inter,sans-serif' }}
+                  >
+                    <span>{expanded ? 'Hide explanation' : 'Show AI explanation'}</span>
+                    <span style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition:'transform 0.2s', display:'inline-block' }}>▾</span>
+                  </button>
+                  {expanded && (
+                    <div style={{ padding:'12px 14px 14px', borderTop:`1px solid ${C.border}`, background:C.bg, fontSize:12, color:C.muted, lineHeight:1.75 }}>
+                      {note.explanation}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+
+  // ── Plan panel ────────────────────────────────────────────────────────────
+  const allWeak    = topics.filter(t => t.pct < 70)
+  const allStrong  = topics.filter(t => t.pct >= 70)
+  const avgAccuracy = topics.length ? Math.round(topics.reduce((s,t) => s+t.pct,0)/topics.length) : null
+  const schedule   = buildSchedule(days, allWeak, cfg.subjects)
+  const readinessColor = avgAccuracy == null ? C.muted : avgAccuracy >= 75 ? '#10B981' : avgAccuracy >= 50 ? '#F59E0B' : '#EF4444'
+  const readinessLabel = avgAccuracy == null ? 'Not enough data yet' : avgAccuracy >= 75 ? 'On Track' : avgAccuracy >= 50 ? 'Needs Work' : 'At Risk'
+
+  // Exam date card — only for the active track
+  const examDatesCard = (
+    <Card C={C} style={{ marginBottom:12 }}>
+      <SH label="Exam Date" C={C} />
+      {(() => {
+        const s       = activeTrack
+        const sc      = STREAM_CONFIG[s]
+        const accent  = TRACK_COLORS[s] ?? C.primary
+        const dateVal = examDates[s] ?? ''
+        const dl      = dateVal ? Math.max(0, Math.ceil((new Date(dateVal) - new Date()) / 86400000)) : null
+        return (
+          <div>
+            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+              <div style={{ width:8, height:8, borderRadius:4, background:accent, flexShrink:0 }} />
+              <div style={{ fontSize:12, fontWeight:800, color:C.navy }}>
+                {sc?.label?.replace(' Track','').replace(' Prep','') ?? s.toUpperCase()}
+              </div>
+              {dl !== null && dl <= 30 && (
+                <span style={{ fontSize:10, fontWeight:800, color: dl <= 7 ? '#EF4444' : '#F59E0B', background: dl <= 7 ? '#FEF2F2' : '#FFFBEB', borderRadius:20, padding:'1px 8px' }}>
+                  {dl === 0 ? 'Today!' : `${dl}d`}
+                </span>
+              )}
+            </div>
+            <input
+              type="date"
+              value={dateVal}
+              onChange={async e => {
+                const date = e.target.value
+                setExamDates(prev => ({ ...prev, [s]: date }))
+                if (user?.id) {
+                  try { await setExamDate(user.id, s, date) } catch {}
+                }
+              }}
+              style={{
+                width:'100%', padding:'8px 12px', borderRadius:10,
+                border:`1.5px solid ${dateVal ? accent+'60' : C.border}`,
+                fontSize:13, fontWeight:600, color:C.navy,
+                background: dateVal ? `${accent}08` : C.card,
+                cursor:'pointer', outline:'none', boxSizing:'border-box',
+              }}
+            />
+            {dl !== null && (
+              <div style={{ marginTop:6, display:'flex', alignItems:'center', gap:8 }}>
+                <div style={{ flex:1, background:C.border, borderRadius:6, height:4, overflow:'hidden' }}>
+                  <div style={{
+                    width:`${Math.min(100, Math.max(2, 100 - (dl / 365 * 100)))}%`,
+                    height:'100%', borderRadius:6,
+                    background: dl <= 7 ? '#EF4444' : dl <= 30 ? '#F59E0B' : accent,
+                    transition:'width 0.4s ease',
+                  }} />
+                </div>
+                <span style={{ fontSize:11, fontWeight:700, color: dl <= 7 ? '#EF4444' : dl <= 30 ? '#F59E0B' : accent, flexShrink:0 }}>
+                  {dl > 0 ? `${dl} day${dl===1?'':'s'}` : 'Exam day!'}
+                </span>
+              </div>
+            )}
+            {/* Hint to check official dates */}
+            <button
+              onClick={() => navigate(`/${activeTrack}/resources`)}
+              style={{
+                marginTop:10, width:'100%', display:'flex', alignItems:'center', gap:8,
+                background:`${accent}08`, border:`1px solid ${accent}25`,
+                borderRadius:9, padding:'8px 12px', cursor:'pointer',
+                fontFamily:'Inter,sans-serif', textAlign:'left',
+                WebkitTapHighlightColor:'transparent',
+              }}
+            >
+              <span style={{ fontSize:14, flexShrink:0 }}>📅</span>
+              <span style={{ fontSize:11, color:C.navy, lineHeight:1.4 }}>
+                <strong>Not sure of your date?</strong> Check official exam dates in the{' '}
+                <span style={{ color:accent, fontWeight:700 }}>Resources tab</span>.
+              </span>
+            </button>
+          </div>
+        )
+      })()}
+    </Card>
+  )
+
+  const planPanel = (
+    <div>
+      {examDatesCard}
+      {/* Readiness ring */}
+      {!loading && topics.length > 0 && (
+        <Card C={C} style={{ marginBottom:12, display:'flex', alignItems:'center', gap:16 }}>
+          <div style={{
+            width:64, height:64, borderRadius:'50%', flexShrink:0,
+            background:`conic-gradient(${readinessColor} ${avgAccuracy}%, ${C.border} 0)`,
+            display:'flex', alignItems:'center', justifyContent:'center',
+            boxShadow:`0 0 0 3px white, 0 0 0 5px ${readinessColor}30`,
+          }}>
+            <div style={{ width:48, height:48, borderRadius:'50%', background:'white', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column' }}>
+              <div style={{ fontSize:13, fontWeight:900, color:readinessColor }}>{avgAccuracy}%</div>
+            </div>
+          </div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:15, fontWeight:800, color:readinessColor, marginBottom:3 }}>{readinessLabel}</div>
+            <div style={{ fontSize:12, color:C.muted, lineHeight:1.5 }}>
+              {allWeak.length === 0 ? 'All topics above 70% — focus on mock practice.' : `${allWeak.length} topic${allWeak.length>1?'s':''} below 70% need attention.`}
+            </div>
+            {days != null && days > 0 && (
+              <div style={{ marginTop:5, fontSize:11, color:C.muted }}>
+                Aim for <strong style={{ color:C.primary }}>{rec.sessions} session{rec.sessions>1?'s':''}/day</strong> · {rec.minutes} min each
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+
+      {/* Today's priority */}
+      {!loading && allWeak.length > 0 && (
+        <div style={{ marginBottom:12 }}>
+          <SH label="Today's Priority" C={C} />
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            {allWeak.slice(0,3).map((t, i) => {
+              const subj = subjectForTopic(t.topic)
+              return (
+                <div key={t.topic} style={{ display:'flex', alignItems:'center', gap:12, background:'white', border:`1px solid ${C.border}`, borderRadius:14, padding:'12px 14px', boxShadow:'0 1px 6px rgba(0,0,0,0.05)' }}>
+                  <div style={{ width:26, height:26, borderRadius:'50%', flexShrink:0, background:i===0?'#EF4444':i===1?'#F59E0B':'#6366F1', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:900, fontSize:11 }}>{i+1}</div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:12, fontWeight:700, color:'#1E293B', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{t.topic}</div>
+                    <div style={{ fontSize:10, color:C.muted, marginTop:1 }}>{t.pct}% accuracy</div>
+                  </div>
+                  <button onClick={() => navigate(`/${activeTrack}/quiz/${subj.id}?topic=${encodeURIComponent(t.topic)}`)} style={{ background:C.primary, color:'white', border:'none', borderRadius:9, padding:'6px 13px', fontWeight:700, cursor:'pointer', fontSize:11, flexShrink:0 }}>Drill →</button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Phased schedule — only shown when performance data exists */}
+      {!loading && topics.length > 0 && schedule.length > 0 && (
+        <div style={{ marginBottom:12 }}>
+          <SH label="Study Schedule" C={C} />
+          <Card C={C} style={{ padding:'14px 16px' }}>
+            {schedule.map((phase, i) => (
+              <div key={i} style={{ display:'flex', gap:0, position:'relative' }}>
+                <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:32, flexShrink:0 }}>
+                  <div style={{ width:26, height:26, borderRadius:'50%', background:`${phase.color}20`, border:`2px solid ${phase.color}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, zIndex:1 }}>{phase.icon}</div>
+                  {i < schedule.length-1 && <div style={{ width:2, flex:1, background:C.border, minHeight:20, marginTop:4 }} />}
+                </div>
+                <div style={{ flex:1, paddingBottom:i<schedule.length-1?18:0, paddingLeft:10 }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:3 }}>
+                    <div style={{ fontSize:12, fontWeight:800, color:C.navy }}>{phase.phase}</div>
+                    <div style={{ fontSize:10, color:phase.color, fontWeight:700, background:`${phase.color}18`, borderRadius:6, padding:'2px 8px', flexShrink:0 }}>{phase.duration}</div>
+                  </div>
+                  <div style={{ fontSize:11, color:C.muted, lineHeight:1.5 }}>{phase.description}</div>
+                </div>
+              </div>
+            ))}
+          </Card>
+        </div>
+      )}
+
+      {/* All topics */}
+      {!loading && topics.length > 0 && (
+        <Card C={C} style={{ marginBottom:12 }}>
+          <SH label="All Topics" C={C} />
+          {[...allWeak, ...allStrong].map(t => {
+            const subj = subjectForTopic(t.topic)
+            return (
+              <div key={t.topic} style={{ marginBottom:10 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
+                  <div style={{ flex:1 }}>
+                    <span style={{ fontSize:12, fontWeight:700, color:C.navy }}>{t.topic}</span>
+                    <span style={{ fontSize:10, color:C.muted, marginLeft:6 }}>{subj?.emoji} {subj?.label}</span>
+                  </div>
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    {t.pct < 70 && (
+                      <button onClick={() => navigate(`/${activeTrack}/quiz/${subj.id}?topic=${encodeURIComponent(t.topic)}`)} style={{ background:'#EF444418', border:'1px solid #EF444440', borderRadius:6, padding:'2px 8px', fontSize:10, fontWeight:700, color:'#EF4444', cursor:'pointer' }}>Drill</button>
+                    )}
+                    <span style={{ fontSize:12, fontWeight:700, color:t.pct>=75?'#10B981':t.pct>=50?'#F59E0B':'#EF4444', minWidth:32, textAlign:'right' }}>{t.pct}%</span>
+                  </div>
+                </div>
+                <div style={{ background:C.border, borderRadius:4, height:5 }}>
+                  <div style={{ width:`${t.pct}%`, background:t.pct>=75?'#10B981':t.pct>=50?'#F59E0B':'#EF4444', height:'100%', borderRadius:4, transition:'width 0.6s ease' }} />
+                </div>
+              </div>
+            )
+          })}
+        </Card>
+      )}
+
+      {/* No performance data — show generic date-based plan */}
+      {!loading && topics.length === 0 && (
+        <div>
+          {/* Disclaimer */}
+          <div style={{
+            display:'flex', alignItems:'flex-start', gap:10,
+            background:`${C.primary}10`, border:`1.5px solid ${C.primary}30`,
+            borderRadius:14, padding:'12px 14px', marginBottom:12,
+          }}>
+            <span style={{ fontSize:18, flexShrink:0 }}>🤖</span>
+            <div style={{ fontSize:12, color:C.navy, lineHeight:1.6 }}>
+              <strong>Generic plan</strong> — based on your exam date only. This will automatically refine as you complete practice sessions and real performance data becomes available.
+            </div>
+          </div>
+
+          {days != null && days > 0 ? (
+            <>
+              {/* Generic schedule based purely on time */}
+              <div style={{ marginBottom:12 }}>
+                <SH label="Suggested Study Schedule" C={C} />
+                <Card C={C} style={{ padding:'14px 16px' }}>
+                  {buildSchedule(days, [], cfg.subjects).map((phase, i, arr) => (
+                    <div key={i} style={{ display:'flex', gap:0, position:'relative' }}>
+                      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:32, flexShrink:0 }}>
+                        <div style={{ width:26, height:26, borderRadius:'50%', background:`${phase.color}20`, border:`2px solid ${phase.color}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, zIndex:1 }}>{phase.icon}</div>
+                        {i < arr.length-1 && <div style={{ width:2, flex:1, background:C.border, minHeight:20, marginTop:4 }} />}
+                      </div>
+                      <div style={{ flex:1, paddingBottom:i<arr.length-1?18:0, paddingLeft:10 }}>
+                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:3 }}>
+                          <div style={{ fontSize:12, fontWeight:800, color:C.navy }}>{phase.phase}</div>
+                          <div style={{ fontSize:10, color:phase.color, fontWeight:700, background:`${phase.color}18`, borderRadius:6, padding:'2px 8px', flexShrink:0 }}>{phase.duration}</div>
+                        </div>
+                        <div style={{ fontSize:11, color:C.muted, lineHeight:1.5 }}>{phase.description}</div>
+                      </div>
+                    </div>
+                  ))}
+                </Card>
+              </div>
+
+              {/* Subjects to cover */}
+              <Card C={C} style={{ marginBottom:12 }}>
+                <SH label={`${cfg.subjects.filter(s => !s.deprecated).length} Subjects to Cover`} C={C} />
+                <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                  {cfg.subjects.filter(s => !s.deprecated).map(s => (
+                    <div key={s.id} style={{ display:'flex', alignItems:'center', gap:10 }}>
+                      <div style={{ width:32, height:32, borderRadius:9, background:`${C.primary}15`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>{s.emoji}</div>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:12, fontWeight:700, color:C.navy }}>{s.label}</div>
+                        {s.desc && <div style={{ fontSize:10, color:C.muted }}>{s.desc}</div>}
+                      </div>
+                      <button
+                        onClick={() => navigate(`/${activeTrack}/quiz/${s.id}`)}
+                        style={{ background:`${C.primary}15`, border:`1px solid ${C.primary}30`, color:C.primary, borderRadius:8, padding:'5px 11px', fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'Inter,sans-serif', flexShrink:0 }}
+                      >
+                        Start →
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              <button
+                onClick={() => setTab('today')}
+                style={{ width:'100%', padding:'12px 0', background:C.primary, color:'white', border:'none', borderRadius:12, fontSize:13, fontWeight:800, cursor:'pointer', fontFamily:'Inter,sans-serif', marginBottom:12 }}
+              >
+                🎯 Start practising to unlock your personalised plan
+              </button>
+            </>
+          ) : (
+            /* No exam date set either */
+            <Card C={C} style={{ textAlign:'center', padding:'24px' }}>
+              <div style={{ fontSize:32, marginBottom:10 }}>📅</div>
+              <div style={{ fontWeight:800, color:C.navy, fontSize:14, marginBottom:6 }}>Set an exam date to get started</div>
+              <div style={{ fontSize:12, color:C.muted, lineHeight:1.6, marginBottom:14 }}>
+                Add your exam date above and complete a few quiz sessions — your personalised plan will appear here.
+              </div>
+              <button
+                onClick={() => setTab('today')}
+                style={{ background:C.primary, color:'white', border:'none', borderRadius:12, padding:'10px 22px', fontWeight:700, cursor:'pointer', fontSize:13 }}
+              >
+                Go to Today →
+              </button>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {days != null && days > 0 && days <= 30 && (
+        <button
+          onClick={() => navigate(`/${activeTrack}/mock/${cfg.subjects[0].id}`)}
+          style={{ width:'100%', background:`linear-gradient(135deg,${C.primary},${C.primary}BB)`, color:'white', border:'none', borderRadius:14, padding:'13px', fontSize:14, fontWeight:800, cursor:'pointer', boxShadow:`0 4px 16px ${C.primary}40`, marginTop:4 }}
+        >
+          📋 Take a Full Mock Exam
+        </button>
+      )}
+    </div>
+  )
+
+  // ── Desktop: 3-column ─────────────────────────────────────────────────────
+  if (isDesktop) {
+    return (
+      <Shell C={C} isDark={isDark} heroContent={heroEl} contentMax={1300}>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:24, alignItems:'start', paddingTop:8 }}>
+          <div>
+            <div style={{ fontSize:14, fontWeight:800, color:C.navy, letterSpacing:'-0.2px', marginBottom:14, display:'flex', alignItems:'center', gap:7 }}>🎯 Today</div>
+            {todayPanel}
+          </div>
+          <div>
+            <div style={{ fontSize:14, fontWeight:800, color:C.navy, letterSpacing:'-0.2px', marginBottom:14, display:'flex', alignItems:'center', gap:7 }}>📈 Progress</div>
+            {progressPanel}
+          </div>
+          <div>
+            <div style={{ fontSize:14, fontWeight:800, color:C.navy, letterSpacing:'-0.2px', marginBottom:14, display:'flex', alignItems:'center', gap:7 }}>📅 Study Plan</div>
+            {planPanel}
+          </div>
+        </div>
+      </Shell>
+    )
+  }
+
+  // ── Mobile/Tablet: tabbed ──────────────────────────────────────────────────
+  return (
+    <Shell C={C} isDark={isDark} heroContent={heroEl}>
+      <TabBar active={tab} onChange={t => { setTab(t); setSearchParams(t!=='today'?{tab:t}:{}) }} C={C} />
+      {tab === 'today' ? todayPanel : tab === 'progress' ? progressPanel : planPanel}
+    </Shell>
+  )
+}

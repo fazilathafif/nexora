@@ -19,15 +19,17 @@ function useActiveTab(stream) {
   if (!stream) return null
   if (pathname === `/${stream}`) return 'home'
   if (pathname.includes('/resources'))  return 'resources'
-  if (pathname.includes('/progress'))   return 'learn'
-  if (pathname.includes('/plan'))       return 'learn'
   if (pathname.includes('/settings'))   return 'me'
-  if (pathname.includes('/today') ||
-    pathname.includes('/quiz/') ||
+  if (pathname.includes('/learn-hub') ||
+    pathname.includes('/progress') ||
+    pathname.includes('/today') ||
+    pathname.includes('/plan')
+  ) return 'learn'
+  if (pathname.includes('/quiz/') ||
     pathname.includes('/mock/') ||
     pathname.includes('/flashcards/') ||
     pathname.includes('/match/')
-  ) return 'practice'
+  ) return 'learn'
   return 'home'
 }
 
@@ -241,11 +243,10 @@ export default function BottomNav() {
   const C = getColors(stream, null, isDark)
 
   const tabs = [
-    { id:'home',      label:'Home',        Icon:HomeIcon,      action:() => navigate(`/${stream}`) },
-    { id:'practice',  label:'Practice',    Icon:PracticeIcon,  action:() => navigate(`/${stream}/today`) },
-    { id:'learn',     label:'My Learning', Icon:LearnIcon,     action:() => navigate(`/${stream}/progress`) },
-    { id:'resources', label:'Resources',   Icon:ResourcesIcon, action:() => navigate(`/${stream}/resources`) },
-    { id:'me',        label:'Profile',     Icon:MeIcon,        action:() => navigate(`/${stream}/settings`) },
+    { id:'home',      label:'Home',      Icon:HomeIcon,      action:() => navigate(`/${stream}`) },
+    { id:'learn',     label:'Learn',     Icon:LearnIcon,     action:() => navigate(`/${stream}/learn-hub`) },
+    { id:'resources', label:'Resources', Icon:ResourcesIcon, action:() => navigate(`/${stream}/resources`) },
+    { id:'me',        label:'Profile',   Icon:MeIcon,        action:() => navigate(`/${stream}/settings`) },
   ]
 
   // ── Desktop sidebar ─────────────────────────────────────────────────────────
