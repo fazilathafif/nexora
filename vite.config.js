@@ -23,9 +23,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'icons/*.png'],
       manifest: {
-        name: 'Nexora – UK Exam Prep',
+        name: 'Nexora – Exam Prep for GCSE, IB, SAT & More',
         short_name: 'Nexora',
-        description: 'UK competitive exam prep for Years 8–12. GCSE, UCAT, LNAT, TMUA, ESAT, TSA, STEP.',
+        description: 'AI-powered exam prep for GCSE, A-Level, IGCSE, IB Diploma, SAT, ACT, AP and more. Free daily practice, mock exams, flashcards and study plans.',
         theme_color: '#0F766E',
         background_color: '#0F766E',
         display: 'standalone',
