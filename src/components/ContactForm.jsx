@@ -73,13 +73,7 @@ export default function ContactForm({ C, user, profile, onClose }) {
       if (!res.ok) throw new Error('non-ok response')
       setSent(true)
     } catch {
-      // Edge function not available — fall back to mailto
-      const body = encodeURIComponent(
-        `Name: ${name || 'Not provided'}\nEmail: ${email}\nType: ${type}\n\n${message}`
-      )
-      const subj = encodeURIComponent(`[Nexora] ${type}: ${subject || message.slice(0, 50)}`)
-      window.location.href = `mailto:customerrelations.nexora@gmail.com?subject=${subj}&body=${body}`
-      setSent(true)
+      setError(true)
     } finally {
       setSending(false)
     }
