@@ -209,6 +209,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
 
   if (!cfg) { navigate('/'); return null }
 
+  const enrolledStreams = profile?.streams?.length ? profile.streams : profile?.stream ? [profile.stream] : [stream]
   const isAnon    = !user?.email || user?.isGuest
   const xp        = profile?.xp     ?? 0
   const streak    = profile?.streak  ?? 0
@@ -255,20 +256,53 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
   const heroEl = (
     <div style={{ padding:'max(18px, env(safe-area-inset-top, 18px)) 16px 0' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div>
-          {!isDesktop && (
-            <div style={{ fontSize:22, fontWeight:900, color:'white', letterSpacing:'-0.5px' }}>
-              Nexora
+        {/* Left: track pills */}
+        <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap', flex:1, minWidth:0 }}>
+          {enrolledStreams.length > 1 ? (
+            enrolledStreams.map(s => {
+              const sc = STREAM_CONFIG[s]
+              const active = s === stream
+              return (
+                <button
+                  key={s}
+                  onClick={() => !active && navigate(`/${s}`)}
+                  style={{
+                    background: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.18)',
+                    border: `1px solid ${active ? 'transparent' : 'rgba(255,255,255,0.3)'}`,
+                    borderRadius:20, padding:'4px 11px',
+                    fontSize:10, fontWeight:800,
+                    color: active ? C.primary : 'white',
+                    cursor: active ? 'default' : 'pointer',
+                    fontFamily:'Inter,sans-serif',
+                    WebkitTapHighlightColor:'transparent',
+                    transition:'all 0.15s',
+                    letterSpacing:'0.04em',
+                  }}
+                >
+                  {sc?.label?.replace(' Track','').replace(' Prep','') ?? s.toUpperCase()}
+                  {active && <span style={{ fontSize:7, marginLeft:3 }}>●</span>}
+                </button>
+              )
+            })
+          ) : (
+            <div>
+              {!isDesktop && (
+                <div style={{ fontSize:22, fontWeight:900, color:'white', letterSpacing:'-0.5px' }}>
+                  Nexora
+                </div>
+              )}
+              <div style={{ display:'flex', alignItems:'center', gap:6, marginTop: isDesktop ? 0 : 4 }}>
+                <span style={{ background:'rgba(255,255,255,0.22)', color:'white', border:'1px solid rgba(255,255,255,0.3)', borderRadius:20, padding:'2px 10px', fontSize:10, fontWeight:800, letterSpacing:'0.07em' }}>
+                  {cfg.label.replace(' Track','').toUpperCase()}
+                </span>
+                <span style={{ fontSize:11, color:'rgba(255,255,255,0.6)' }}>{cfg.years}</span>
+              </div>
             </div>
           )}
-          <div style={{ display:'flex', alignItems:'center', gap:6, marginTop: isDesktop ? 0 : 4 }}>
-            <span style={{ background:'rgba(255,255,255,0.22)', color:'white', border:'1px solid rgba(255,255,255,0.3)', borderRadius:20, padding:'2px 10px', fontSize:10, fontWeight:800, letterSpacing:'0.07em' }}>
-              {cfg.label.replace(' Track','').toUpperCase()}
-            </span>
-            <span style={{ fontSize:11, color:'rgba(255,255,255,0.6)' }}>{cfg.years}</span>
-          </div>
         </div>
-        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+
+        {/* Right: streak + actions */}
+        <div style={{ display:'flex', gap:8, alignItems:'center', flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:4 }}>
             <span style={{ fontSize:20 }}>🔥</span>
             <span style={{ fontWeight:900, color:'white', fontSize:17 }}>{streak}</span>
@@ -279,7 +313,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
               ? <HeroIconBtn onClick={signOut} title="Sign Out"><SignOutIcon color="white" size={18} /></HeroIconBtn>
               : null
           }
-          <HeroIconBtn onClick={switchStream} title="Switch track"><SwitchIcon color="white" size={18} /></HeroIconBtn>
+          <HeroIconBtn onClick={() => navigate('/landing')} title="Manage tracks"><SwitchIcon color="white" size={18} /></HeroIconBtn>
         </div>
       </div>
 
@@ -1219,7 +1253,7 @@ function GcseSubjectGrid({ subjects, navigate, stream, C }) {
 
 export function Shell({ C, isDark, children, noNav, heroContent, contentMax }) {
   const { isDesktop, isTablet } = useBreakpoint()
-  const heroH = heroContent ? 188 : 64
+  // heroH removed — hero sections size themselves via their own padding/content
 
   const css = `
     *{box-sizing:border-box}button{font-family:inherit}
@@ -1240,7 +1274,7 @@ export function Shell({ C, isDark, children, noNav, heroContent, contentMax }) {
           {heroContent && (
             <div style={{
               background:`linear-gradient(135deg, ${C.trackAccent} 0%, ${C.trackAccent}CC 100%)`,
-              minHeight:heroH, position:'relative', zIndex:1,
+              position:'relative', zIndex:1,
             }}>
               {heroContent}
             </div>
@@ -1260,7 +1294,7 @@ export function Shell({ C, isDark, children, noNav, heroContent, contentMax }) {
       {heroContent && (
         <div style={{
           background:`linear-gradient(135deg, ${C.trackAccent} 0%, ${C.trackAccent}CC 100%)`,
-          minHeight:heroH, position:'relative', zIndex:1,
+          position:'relative', zIndex:1,
         }}>
           {heroContent}
         </div>

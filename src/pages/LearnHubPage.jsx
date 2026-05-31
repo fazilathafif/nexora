@@ -860,42 +860,47 @@ export default function LearnHubPage({ user, profile, isDark }) {
 
   // ── Hero ────────────────────────────────────────────────────────────────────
   const heroEl = (
-    <div style={{ padding:'max(18px, env(safe-area-inset-top, 18px)) 16px 4px' }}>
-      {!isDesktop && (
-        <div style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.5)', letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:2 }}>
-          Learn · {cfg?.label?.replace(' Track','').replace(' Prep','') ?? activeTrack.toUpperCase()}
-        </div>
-      )}
-      <div style={{ fontSize: isDesktop ? 22 : 24, fontWeight:900, color:'white', letterSpacing:'-0.5px', fontFamily:"'Playfair Display', Georgia, serif" }}>
-        {greeting}, {firstName}
-      </div>
-      <div style={{ fontSize:13, color:'rgba(255,255,255,0.65)', marginTop:4, fontWeight:500 }}>
-        {days !== null && days > 0
-          ? `${days} day${days===1?'':'s'} until your exam · ${rec.sessions} session${rec.sessions>1?'s':''} today`
-          : "Let's make today count"}
-      </div>
-      {/* Stat pills in hero */}
-      <div style={{ display:'flex', gap:8, marginTop:12, flexWrap:'wrap' }}>
-        {[
-          { icon:'🔥', val:streak, label:'streak' },
-          { icon:'⚡', val:xp,     label:'XP'     },
-          { icon:'🎓', val:level,  label:'level'  },
-        ].map(s => (
-          <div key={s.label} style={{
-            display:'flex', alignItems:'center', gap:5,
-            background:'rgba(255,255,255,0.18)', backdropFilter:'blur(6px)',
-            border:'1px solid rgba(255,255,255,0.25)',
-            borderRadius:20, padding:'4px 10px',
-          }}>
-            <span style={{ fontSize:13 }}>{s.icon}</span>
-            <span style={{ fontSize:12, fontWeight:800, color:'white' }}>{s.val}</span>
-            <span style={{ fontSize:10, color:'rgba(255,255,255,0.7)' }}>{s.label}</span>
+    <div style={{ padding:'max(14px, env(safe-area-inset-top, 14px)) 16px 14px' }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
+        {/* Left: track label */}
+        <div style={{ display:'flex', alignItems:'center', gap:8, minWidth:0 }}>
+          <div style={{ fontSize:16, fontWeight:900, color:'white', letterSpacing:'-0.3px' }}>
+            {cfg?.label?.replace(' Track','').replace(' Prep','') ?? activeTrack.toUpperCase()}
           </div>
-        ))}
+          {days !== null && days > 0 && (
+            <span style={{
+              fontSize:10, fontWeight:800, color:'rgba(255,255,255,0.9)',
+              background:'rgba(255,255,255,0.18)', borderRadius:20, padding:'2px 8px',
+              whiteSpace:'nowrap',
+            }}>
+              {days}d
+            </span>
+          )}
+        </div>
+
+        {/* Right: stat pills */}
+        <div style={{ display:'flex', gap:6, alignItems:'center', flexShrink:0 }}>
+          {[
+            { icon:'🔥', val:streak },
+            { icon:'⚡', val:xp    },
+            { icon:'🎓', val:level },
+          ].map(s => (
+            <div key={s.icon} style={{
+              display:'flex', alignItems:'center', gap:3,
+              background:'rgba(255,255,255,0.18)', backdropFilter:'blur(6px)',
+              border:'1px solid rgba(255,255,255,0.25)',
+              borderRadius:20, padding:'3px 8px',
+            }}>
+              <span style={{ fontSize:11 }}>{s.icon}</span>
+              <span style={{ fontSize:11, fontWeight:800, color:'white' }}>{s.val}</span>
+            </div>
+          ))}
+        </div>
       </div>
-      {/* Track switcher pills — only when enrolled in 2+ tracks */}
+
+      {/* Track switcher — only when enrolled in 2+ tracks */}
       {enrolledStreams.length > 1 && (
-        <div style={{ display:'flex', gap:6, marginTop:12, flexWrap:'wrap' }}>
+        <div style={{ display:'flex', gap:5, marginTop:10, flexWrap:'wrap' }}>
           {enrolledStreams.map(s => {
             const sc     = STREAM_CONFIG[s]
             const accent = TRACK_COLORS[s] ?? COURSERA_BLUE
@@ -905,11 +910,11 @@ export default function LearnHubPage({ user, profile, isDark }) {
                 key={s}
                 onClick={() => setActiveTrack(s)}
                 style={{
-                  display:'flex', alignItems:'center', gap:5,
+                  display:'flex', alignItems:'center', gap:4,
                   background: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.18)',
                   border: `1px solid ${active ? 'transparent' : 'rgba(255,255,255,0.3)'}`,
-                  borderRadius:20, padding:'5px 12px',
-                  fontSize:11, fontWeight:800,
+                  borderRadius:20, padding:'4px 10px',
+                  fontSize:10, fontWeight:800,
                   color: active ? accent : 'white',
                   cursor:'pointer', fontFamily:'Inter,sans-serif',
                   WebkitTapHighlightColor:'transparent',
@@ -917,7 +922,7 @@ export default function LearnHubPage({ user, profile, isDark }) {
                 }}
               >
                 {sc?.label?.replace(' Track','').replace(' Prep','') ?? s.toUpperCase()}
-                {active && <span style={{ fontSize:8, marginLeft:2 }}>●</span>}
+                {active && <span style={{ fontSize:7, marginLeft:1 }}>●</span>}
               </button>
             )
           })}

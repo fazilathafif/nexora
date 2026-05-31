@@ -371,47 +371,47 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
   }
 
   const heroEl = (
-    <div style={{padding:`max(18px, env(safe-area-inset-top, 18px)) ${isDesktop ? 32 : 16}px 0`}}>
-      <div style={{display:'flex', alignItems:'center', gap:12, marginBottom: isMobile ? 20 : 16}}>
-        <button
-          onClick={() => navigate(-1)}
-          style={{background:'rgba(255,255,255,0.18)', border:'1px solid rgba(255,255,255,0.3)', borderRadius:10, width:36, height:36, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0}}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="M19 12H5M5 12l7 7M5 12l7-7" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
-        <div>
-          <div style={{fontSize:22, fontWeight:900, color:'white', letterSpacing:'-0.4px'}}>Me</div>
-          <div style={{fontSize:11, color:'rgba(255,255,255,0.65)', marginTop:1}}>Your profile &amp; notes</div>
+    <div style={{ padding:'max(14px, env(safe-area-inset-top, 14px)) 16px 14px' }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
+        {/* Left: avatar + name */}
+        <div style={{ display:'flex', alignItems:'center', gap:10, minWidth:0, flex:1 }}>
+          <Avatar initial={initial} C={C} size={36} />
+          <div style={{ minWidth:0 }}>
+            <div style={{ fontSize:14, fontWeight:800, color:'white', letterSpacing:'-0.2px', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+              {profile?.display_name || (email ? email.split('@')[0] : 'Scholar')}
+            </div>
+            <div style={{ fontSize:10, color:'rgba(255,255,255,0.65)', marginTop:1 }}>
+              {email || 'Guest account'}
+            </div>
+          </div>
+        </div>
+        {/* Right: stat pills */}
+        <div style={{ display:'flex', gap:6, alignItems:'center', flexShrink:0 }}>
+          {[
+            { icon:'🔥', val: profile?.streak ?? 0 },
+            { icon:'⚡', val: profile?.xp ?? 0     },
+            { icon:'🎓', val: level                 },
+          ].map(s => (
+            <div key={s.icon} style={{
+              display:'flex', alignItems:'center', gap:3,
+              background:'rgba(255,255,255,0.18)', backdropFilter:'blur(6px)',
+              border:'1px solid rgba(255,255,255,0.25)',
+              borderRadius:20, padding:'3px 8px',
+            }}>
+              <span style={{ fontSize:11 }}>{s.icon}</span>
+              <span style={{ fontSize:11, fontWeight:800, color:'white' }}>{s.val}</span>
+            </div>
+          ))}
+          {/* Profile label pill */}
+          <div style={{
+            fontSize:10, fontWeight:800, color:'rgba(255,255,255,0.9)',
+            background:'rgba(255,255,255,0.18)', borderRadius:20, padding:'3px 10px',
+            letterSpacing:'0.06em', textTransform:'uppercase',
+          }}>
+            Profile
+          </div>
         </div>
       </div>
-
-      {isMobile ? (
-        <div style={{display:'flex', flexDirection:'column', alignItems:'center', paddingBottom:28}}>
-          <Avatar initial={initial} C={C} size={72} />
-          <div style={{fontSize:19, fontWeight:800, color:'white', marginTop:12, letterSpacing:'-0.3px'}}>
-            {profile?.display_name || (email ? email.split('@')[0] : 'Student')}
-          </div>
-          <div style={{fontSize:12, color:'rgba(255,255,255,0.68)', marginTop:3}}>{email || 'Guest account'}</div>
-          <div style={{marginTop:10, background:'rgba(255,255,255,0.2)', border:'1px solid rgba(255,255,255,0.32)', borderRadius:20, padding:'4px 14px', fontSize:10, fontWeight:800, color:'white', letterSpacing:'0.07em'}}>
-            {STREAM_CONFIG[stream]?.label?.toUpperCase() ?? stream.toUpperCase()}
-          </div>
-        </div>
-      ) : (
-        <div style={{display:'flex', alignItems:'center', gap:16, paddingBottom:28}}>
-          <Avatar initial={initial} C={C} size={isDesktop ? 54 : 64} />
-          <div style={{flex:1, minWidth:0}}>
-            <div style={{fontSize: isDesktop ? 18 : 20, fontWeight:800, color:'white', letterSpacing:'-0.3px'}}>
-              {profile?.display_name || (email ? email.split('@')[0] : 'Student')}
-            </div>
-            <div style={{fontSize:12, color:'rgba(255,255,255,0.7)', marginTop:3}}>{email || 'Guest account'}</div>
-          </div>
-          <div style={{background:'rgba(255,255,255,0.2)', border:'1px solid rgba(255,255,255,0.32)', borderRadius:20, padding:'5px 14px', fontSize:10, fontWeight:800, color:'white', letterSpacing:'0.07em', flexShrink:0}}>
-            {STREAM_CONFIG[stream]?.label?.toUpperCase() ?? stream.toUpperCase()}
-          </div>
-        </div>
-      )}
     </div>
   )
 

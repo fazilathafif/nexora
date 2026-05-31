@@ -17,7 +17,7 @@ import { getTopicStats } from '../lib/db.js'
 import { STREAM_CONFIG } from '../data/questions.js'
 import { EXAM_DATES, EXAM_DATES_VINTAGE } from '../data/officialExamDates.js'
 import { RESOURCES, getResourceSubjects } from '../data/resources.js'
-import { TRACK_COLORS } from '../styles/courseraTokens.js'
+import { TRACK_COLORS, COURSERA_BLUE } from '../styles/courseraTokens.js'
 
 const TYPE_META = {
   textbook:     { label: 'Textbook',       color: '#0056D2', bg: '#EFF6FF' },
@@ -419,13 +419,55 @@ export default function ResourcesPage({ user, profile, isDark }) {
     </div>
   )
 
-  // ── Layout ────────────────────────────────────────────────────────────────
-  const header = (
-    <div style={{ marginBottom: 18 }}>
-      <div style={{ fontSize: 26, fontWeight: 900, color: C.navy, fontFamily: "'Playfair Display', Georgia, serif", letterSpacing: '-0.4px' }}>
-        Resources
+
+  // ── Hero (consistent with HomePage + LearnHub) ────────────────────────────
+  const heroEl = (
+    <div style={{ padding: 'max(14px, env(safe-area-inset-top, 14px)) 16px 14px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        {/* Left: track pills or single label */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0, flexWrap: 'wrap' }}>
+          {enrolledStreams.length > 1 ? (
+            enrolledStreams.map(s => {
+              const sc     = STREAM_CONFIG[s]
+              const accent = TRACK_COLORS[s] ?? COURSERA_BLUE
+              const active = s === activeTrack
+              return (
+                <button
+                  key={s}
+                  onClick={() => setActiveTrack(s)}
+                  style={{
+                    background: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.18)',
+                    border: `1px solid ${active ? 'transparent' : 'rgba(255,255,255,0.3)'}`,
+                    borderRadius: 20, padding: '4px 11px',
+                    fontSize: 10, fontWeight: 800,
+                    color: active ? accent : 'white',
+                    cursor: 'pointer', fontFamily: 'Inter,sans-serif',
+                    WebkitTapHighlightColor: 'transparent',
+                    transition: 'all 0.15s', letterSpacing: '0.04em',
+                  }}
+                >
+                  {sc?.label?.replace(' Track','').replace(' Prep','') ?? s.toUpperCase()}
+                  {active && <span style={{ fontSize: 7, marginLeft: 3 }}>●</span>}
+                </button>
+              )
+            })
+          ) : (
+            <div style={{ fontSize: 16, fontWeight: 900, color: 'white', letterSpacing: '-0.3px' }}>
+              {cfg?.label?.replace(' Track','').replace(' Prep','') ?? activeTrack.toUpperCase()}
+            </div>
+          )}
+        </div>
+        {/* Right: page title pill */}
+        <div style={{
+          flexShrink: 0, fontSize: 11, fontWeight: 800, color: 'rgba(255,255,255,0.9)',
+          background: 'rgba(255,255,255,0.18)', borderRadius: 20, padding: '3px 10px',
+          letterSpacing: '0.06em', textTransform: 'uppercase',
+        }}>
+          Resources
+        </div>
       </div>
-      <div style={{ fontSize: 11, color: C.muted, marginTop: 1 }}>
+      {/* Subtitle */}
+      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 8, fontWeight: 500 }}>
         Exam dates · textbooks & guides · {isUK ? 'university' : 'college'} guidance
       </div>
     </div>
@@ -433,9 +475,7 @@ export default function ResourcesPage({ user, profile, isDark }) {
 
   if (!isMobile) {
     return (
-      <Shell C={C} isDark={isDark} contentMax={1100}>
-        {header}
-        {trackSwitcher}
+      <Shell C={C} isDark={isDark} heroContent={heroEl} contentMax={1100}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.1fr', gap: 24, alignItems: 'start' }}>
           <div style={{ position: 'sticky', top: 24 }}>
             {advisorPanel}
@@ -450,9 +490,7 @@ export default function ResourcesPage({ user, profile, isDark }) {
   }
 
   return (
-    <Shell C={C} isDark={isDark}>
-      {header}
-      {trackSwitcher}
+    <Shell C={C} isDark={isDark} heroContent={heroEl}>
       {advisorPanel}
       {examDatesPanel}
       {booksPanel}
