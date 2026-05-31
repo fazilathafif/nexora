@@ -46,10 +46,11 @@ function MarqueeRow({ chips, direction }) {
       >
         {doubled.map((chip, i) => (
           <span key={i} style={{
-            background:`${COURSERA_BLUE}10`,
-            border:`1px solid ${COURSERA_BLUE}30`,
+            background:'rgba(255,255,255,0.15)',
+            border:'1px solid rgba(255,255,255,0.3)',
+            backdropFilter:'blur(8px)',
             borderRadius:20,
-            padding:'5px 11px', fontSize:11, fontWeight:700, color: COURSERA_BLUE, flexShrink:0,
+            padding:'5px 11px', fontSize:11, fontWeight:700, color:'white', flexShrink:0,
           }}>{chip}</span>
         ))}
       </div>
@@ -402,164 +403,87 @@ export default function AuthGate() {
     )
   }
 
-  const slideX  = `calc(-${screenIndex * 33.333}% + ${dragOffset}px)`
-  const slideTx = dragOffset !== 0 ? 'none' : 'transform 0.38s cubic-bezier(0.25,0.46,0.45,0.94)'
-
   return (
-    <div style={{ position:'fixed', inset:0, overflow:'hidden', fontFamily:'Inter,sans-serif', background:'#F5F7FA' }}>
+    <div style={{ position:'fixed', inset:0, overflow:'hidden', fontFamily:'Inter,sans-serif' }}>
       <style>{css}</style>
 
-      {/* 3-screen horizontal slider */}
-      <div
-        style={{
-          position:'absolute', inset:0,
-          display:'flex', width:'300%',
-          transform:`translateX(${slideX})`, transition:slideTx,
-        }}
-        onPointerDown={screenIndex < 2 ? handlePointerDown : undefined}
-        onPointerMove={screenIndex < 2 ? handlePointerMove : undefined}
-        onPointerUp={screenIndex < 2 ? handlePointerUp : undefined}
-        onPointerLeave={screenIndex < 2 ? handlePointerUp : undefined}
-      >
-        {/* Screen 0 — Welcome */}
-        <div style={{ width:'33.333%', height:'100%', position:'relative', flexShrink:0 }}>
-          <WelcomeScreen onGetStarted={() => goTo(1)} onSkip={() => goTo(2)} />
-        </div>
+      {/* ── Full-bleed campus gate background ── */}
+      <div style={{
+        position:'absolute', inset:0,
+        backgroundImage:'url(/campus-gate.jpg)',
+        backgroundSize:'cover',
+        backgroundPosition:'center top',
+        backgroundRepeat:'no-repeat',
+      }} />
 
-        {/* Screen 1 — Features */}
-        <div style={{ width:'33.333%', height:'100%', position:'relative', flexShrink:0 }}>
-          <FeaturesScreen onContinue={() => goTo(2)} onBack={() => goTo(0)} />
-        </div>
+      {/* Dark overlay — stronger at bottom for text readability */}
+      <div style={{
+        position:'absolute', inset:0,
+        background:'linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.25) 40%, rgba(0,0,0,0.72) 75%, rgba(0,0,0,0.9) 100%)',
+      }} />
 
-        {/* Screen 2 — Sign-in */}
-        <div style={{ width:'33.333%', height:'100%', position:'relative', flexShrink:0, overflowY: isDesktop ? 'auto' : 'hidden' }}>
+      {/* ── Content ── */}
+      <div style={{ position:'relative', zIndex:1, height:'100%', display:'flex', flexDirection:'column' }}>
 
-          {isDesktop ? (
-            /* ── Desktop: two-column layout ── */
-            <div style={{ display:'flex', gap:36, padding:'40px 48px', alignItems:'flex-start', minHeight:'100%' }}>
-              {/* Left column: logo + scrollable accordion */}
-              <div style={{ flex:1, maxHeight:'85vh', overflowY:'auto', paddingRight:4 }}>
-                <div style={{ marginBottom:22 }}>
-                  <div style={{ fontSize:36, fontWeight:900, color: COURSERA_BLUE, letterSpacing:'-1.5px', marginBottom:6 }}>
-                    Nexora
-                    <span style={{ marginLeft:8, background:`${COURSERA_BLUE}15`, border:`1px solid ${COURSERA_BLUE}30`, color: COURSERA_BLUE, fontSize:9, fontWeight:800, letterSpacing:'0.08em', padding:'2px 7px', borderRadius:6, verticalAlign:'middle' }}>BETA</span>
-                  </div>
-                  <p style={{ color:'#6B7280', fontSize:11, fontWeight:700, margin:0, letterSpacing:'0.16em' }}>
-                    ACE YOUR ENTRANCE EXAMS
-                  </p>
-                </div>
-                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                  {TRACK_GROUPS.map((group, i) => {
-                    const open = !!expandedGroups[group.label]
-                    const showRegionHeader = i === 0 || TRACK_GROUPS[i - 1].region !== group.region
-                    return (
-                      <div key={group.label}>
-                        {showRegionHeader && (
-                          <div style={{ fontSize:10, fontWeight:800, color:'#9CA3AF', letterSpacing:'0.12em', textTransform:'uppercase', padding:'6px 2px 4px' }}>
-                            {group.region}
-                          </div>
-                        )}
-                        <button
-                          onClick={() => setExpandedGroups(g => ({ ...g, [group.label]: !g[group.label] }))}
-                          style={{ display:'flex', alignItems:'center', justifyContent:'space-between', width:'100%', background:'white', border:'1px solid #E5E7EB', borderRadius: open ? '10px 10px 0 0' : 10, padding:'9px 13px', cursor:'pointer', fontFamily:'Inter,sans-serif', transition:'border-radius 0.22s ease' }}
-                        >
-                          <span style={{ fontSize:10, fontWeight:800, color:'#374151', letterSpacing:'0.12em', textTransform:'uppercase' }}>{group.label}</span>
-                          <span style={{ fontSize:13, color:'#9CA3AF', transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition:'transform 0.25s ease', display:'block', lineHeight:1 }}>▾</span>
-                        </button>
-                        {open && (
-                          <div style={{ background:'white', borderRadius:'0 0 10px 10px', border:'1px solid #E5E7EB', borderTop:'none', padding:'10px 10px 12px' }}>
-                            <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
-                              {group.chips.map(chip => (
-                                <span key={chip} style={{ background:`${COURSERA_BLUE}10`, border:`1px solid ${COURSERA_BLUE}25`, borderRadius:20, padding:'4px 10px', fontSize:11, fontWeight:700, color: COURSERA_BLUE }}>{chip}</span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Right column: sign-in card (sticky) */}
-              <div style={{ width:360, flexShrink:0, position:'sticky', top:0, background:'white', borderRadius:20, padding:'28px 24px', boxShadow:'0 4px 24px rgba(0,0,0,0.1)', border:'1px solid #E5E7EB', maxHeight:'90vh', overflowY:'auto' }}>
-                <div style={{ width:32, height:4, borderRadius:2, background:'#E5E7EB', margin:'0 auto 20px' }} />
-                {sheetBody()}
-              </div>
+        {/* Logo area — sits over the arch */}
+        <div style={{
+          flex:1, display:'flex', flexDirection:'column',
+          alignItems:'center', justifyContent:'flex-end',
+          paddingBottom:28, paddingTop:`max(28px, env(safe-area-inset-top, 28px))`,
+          textAlign:'center', padding:'max(40px, env(safe-area-inset-top, 40px)) 24px 32px',
+        }}>
+          <div className="animate-fade-up">
+            <div style={{ fontSize:42, fontWeight:900, color:'white', letterSpacing:'-2px', marginBottom:8, fontFamily:"'Playfair Display', Georgia, serif", textShadow:'0 2px 20px rgba(0,0,0,0.5)' }}>
+              Nexora
             </div>
-
-          ) : (
-            /* ── Mobile: original bottom-sheet layout ── */
-            <>
-              <div style={{
-                position:'absolute', top:0, left:0, right:0,
-                bottom: compact ? '66%' : '46%',
-                display:'flex', flexDirection:'column',
-                alignItems:'center', justifyContent:'flex-end',
-                padding:'0 24px 28px',
-                transition:'bottom 0.38s cubic-bezier(0.25,0.46,0.45,0.94)',
-                pointerEvents:'none',
-              }}>
-                <div className="animate-fade-up" style={{ textAlign:'center' }}>
-                  <div style={{ fontSize:38, fontWeight:900, color: COURSERA_BLUE, letterSpacing:'-1.5px', marginBottom:6 }}>
-                    Nexora
-                    <span style={{ marginLeft:8, background:`${COURSERA_BLUE}15`, border:`1px solid ${COURSERA_BLUE}30`, color: COURSERA_BLUE, fontSize:9, fontWeight:800, letterSpacing:'0.08em', padding:'2px 7px', borderRadius:6, verticalAlign:'middle' }}>BETA</span>
-                  </div>
-                  <p style={{ color:'#6B7280', fontSize:11, fontWeight:700, margin:0, letterSpacing:'0.16em' }}>
-                    ACE YOUR ENTRANCE EXAMS
-                  </p>
-                </div>
-
-                {!compact && (
-                  <div className="animate-fade-up" style={{ display:'flex', flexDirection:'column', gap:6, marginTop:20, width:'100%', pointerEvents:'auto' }}>
-                    {TRACK_GROUPS.map((group, i) => {
-                      const open = !!expandedGroups[group.label]
-                      const showRegionHeader = i === 0 || TRACK_GROUPS[i - 1].region !== group.region
-                      return (
-                        <div key={group.label}>
-                          {showRegionHeader && (
-                            <div style={{ fontSize:10, fontWeight:800, color:'#9CA3AF', letterSpacing:'0.12em', textTransform:'uppercase', padding:'6px 2px 4px' }}>
-                              {group.region}
-                            </div>
-                          )}
-                          <button
-                            onClick={() => setExpandedGroups(g => ({ ...g, [group.label]: !g[group.label] }))}
-                            style={{ display:'flex', alignItems:'center', justifyContent:'space-between', width:'100%', background:'white', border:'1px solid #E5E7EB', borderRadius: open ? '10px 10px 0 0' : 10, padding:'9px 13px', cursor:'pointer', fontFamily:'Inter,sans-serif', transition:'border-radius 0.22s ease' }}
-                          >
-                            <span style={{ fontSize:10, fontWeight:800, color:'#374151', letterSpacing:'0.12em', textTransform:'uppercase' }}>{group.label}</span>
-                            <span style={{ fontSize:13, color:'#9CA3AF', transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition:'transform 0.25s ease', display:'block', lineHeight:1 }}>▾</span>
-                          </button>
-                          {open && (
-                            <div style={{ background:'white', borderRadius:'0 0 10px 10px', border:'1px solid #E5E7EB', borderTop:'none', padding:'10px 10px 12px' }}>
-                              <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
-                                {group.chips.map(chip => (
-                                  <span key={chip} style={{ background:`${COURSERA_BLUE}10`, border:`1px solid ${COURSERA_BLUE}25`, borderRadius:20, padding:'4px 10px', fontSize:11, fontWeight:700, color: COURSERA_BLUE }}>{chip}</span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Bottom sheet */}
-              <div style={{
-                position:'absolute', bottom:0, left:0, right:0,
-                background:'#FFFFFF', borderRadius:'24px 24px 0 0',
-                padding:`24px 24px calc(40px + env(safe-area-inset-bottom, 0px))`,
-                boxShadow:'0 -4px 24px rgba(0,0,0,0.08)',
-                border:'1px solid #E5E7EB',
-                maxHeight:'78dvh', overflowY:'auto',
-              }}>
-                <div style={{ width:32, height:4, borderRadius:2, background:'#E5E7EB', margin:'0 auto 20px' }} />
-                {sheetBody()}
-              </div>
-            </>
-          )}
+            <p style={{ color:'rgba(255,255,255,0.85)', fontSize:13, fontWeight:600, margin:'0 0 16px', letterSpacing:'0.12em', textTransform:'uppercase', textShadow:'0 1px 8px rgba(0,0,0,0.4)' }}>
+              Your path to the world's top universities
+            </p>
+            {/* Marquee chips */}
+            <div style={{ width:'100%', maxWidth:360, margin:'0 auto', display:'flex', flexDirection:'column', gap:6, overflow:'hidden' }}>
+              <MarqueeRow chips={GCSE_CHIPS} direction="left" />
+              <MarqueeRow chips={US_CHIPS}   direction="right" />
+            </div>
+          </div>
         </div>
+
+        {/* ── Sign-in sheet — frosted glass bottom panel ── */}
+        {isDesktop ? (
+          /* Desktop: centred card over image */
+          <div style={{
+            position:'absolute', top:'50%', right:48,
+            transform:'translateY(-50%)',
+            width:400, background:'rgba(255,255,255,0.97)',
+            backdropFilter:'blur(20px)',
+            borderRadius:24, padding:'32px 28px',
+            boxShadow:'0 24px 80px rgba(0,0,0,0.4)',
+            border:'1px solid rgba(255,255,255,0.4)',
+            maxHeight:'90vh', overflowY:'auto',
+          }}>
+            <div style={{ marginBottom:20 }}>
+              <div style={{ fontSize:28, fontWeight:900, color: COURSERA_BLUE, letterSpacing:'-1px', marginBottom:4 }}>
+                Nexora
+                <span style={{ marginLeft:8, background:`${COURSERA_BLUE}15`, border:`1px solid ${COURSERA_BLUE}30`, color: COURSERA_BLUE, fontSize:9, fontWeight:800, letterSpacing:'0.08em', padding:'2px 7px', borderRadius:6, verticalAlign:'middle' }}>BETA</span>
+              </div>
+              <p style={{ color:'#6B7280', fontSize:11, fontWeight:700, margin:0, letterSpacing:'0.14em', textTransform:'uppercase' }}>
+                Ace your entrance exams
+              </p>
+            </div>
+            {sheetBody()}
+          </div>
+        ) : (
+          /* Mobile: bottom sheet rising over image */
+          <div style={{
+            background:'white',
+            borderRadius:'24px 24px 0 0',
+            padding:`24px 24px calc(40px + env(safe-area-inset-bottom, 0px))`,
+            boxShadow:'0 -8px 40px rgba(0,0,0,0.35)',
+            maxHeight:'72dvh', overflowY:'auto',
+          }}>
+            <div style={{ width:36, height:4, borderRadius:2, background:'#E5E7EB', margin:'0 auto 20px' }} />
+            {sheetBody()}
+          </div>
+        )}
       </div>
     </div>
   )
