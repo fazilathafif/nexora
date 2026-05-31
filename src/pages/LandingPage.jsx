@@ -268,6 +268,84 @@ function AdvisorSheet({ onClose, onAddTracks }) {
   )
 }
 
+// ── Why Nexora tooltip button ─────────────────────────────────────────────────
+
+const WHY_POINTS = [
+  { icon:'🕹️', text:'5 Dynamic Study Modes – Switch seamlessly between Quizzes, Flashcards, Mock Exams, Active Recall, and Match Games to keep your brain engaged.' },
+  { icon:'🧠', text:'Instant AI Tutoring – Don\'t just see what you got wrong; get a personalised, step-by-step AI explanation after every single question.' },
+  { icon:'📈', text:'Scientific Spaced Repetition – Stop cramming. Our smart algorithm schedules reviews right before you\'re about to forget, cutting study time in half.' },
+  { icon:'🎓', text:'Global Exam Coverage – Tailored content built specifically for GCSE, A-Level, IGCSE, IB, SAT, ACT, AP, and beyond.' },
+  { icon:'📅', text:'Countdown to Success – Enter your exam date and unlock a personalised, automated study plan that keeps you perfectly on track.' },
+  { icon:'🎁', text:'100% Free, Zero Friction – No credit card, no paywalls, no catch. High-tier education, accessible to everyone.' },
+]
+
+function WhyNexoraButton({ onSave, saving, disabled, label }) {
+  const [hovered, setHovered] = useState(false)
+
+  return (
+    <div style={{ position:'relative', flex:1 }}>
+      <button
+        onClick={onSave}
+        disabled={disabled}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onFocus={() => setHovered(true)}
+        onBlur={() => setHovered(false)}
+        style={{
+          width:'100%', padding:'13px 0',
+          background: disabled ? '#D1D5DB' : COURSERA_BLUE,
+          color:'white', border:'none', borderRadius:8,
+          fontSize:14, fontWeight:700,
+          cursor: disabled ? 'default' : 'pointer',
+          fontFamily:'Inter,sans-serif',
+          transition:'background 0.15s',
+        }}
+      >
+        {label}
+      </button>
+
+      {hovered && !disabled && (
+        <div style={{
+          position:'absolute', bottom:'calc(100% + 12px)', left:'50%',
+          transform:'translateX(-50%)',
+          background:'#0F172A',
+          borderRadius:16, padding:'20px 22px',
+          boxShadow:'0 16px 48px rgba(0,0,0,0.28)',
+          width:320, zIndex:300,
+          fontFamily:'Inter,sans-serif',
+          pointerEvents:'none',
+        }}>
+          {/* Header */}
+          <div style={{ fontSize:15, fontWeight:900, color:'white', marginBottom:4, letterSpacing:'-0.2px' }}>
+            Why Nexora?
+          </div>
+          <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', marginBottom:14 }}>
+            Not just another revision app.
+          </div>
+
+          {/* Points */}
+          <div style={{ display:'flex', flexDirection:'column', gap:11 }}>
+            {WHY_POINTS.map((p, i) => (
+              <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
+                <span style={{ fontSize:15, flexShrink:0, marginTop:1 }}>{p.icon}</span>
+                <span style={{ fontSize:12, color:'rgba(255,255,255,0.82)', lineHeight:1.55, fontWeight:500 }}>{p.text}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Caret */}
+          <div style={{
+            position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)',
+            width:0, height:0,
+            borderLeft:'8px solid transparent', borderRight:'8px solid transparent',
+            borderTop:'8px solid #0F172A',
+          }} />
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function LandingPage({ user, profile, refreshProfile }) {
@@ -485,27 +563,20 @@ export default function LandingPage({ user, profile, refreshProfile }) {
               {saveError}
             </div>
           )}
-          <div style={{ display:'flex', gap:10 }}>
+          <div style={{ display:'flex', gap:10, alignItems:'center' }}>
             <button
               onClick={() => { setPendingStreams(originalStreams); setSaveError(null) }}
               style={{ background:'none', border:'none', fontSize:13, fontWeight:700, color:'#6B7280', cursor:'pointer', fontFamily:'Inter,sans-serif', padding:'0 8px', flexShrink:0 }}
             >
               Cancel
             </button>
-            <button
-              onClick={saveStreams}
+            {/* Save + Why Nexora tooltip */}
+            <WhyNexoraButton
+              onSave={saveStreams}
+              saving={saving}
               disabled={saving || pendingStreams.length === 0}
-              style={{
-                flex:1, padding:'13px 0',
-                background: saving || pendingStreams.length === 0 ? '#D1D5DB' : COURSERA_BLUE,
-                color:'white', border:'none', borderRadius:8,
-                fontSize:14, fontWeight:700,
-                cursor: saving || pendingStreams.length === 0 ? 'default' : 'pointer',
-                fontFamily:'Inter,sans-serif',
-              }}
-            >
-              {saving ? 'Saving…' : `Save ${pendingStreams.length} track${pendingStreams.length !== 1 ? 's' : ''}`}
-            </button>
+              label={saving ? 'Saving…' : `Get Started`}
+            />
           </div>
         </div>
       )}
