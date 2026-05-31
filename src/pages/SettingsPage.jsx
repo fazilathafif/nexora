@@ -529,7 +529,7 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
       </SectionBox>
       <CollapsibleSection title="Contact Us" icon="✉️" C={C}>
         <div style={{ padding:'14px 16px' }}>
-          <ContactForm C={C} user={user} />
+          <ContactForm C={C} user={user} profile={profile} />
         </div>
       </CollapsibleSection>
       <SectionBox title="Legal" C={C}>

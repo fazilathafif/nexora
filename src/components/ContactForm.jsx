@@ -8,8 +8,8 @@ const TYPES = [
   'Other',
 ]
 
-export default function ContactForm({ C, user, onClose }) {
-  const [name,    setName]    = useState(user?.display_name ?? user?.user_metadata?.full_name ?? '')
+export default function ContactForm({ C, user, profile, onClose }) {
+  const [name,    setName]    = useState(profile?.display_name ?? user?.user_metadata?.full_name ?? '')
   const [email,   setEmail]   = useState(user?.email ?? '')
   const [type,    setType]    = useState('General Enquiry')
   const [subject, setSubject] = useState('')
@@ -17,6 +17,8 @@ export default function ContactForm({ C, user, onClose }) {
   const [sending, setSending] = useState(false)
   const [sent,    setSent]    = useState(false)
   const [error,   setError]   = useState(null)
+
+  const canSubmit = !!email && message.trim().length >= 10
 
   const navy  = C?.navy  ?? '#1E293B'
   const muted = C?.muted ?? '#64748B'
@@ -52,7 +54,7 @@ export default function ContactForm({ C, user, onClose }) {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!email || message.length < 10) return
+    if (!canSubmit) return
     setSending(true)
     setError(null)
     try {
@@ -150,15 +152,18 @@ export default function ContactForm({ C, user, onClose }) {
 
       {/* Message */}
       <div style={fieldStyle}>
-        <label style={labelStyle}>
-          Message <span style={{ color: '#EF4444' }}>*</span>
-        </label>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:5 }}>
+          <label style={{ ...labelStyle, marginBottom:0 }}>
+            Message <span style={{ color: '#EF4444' }}>*</span>
+          </label>
+          <span style={{ fontSize:10, color: message.trim().length < 10 ? '#F59E0B' : '#10B981', fontWeight:600 }}>
+            {message.trim().length < 10 ? `${10 - message.trim().length} more chars needed` : `${message.trim().length} chars`}
+          </span>
+        </div>
         <textarea
           value={message}
           onChange={e => setMessage(e.target.value)}
-          placeholder="How can we help? (min 10 characters)"
-          required
-          minLength={10}
+          placeholder="How can we help?"
           rows={4}
           style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }}
         />
@@ -180,22 +185,22 @@ export default function ContactForm({ C, user, onClose }) {
 
       <button
         type="submit"
-        disabled={sending || !email || message.length < 10}
+        disabled={sending || !canSubmit}
         style={{
-          background: (sending || !email || message.length < 10) ? '#CBD5E1' : primary,
+          background: (sending || !canSubmit) ? '#CBD5E1' : primary,
           color: 'white',
           border: 'none',
           borderRadius: 10,
           padding: '10px 22px',
           fontSize: 13,
           fontWeight: 700,
-          cursor: (sending || !email || message.length < 10) ? 'not-allowed' : 'pointer',
+          cursor: (sending || !canSubmit) ? 'not-allowed' : 'pointer',
           fontFamily: 'Inter,sans-serif',
           transition: 'background 0.2s',
           width: '100%',
         }}
       >
-        {sending ? 'Sending…' : 'Send message'}
+        {sending ? 'Sending…' : !email ? 'Enter your email to send' : message.trim().length < 10 ? 'Add a message to send' : 'Send message'}
       </button>
     </form>
   )
