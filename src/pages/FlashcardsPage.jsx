@@ -58,6 +58,12 @@ export default function FlashcardsPage() {
   const { isDark } = useTheme()
   const C         = getColors(stream, subject, isDark)
   const dark      = isDark
+
+  // Explore mode gate — Flashcards not available in trial
+  if (sessionStorage.getItem('nx_explore') === '1') {
+    navigate('/', { replace: true })
+    return null
+  }
   const allQs     = sortByDue(getQuestions(stream, subject))
   const deckRef   = useRef(null)
   const { isDesktop } = useBreakpoint()

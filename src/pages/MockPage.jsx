@@ -28,6 +28,12 @@ export default function MockPage({ user, profile, refreshProfile, isDark }) {
   const dark                 = isDark
   const { isDesktop }        = useBreakpoint()
 
+  // Explore mode gate — Mock exams not available in trial
+  if (sessionStorage.getItem('nx_explore') === '1') {
+    navigate('/', { replace: true })
+    return null
+  }
+
   const cfg = stream === 'gcse'
     ? MOCK_CONFIG.gcse
     : stream === 'alevel'

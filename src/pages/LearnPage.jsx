@@ -21,6 +21,12 @@ export default function LearnPage({ isDark }) {
   const C                   = getColors(stream, null, isDark)
   const dark                = isDark
 
+  // Explore mode gate — Learn mode not available in trial
+  if (sessionStorage.getItem('nx_explore') === '1') {
+    navigate('/', { replace: true })
+    return null
+  }
+
   const allQuestions = getQuestions(stream, subject)
 
   const [queue,       setQueue]       = useState(() => shuffle(allQuestions))
@@ -43,7 +49,7 @@ export default function LearnPage({ isDark }) {
     setShuffledOpts(shuffle(opts))
     setPhase('question')
     setSelected(null)
-  }, [idx, queue])
+  }, [idx]) // eslint-disable-line
 
   const handleSelect = useCallback((optOriginalIndex) => {
     if (phase !== 'question') return

@@ -440,12 +440,25 @@ export default function AuthGate() {
         )}
 
         {!AUTH_DISABLED && (
-          <div style={{ textAlign:'center', marginTop:14 }}>
+          <div style={{ marginTop:14 }}>
             <button
-              onClick={() => { sessionStorage.setItem('nx_explore', '1'); navigate('/') }}
-              style={{ background:'none', border:'none', color: COURSERA_BLUE, fontSize:12, cursor:'pointer', textDecoration:'underline', fontFamily:'Inter,sans-serif', fontWeight:600 }}
+              onClick={() => {
+                sessionStorage.setItem('nx_explore', '1')
+                sessionStorage.setItem('nx_explore_limit', '3')
+                sessionStorage.setItem('nx_explore_used', '0')
+                navigate('/')
+              }}
+              style={{
+                width:'100%', background:'rgba(255,255,255,0.12)',
+                border:'1.5px solid rgba(255,255,255,0.35)',
+                borderRadius:8, padding:'11px', fontWeight:700,
+                fontSize:13, color:'white', cursor:'pointer',
+                fontFamily:'Inter,sans-serif', transition:'opacity 0.2s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
+              onMouseLeave={e => e.currentTarget.style.opacity = '1'}
             >
-              Explore 3 free questions first →
+              Try 3 free questions first →
             </button>
           </div>
         )}
