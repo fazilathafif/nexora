@@ -46,7 +46,7 @@ Sent from nexoralearn.app
       },
       body: JSON.stringify({
         from: 'Nexora Contact <noreply@nexoralearn.app>',
-        to: ['fazilath.afif@gmail.com'],
+        to: ['customerrelations.nexora@gmail.com'],
         reply_to: email,
         subject: `[Nexora] ${type || 'Contact'}: ${subject || message.slice(0, 50)}`,
         text: emailBody,
