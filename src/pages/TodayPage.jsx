@@ -369,47 +369,100 @@ function SrsDueCard({ srsData, totalDue, stream, C, dark, navigate }) {
 
 function QuickStartGrid({ subjects, stream, C, cols }) {
   const navigate = useNavigate()
+  const [openMenu, setOpenMenu] = useState(null)
+
+  const MODES = [
+    { label:'Flashcards', icon:'🃏', desc:'Spaced repetition', key:'flashcards' },
+    { label:'Mock Exam',  icon:'📋', desc:'Timed full paper',  key:'mock' },
+    { label:'Learn',      icon:'🧠', desc:'AI explanations',   key:'learn' },
+  ]
+
   return (
     <div style={{ marginBottom: 14 }}>
       <SectionHeading label="Quick Start" C={C} />
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 8 }}>
+      <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
         {subjects.map(s => (
-          <div key={s.id} style={{
-            background: 'white', border: `1px solid ${C.border}`,
-            borderRadius: 16, padding: '12px 10px',
-            boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 9 }}>
+          <div key={s.id} style={{ position:'relative' }}>
+            <div style={{
+              background:'white', border:`1.5px solid ${C.border}`,
+              borderRadius:14, overflow:'visible',
+              boxShadow:'0 1px 8px rgba(0,0,0,0.05)',
+              display:'flex', alignItems:'center', gap:12,
+            }}>
               <div style={{
-                width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-                background: `${C.primary}18`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
-              }}>
-                {s.emoji}
+                width:44, height:44, borderRadius:12, flexShrink:0, marginLeft:12,
+                background:`${C.primary}15`,
+                display:'flex', alignItems:'center', justifyContent:'center', fontSize:20,
+              }}>{s.emoji}</div>
+
+              <div style={{ flex:1, minWidth:0, padding:'12px 0' }}>
+                <div style={{ fontSize:13, fontWeight:800, color:'#1E293B', lineHeight:1.2 }}>{s.label}</div>
+                {s.desc && <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>{s.desc}</div>}
               </div>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#1E293B', lineHeight: 1.2 }}>{s.label}</div>
+
+              <button
+                onClick={() => navigate(`/${stream}/quiz/${s.id}`)}
+                style={{
+                  background:C.primary, color:'white',
+                  border:'none', borderRadius:10,
+                  padding:'8px 14px', fontSize:12, fontWeight:800,
+                  cursor:'pointer', fontFamily:'Inter,sans-serif',
+                  whiteSpace:'nowrap', flexShrink:0,
+                  WebkitTapHighlightColor:'transparent',
+                }}
+              >
+                Practice →
+              </button>
+
+              <button
+                onClick={() => setOpenMenu(openMenu === s.id ? null : s.id)}
+                style={{
+                  width:36, height:36, borderRadius:10, flexShrink:0,
+                  marginRight:8, background:'transparent',
+                  border:`1.5px solid ${C.border}`,
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  cursor:'pointer', fontSize:16, color:C.muted,
+                  WebkitTapHighlightColor:'transparent',
+                  fontFamily:'Inter,sans-serif',
+                }}
+                aria-label="More modes"
+              >⋯</button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 4 }}>
-              {[
-                { label: 'Quiz',  path: `/${stream}/quiz/${s.id}` },
-                { label: 'Cards', path: `/${stream}/flashcards/${s.id}` },
-                { label: 'Mock',  path: `/${stream}/mock/${s.id}` },
-                { label: 'Learn', path: `/${stream}/learn/${s.id}` },
-              ].map(m => (
-                <button
-                  key={m.label}
-                  onClick={() => navigate(m.path)}
-                  style={{
-                    background: `${C.primary}10`, border: `1px solid ${C.primary}25`,
-                    borderRadius: 7, padding: '5px 2px',
-                    fontSize: 10, fontWeight: 700, color: C.primary,
-                    cursor: 'pointer', fontFamily: 'Inter,sans-serif',
-                  }}
-                >
-                  {m.label}
-                </button>
-              ))}
-            </div>
+
+            {openMenu === s.id && (
+              <>
+                <div onClick={() => setOpenMenu(null)} style={{ position:'fixed', inset:0, zIndex:50 }} />
+                <div style={{
+                  position:'absolute', top:'calc(100% + 6px)', right:0,
+                  background:'white', border:`1.5px solid ${C.border}`,
+                  borderRadius:14, boxShadow:'0 8px 24px rgba(0,0,0,0.12)',
+                  zIndex:51, minWidth:200, overflow:'hidden',
+                }}>
+                  {MODES.map((m, i) => (
+                    <button
+                      key={m.key}
+                      onClick={() => { setOpenMenu(null); navigate(`/${stream}/${m.key}/${s.id}`) }}
+                      style={{
+                        width:'100%', display:'flex', alignItems:'center', gap:12,
+                        background:'white', border:'none',
+                        borderBottom: i < MODES.length - 1 ? `1px solid ${C.border}` : 'none',
+                        padding:'11px 14px', cursor:'pointer',
+                        fontFamily:'Inter,sans-serif', textAlign:'left',
+                        WebkitTapHighlightColor:'transparent',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = `${C.primary}08`}
+                      onMouseLeave={e => e.currentTarget.style.background = 'white'}
+                    >
+                      <span style={{ fontSize:18, flexShrink:0 }}>{m.icon}</span>
+                      <div>
+                        <div style={{ fontSize:13, fontWeight:700, color:'#1E293B' }}>{m.label}</div>
+                        <div style={{ fontSize:10, color:C.muted, marginTop:1 }}>{m.desc}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         ))}
       </div>

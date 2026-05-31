@@ -266,43 +266,116 @@ function SrsDueCard({ srsData, totalDue, stream, C, navigate }) {
 
 function QuickStartGrid({ subjects, stream, C, cols }) {
   const navigate = useNavigate()
+  const [openMenu, setOpenMenu] = useState(null)
+
+  const MODES = [
+    { label:'Flashcards', icon:'🃏', desc:'Spaced repetition', key:'flashcards' },
+    { label:'Mock Exam',  icon:'📋', desc:'Timed full paper',  key:'mock' },
+    { label:'Learn',      icon:'🧠', desc:'AI explanations',   key:'learn' },
+  ]
+
+  function getPath(subjectId, mode) {
+    const base = `/${stream}/${mode}/${subjectId}`
+    return base
+  }
+
   return (
     <div style={{ marginBottom:12 }}>
       <SH label="Quick Start" C={C} />
-      <div style={{ display:'grid', gridTemplateColumns:`repeat(${cols}, 1fr)`, gap:8 }}>
+      <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
         {subjects.map(s => (
-          <div key={s.id} style={{
-            background:'white', border:`1px solid ${C.border}`,
-            borderRadius:16, padding:'12px 10px',
-            boxShadow:'0 1px 6px rgba(0,0,0,0.05)',
-          }}>
-            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:9 }}>
+          <div key={s.id} style={{ position:'relative' }}>
+            <div style={{
+              background:'white', border:`1.5px solid ${C.border}`,
+              borderRadius:14, overflow:'visible',
+              boxShadow:'0 1px 8px rgba(0,0,0,0.05)',
+              display:'flex', alignItems:'center', gap:12,
+            }}>
+              {/* Emoji */}
               <div style={{
-                width:30, height:30, borderRadius:9, flexShrink:0,
-                background:`${C.primary}18`,
-                display:'flex', alignItems:'center', justifyContent:'center', fontSize:15,
+                width:44, height:44, borderRadius:12, flexShrink:0, marginLeft:12,
+                background:`${C.primary}15`,
+                display:'flex', alignItems:'center', justifyContent:'center', fontSize:20,
               }}>{s.emoji}</div>
-              <div style={{ fontSize:11, fontWeight:800, color:'#1E293B', lineHeight:1.2 }}>{s.label}</div>
+
+              {/* Label */}
+              <div style={{ flex:1, minWidth:0, padding:'12px 0' }}>
+                <div style={{ fontSize:13, fontWeight:800, color:'#1E293B', lineHeight:1.2 }}>{s.label}</div>
+                {s.desc && <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>{s.desc}</div>}
+              </div>
+
+              {/* Primary CTA */}
+              <button
+                onClick={() => navigate(`/${stream}/quiz/${s.id}`)}
+                style={{
+                  background:C.primary, color:'white',
+                  border:'none', borderRadius:10,
+                  padding:'8px 14px', fontSize:12, fontWeight:800,
+                  cursor:'pointer', fontFamily:'Inter,sans-serif',
+                  whiteSpace:'nowrap', flexShrink:0,
+                  WebkitTapHighlightColor:'transparent',
+                }}
+              >
+                Practice →
+              </button>
+
+              {/* More button */}
+              <button
+                onClick={() => setOpenMenu(openMenu === s.id ? null : s.id)}
+                style={{
+                  width:36, height:36, borderRadius:10, flexShrink:0,
+                  marginRight:8, background:'transparent',
+                  border:`1.5px solid ${C.border}`,
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  cursor:'pointer', fontSize:16, color:C.muted,
+                  WebkitTapHighlightColor:'transparent',
+                  fontFamily:'Inter,sans-serif',
+                }}
+                aria-label="More modes"
+              >
+                ⋯
+              </button>
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:4 }}>
-              {[
-                { label:'Quiz',  path:`/${stream}/quiz/${s.id}` },
-                { label:'Cards', path:`/${stream}/flashcards/${s.id}` },
-                { label:'Mock',  path:`/${stream}/mock/${s.id}` },
-                { label:'Learn', path:`/${stream}/learn/${s.id}` },
-              ].map(m => (
-                <button
-                  key={m.label}
-                  onClick={() => navigate(m.path)}
-                  style={{
-                    background:`${C.primary}10`, border:`1px solid ${C.primary}25`,
-                    borderRadius:7, padding:'5px 2px',
-                    fontSize:10, fontWeight:700, color:C.primary,
-                    cursor:'pointer', fontFamily:'Inter,sans-serif',
-                  }}
-                >{m.label}</button>
-              ))}
-            </div>
+
+            {/* Popover */}
+            {openMenu === s.id && (
+              <>
+                {/* Backdrop */}
+                <div
+                  onClick={() => setOpenMenu(null)}
+                  style={{ position:'fixed', inset:0, zIndex:50 }}
+                />
+                <div style={{
+                  position:'absolute', top:'calc(100% + 6px)', right:0,
+                  background:'white', border:`1.5px solid ${C.border}`,
+                  borderRadius:14, boxShadow:'0 8px 24px rgba(0,0,0,0.12)',
+                  zIndex:51, minWidth:200, overflow:'hidden',
+                }}>
+                  {MODES.map((m, i) => (
+                    <button
+                      key={m.key}
+                      onClick={() => { setOpenMenu(null); navigate(getPath(s.id, m.key)) }}
+                      style={{
+                        width:'100%', display:'flex', alignItems:'center', gap:12,
+                        background:'white', border:'none',
+                        borderBottom: i < MODES.length - 1 ? `1px solid ${C.border}` : 'none',
+                        padding:'11px 14px', cursor:'pointer',
+                        fontFamily:'Inter,sans-serif', textAlign:'left',
+                        WebkitTapHighlightColor:'transparent',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = `${C.primary}08`}
+                      onMouseLeave={e => e.currentTarget.style.background = 'white'}
+                    >
+                      <span style={{ fontSize:18, flexShrink:0 }}>{m.icon}</span>
+                      <div>
+                        <div style={{ fontSize:13, fontWeight:700, color:'#1E293B' }}>{m.label}</div>
+                        <div style={{ fontSize:10, color:C.muted, marginTop:1 }}>{m.desc}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         ))}
       </div>
@@ -391,55 +464,50 @@ function WeeklyHeatmap({ heatmap, maxSessions, loading, C }) {
 const UK_STREAMS = ['gcse','alevel']
 const US_STREAMS = ['sat','act','ap','psat']
 
-function SubjectMasteryStrip({ streams, C }) {
-  const [collapsed, setCollapsed] = useState({})
-  const norm = Array.isArray(streams) ? streams : [streams]
-  const uk   = norm.filter(s => UK_STREAMS.includes(s))
-  const us   = norm.filter(s => US_STREAMS.includes(s))
+function SubjectMasteryStrip({ streams, C, navigate, activeTrack }) {
+  const norm  = Array.isArray(streams) ? streams : [streams]
   const total = norm.length
 
-  function renderGroup(regionLabel, regionStreams) {
-    if (!regionStreams.length) return null
+  // Group streams by region
+  const uk    = norm.filter(s => UK_STREAMS.includes(s))
+  const us    = norm.filter(s => US_STREAMS.includes(s))
+  const intl  = norm.filter(s => !UK_STREAMS.includes(s) && !US_STREAMS.includes(s))
+
+  function renderTrack(s) {
+    const cfg    = STREAM_CONFIG[s]
+    if (!cfg) return null
+    const accent = TRACK_COLORS[s] ?? C.primary
+    const isActive = s === activeTrack
     return (
-      <div key={regionLabel} style={{ marginBottom:8 }}>
+      <div key={s} style={{ marginBottom: total > 1 ? 20 : 0 }}>
         {total > 1 && (
-          <div style={{ fontSize:10, fontWeight:800, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:8 }}>
-            {regionLabel}
+          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+            <div style={{ width:10, height:10, borderRadius:5, background:accent, flexShrink:0 }} />
+            <span style={{ fontSize:12, fontWeight:800, color:C.navy }}>
+              {cfg.label?.replace(' Track','').replace(' Prep','') ?? s.toUpperCase()}
+            </span>
+            {isActive && (
+              <span style={{ fontSize:9, fontWeight:800, color:accent, background:`${accent}15`, border:`1px solid ${accent}30`, borderRadius:20, padding:'1px 7px', letterSpacing:'0.04em' }}>
+                ACTIVE
+              </span>
+            )}
           </div>
         )}
-        {regionStreams.map(s => {
-          const cfg    = STREAM_CONFIG[s]
-          if (!cfg) return null
-          const accent = TRACK_COLORS[s] ?? C.primary
-          const isCollapsed = collapsed[s]
-          return (
-            <div key={s} style={{ marginBottom:10 }}>
-              {total > 1 && (
-                <button
-                  onClick={() => setCollapsed(p => ({ ...p, [s]:!p[s] }))}
-                  style={{
-                    display:'flex', alignItems:'center', gap:8, width:'100%',
-                    background:'none', border:'none', cursor:'pointer', padding:'4px 0 6px',
-                    textAlign:'left', fontFamily:'Inter,sans-serif',
-                  }}
-                >
-                  <div style={{ width:10, height:10, borderRadius:5, background:accent, flexShrink:0 }} />
-                  <span style={{ fontSize:12, fontWeight:700, color:C.navy, flex:1 }}>
-                    {cfg.label?.replace(' Track','').replace(' Prep','') ?? s.toUpperCase()}
-                  </span>
-                  <span style={{ fontSize:11, color:C.muted }}>{isCollapsed ? '▸' : '▾'}</span>
-                </button>
-              )}
-              {!isCollapsed && (
-                <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-                  {cfg.subjects.filter(sub => !sub.deprecated).map(sub => (
-                    <MasteryDot key={sub.id} stream={s} subject={sub} C={C} />
-                  ))}
-                </div>
-              )}
-            </div>
-          )
-        })}
+        <MasteryList stream={s} subjects={cfg.subjects.filter(sub => !sub.deprecated)} accent={accent} C={C} navigate={navigate} />
+      </div>
+    )
+  }
+
+  function renderGroup(label, regionStreams) {
+    if (!regionStreams.length) return null
+    return (
+      <div key={label} style={{ marginBottom:4 }}>
+        {total > 1 && regionStreams.length > 0 && (
+          <div style={{ fontSize:10, fontWeight:800, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:10 }}>
+            {label}
+          </div>
+        )}
+        {regionStreams.map(renderTrack)}
       </div>
     )
   }
@@ -449,29 +517,116 @@ function SubjectMasteryStrip({ streams, C }) {
       <SH label="Subject Mastery" C={C} />
       {renderGroup('🇬🇧 United Kingdom', uk)}
       {renderGroup('🇺🇸 United States', us)}
+      {renderGroup('🌍 International', intl)}
     </Card>
   )
 }
 
-function MasteryDot({ stream, subject, C }) {
-  const questions = getQuestions(stream, subject.id)
+function MasteryList({ stream, subjects, accent, C, navigate }) {
+  // Collect pct for all subjects then sort weakest first
+  const rows = subjects.map(sub => {
+    const questions = getQuestions(stream, sub.id)
+    return { sub, questions }
+  })
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+      {rows.map(({ sub, questions }) => (
+        <MasteryRow
+          key={sub.id}
+          stream={stream}
+          subject={sub}
+          questions={questions}
+          accent={accent}
+          C={C}
+          navigate={navigate}
+        />
+      ))}
+    </div>
+  )
+}
+
+function MasteryRow({ stream, subject, questions, accent, C, navigate }) {
   const { pct, badge } = useMastery(questions)
   const badgeLabel = badge==='gold'?'🥇':badge==='silver'?'🥈':badge==='bronze'?'🥉':null
-  const barColor   = badge==='gold'?'#FBBF24':badge==='silver'?'#9CA3AF':badge==='bronze'?'#CD7F32':C.primary
+
+  const barColor = pct >= 75 ? '#10B981'
+    : pct >= 50 ? '#F59E0B'
+    : pct > 0   ? '#EF4444'
+    : C.border.replace('#','') !== '' ? '#E2E8F0' : '#E2E8F0'
+
+  const textColor = pct >= 75 ? '#065F46'
+    : pct >= 50 ? '#92400E'
+    : pct > 0   ? '#991B1B'
+    : C.muted
+
+  const bgColor = pct >= 75 ? '#ECFDF5'
+    : pct >= 50 ? '#FFFBEB'
+    : pct > 0   ? '#FEF2F2'
+    : '#F8FAFC'
+
+  const [hovered, setHovered] = useState(false)
+
   return (
-    <div style={{ textAlign:'center', minWidth:52 }}>
+    <button
+      onClick={() => navigate && navigate(`/${stream}/quiz/${subject.id}`)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        width:'100%', display:'flex', alignItems:'center', gap:10,
+        background: hovered ? `${accent}06` : 'transparent',
+        border:`1px solid ${hovered ? accent+'30' : C.border}`,
+        borderRadius:12, padding:'10px 12px',
+        cursor: navigate ? 'pointer' : 'default',
+        fontFamily:'Inter,sans-serif', textAlign:'left',
+        transition:'all 0.15s ease',
+        WebkitTapHighlightColor:'transparent',
+      }}
+    >
+      {/* Emoji */}
       <div style={{
-        width:42, height:42, borderRadius:21, margin:'0 auto 4px',
-        background:`${barColor}18`, border:`2px solid ${barColor}40`,
+        width:36, height:36, borderRadius:10, flexShrink:0,
+        background:`${accent}15`,
         display:'flex', alignItems:'center', justifyContent:'center',
-        fontSize:19, position:'relative',
+        fontSize:18,
       }}>
         {subject.emoji}
-        {badgeLabel && <div style={{ position:'absolute', top:-4, right:-4, fontSize:13 }}>{badgeLabel}</div>}
       </div>
-      <div style={{ fontSize:9, fontWeight:700, color:C.navy, lineHeight:1.2 }}>{subject.label.replace(' & ','\n& ')}</div>
-      <div style={{ fontSize:10, fontWeight:800, color:barColor, marginTop:2 }}>{pct}%</div>
-    </div>
+
+      {/* Label + bar */}
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:5, marginBottom:5 }}>
+          <span style={{ fontSize:12, fontWeight:700, color:C.navy, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+            {subject.label}
+          </span>
+          {badgeLabel && <span style={{ fontSize:12, lineHeight:1, flexShrink:0 }}>{badgeLabel}</span>}
+        </div>
+        {/* Progress bar */}
+        <div style={{ height:5, background:'#E2E8F0', borderRadius:999, overflow:'hidden' }}>
+          <div style={{
+            height:'100%', borderRadius:999,
+            width:`${pct}%`,
+            background: barColor,
+            transition:'width 0.6s ease',
+          }} />
+        </div>
+      </div>
+
+      {/* Percentage badge */}
+      <div style={{
+        flexShrink:0, minWidth:40, textAlign:'center',
+        background: pct === 0 ? 'transparent' : bgColor,
+        border: pct === 0 ? 'none' : `1px solid ${barColor}30`,
+        borderRadius:8, padding:'3px 7px',
+      }}>
+        <span style={{
+          fontSize:12, fontWeight:800,
+          color: pct === 0 ? C.muted : textColor,
+        }}>
+          {pct === 0 ? '—' : `${pct}%`}
+        </span>
+      </div>
+    </button>
   )
 }
 
@@ -823,7 +978,7 @@ export default function LearnHubPage({ user, profile, isDark }) {
       )}
       <StatStrip streak={streak} xp={xp} level={level} C={C} />
       <WeeklyHeatmap heatmap={heatmap} maxSessions={maxSessions} loading={loading} C={C} />
-      <SubjectMasteryStrip streams={enrolledStreams} C={C} />
+      <SubjectMasteryStrip streams={[activeTrack]} C={C} navigate={navigate} activeTrack={activeTrack} />
       <Card C={C} style={{ marginBottom:12 }}>
         <SH label={['sat','act','ap','psat'].includes(stream) ? 'Topic Performance' : 'Subject Strength'} C={C} />
         {loading ? <Skeleton C={C} height={120} /> : topics.length === 0
