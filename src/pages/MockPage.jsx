@@ -34,7 +34,7 @@ export default function MockPage({ user, profile, refreshProfile, isDark }) {
       ? MOCK_CONFIG.alevel?.[subject]
       : MOCK_CONFIG[stream]
 
-  const questions = getQuestions(stream, subject).slice().sort(() => Math.random() - 0.5)
+  const [questions] = useState(() => getQuestions(stream, subject).slice().sort(() => Math.random() - 0.5))
   const { startQuizSession, submitAnswer, finishQuizSession } = useProgress(user, profile, refreshProfile)
 
   const [answers,      setAnswers]      = useState(() => Array(questions.length).fill(null))
