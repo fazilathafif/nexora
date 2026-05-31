@@ -279,12 +279,17 @@ export default function LandingPage({ user, profile, refreshProfile }) {
   const hasChanges = JSON.stringify([...pendingStreams].sort()) !== JSON.stringify([...originalStreams].sort())
 
   function toggleStream(stream) {
-    if (!user) { navigate(`/${stream}`); return }
     setPendingStreams(prev => prev.includes(stream) ? prev.filter(s => s !== stream) : [...prev, stream])
   }
 
   async function saveStreams() {
-    if (!user || !pendingStreams.length) return
+    if (!pendingStreams.length) return
+    if (!user) {
+      // Not signed in — navigate to auth with the selection saved in session
+      sessionStorage.setItem('nx_pending_streams', JSON.stringify(pendingStreams))
+      navigate('/?signin=1')
+      return
+    }
     setSaving(true); setSaveError(null)
     try {
       const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out — please try again.')), 8000))
@@ -368,8 +373,11 @@ export default function LandingPage({ user, profile, refreshProfile }) {
           {/* Top bar */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:28 }}>
             <div style={{ fontSize:22, fontWeight:900, color:'white', letterSpacing:'-0.5px' }}>Nexora</div>
-            {profile?.stream && (
-              <button onClick={() => navigate(`/${profile.stream}`)} style={{ background:'rgba(255,255,255,0.18)', border:'1px solid rgba(255,255,255,0.3)', borderRadius:20, padding:'7px 16px', fontSize:12, fontWeight:700, color:'white', cursor:'pointer', fontFamily:'Inter,sans-serif', backdropFilter:'blur(8px)' }}>
+            {(profile?.stream || profile?.active_stream) && (
+              <button
+                onClick={() => navigate(`/${profile.active_stream ?? profile.stream}`)}
+                style={{ background:'rgba(255,255,255,0.18)', border:'1px solid rgba(255,255,255,0.3)', borderRadius:20, padding:'7px 16px', fontSize:12, fontWeight:700, color:'white', cursor:'pointer', fontFamily:'Inter,sans-serif', backdropFilter:'blur(8px)' }}
+              >
                 ← Back
               </button>
             )}

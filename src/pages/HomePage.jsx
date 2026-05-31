@@ -310,7 +310,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
           {isSupabaseConfigured && isAnon
             ? <HeroIconBtn onClick={() => setShowAuth(true)} title="Sign In"><SignInIcon color="white" size={18} /></HeroIconBtn>
             : isSupabaseConfigured && !isAnon
-              ? <HeroIconBtn onClick={signOut} title="Sign Out"><SignOutIcon color="white" size={18} /></HeroIconBtn>
+              ? <HeroIconBtn onClick={() => { signOut?.(); navigate('/') }} title="Sign Out"><SignOutIcon color="white" size={18} /></HeroIconBtn>
               : null
           }
           <HeroIconBtn onClick={() => navigate(`/${stream}/settings?contact=1`)} title="Contact Us"><MailIcon color="white" size={18} /></HeroIconBtn>
