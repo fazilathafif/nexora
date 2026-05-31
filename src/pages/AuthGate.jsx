@@ -58,6 +58,56 @@ function MarqueeRow({ chips, direction }) {
   )
 }
 
+const WHY_POINTS = [
+  { icon:'🕹️', text:'5 Dynamic Study Modes – Quizzes, Flashcards, Mock Exams, Active Recall, Match Games.' },
+  { icon:'🧠', text:'Instant AI Tutoring – Step-by-step explanation after every question.' },
+  { icon:'📈', text:'Scientific Spaced Repetition – Smart scheduling cuts study time in half.' },
+  { icon:'🎓', text:'Global Coverage – GCSE, A-Level, IGCSE, IB, SAT, ACT, AP & beyond.' },
+  { icon:'📅', text:'Countdown to Success – Personalised study plan tied to your exam date.' },
+  { icon:'🎁', text:'100% Free, Zero Friction – No card, no paywalls, no catch.' },
+]
+
+function WhyNexoraPanel() {
+  const [open, setOpen] = useState(false)
+  return (
+    <div style={{ maxWidth:340, margin:'0 auto', textAlign:'left' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
+          background:'rgba(255,255,255,0.15)', backdropFilter:'blur(8px)',
+          border:'1px solid rgba(255,255,255,0.3)',
+          borderRadius: open ? '12px 12px 0 0' : 12,
+          padding:'10px 16px', cursor:'pointer',
+          fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent',
+        }}
+      >
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <span style={{ fontSize:15 }}>✨</span>
+          <span style={{ fontSize:13, fontWeight:700, color:'white' }}>Why Nexora?</span>
+        </div>
+        <span style={{ fontSize:13, color:'rgba(255,255,255,0.7)', transform: open ? 'rotate(180deg)' : 'none', transition:'transform 0.2s', display:'inline-block' }}>▾</span>
+      </button>
+      {open && (
+        <div style={{
+          background:'rgba(15,23,42,0.82)', backdropFilter:'blur(16px)',
+          border:'1px solid rgba(255,255,255,0.15)', borderTop:'none',
+          borderRadius:'0 0 12px 12px', padding:'14px 16px',
+        }}>
+          <div style={{ display:'flex', flexDirection:'column', gap:9 }}>
+            {WHY_POINTS.map((p, i) => (
+              <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
+                <span style={{ fontSize:13, flexShrink:0, marginTop:1 }}>{p.icon}</span>
+                <span style={{ fontSize:12, color:'rgba(255,255,255,0.80)', lineHeight:1.5, fontWeight:500 }}>{p.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function CtaPanel({ children }) {
   return (
     <div style={{
@@ -341,9 +391,9 @@ export default function AuthGate() {
                 <Divider label="OR" />
                 <button
                   onClick={() => setEmailExpanded(true)}
-                  style={{ width:'100%', background:'transparent', border:`1.5px solid #E5E7EB`, borderRadius:8, padding:'13px', fontWeight:700, fontSize:14, color:'#374151', cursor:'pointer', fontFamily:'Inter,sans-serif', transition:'border-color 0.2s' }}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = COURSERA_BLUE}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}
+                  style={{ width:'100%', background:'rgba(255,255,255,0.12)', border:'1.5px solid rgba(255,255,255,0.35)', borderRadius:8, padding:'13px', fontWeight:700, fontSize:14, color:'white', cursor:'pointer', fontFamily:'Inter,sans-serif', transition:'border-color 0.2s' }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.6)'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.35)'}
                 >
                   Sign in with email
                 </button>
@@ -436,14 +486,11 @@ export default function AuthGate() {
             <div style={{ fontSize:42, fontWeight:900, color:'white', letterSpacing:'-2px', marginBottom:8, fontFamily:"'Playfair Display', Georgia, serif", textShadow:'0 2px 20px rgba(0,0,0,0.5)' }}>
               Nexora
             </div>
-            <p style={{ color:'rgba(255,255,255,0.85)', fontSize:13, fontWeight:600, margin:'0 0 16px', letterSpacing:'0.12em', textTransform:'uppercase', textShadow:'0 1px 8px rgba(0,0,0,0.4)' }}>
+            <p style={{ color:'rgba(255,255,255,0.75)', fontSize:12, fontWeight:600, margin:'0 0 20px', letterSpacing:'0.12em', textTransform:'uppercase', textShadow:'0 1px 8px rgba(0,0,0,0.4)' }}>
               Your path to the world's top universities
             </p>
-            {/* Marquee chips */}
-            <div style={{ width:'100%', maxWidth:360, margin:'0 auto', display:'flex', flexDirection:'column', gap:6, overflow:'hidden' }}>
-              <MarqueeRow chips={GCSE_CHIPS} direction="left" />
-              <MarqueeRow chips={US_CHIPS}   direction="right" />
-            </div>
+            {/* Why Nexora — expandable */}
+            <WhyNexoraPanel />
           </div>
         </div>
 
@@ -453,8 +500,9 @@ export default function AuthGate() {
           <div style={{
             position:'absolute', top:'50%', right:48,
             transform:'translateY(-50%)',
-            width:400, background:'rgba(255,255,255,0.97)',
-            backdropFilter:'blur(20px)',
+            width:400, background:'rgba(255,255,255,0.18)',
+            backdropFilter:'blur(28px) saturate(180%)',
+            WebkitBackdropFilter:'blur(28px) saturate(180%)',
             borderRadius:24, padding:'32px 28px',
             boxShadow:'0 24px 80px rgba(0,0,0,0.4)',
             border:'1px solid rgba(255,255,255,0.4)',
@@ -474,13 +522,17 @@ export default function AuthGate() {
         ) : (
           /* Mobile: bottom sheet rising over image */
           <div style={{
-            background:'white',
+            background:'rgba(255,255,255,0.18)',
+            backdropFilter:'blur(28px) saturate(180%)',
+            WebkitBackdropFilter:'blur(28px) saturate(180%)',
             borderRadius:'24px 24px 0 0',
             padding:`24px 24px calc(40px + env(safe-area-inset-bottom, 0px))`,
             boxShadow:'0 -8px 40px rgba(0,0,0,0.35)',
+            border:'1px solid rgba(255,255,255,0.25)',
+            borderBottom:'none',
             maxHeight:'72dvh', overflowY:'auto',
           }}>
-            <div style={{ width:36, height:4, borderRadius:2, background:'#E5E7EB', margin:'0 auto 20px' }} />
+            <div style={{ width:36, height:4, borderRadius:2, background:'rgba(255,255,255,0.4)', margin:'0 auto 20px' }} />
             {sheetBody()}
           </div>
         )}
@@ -495,9 +547,9 @@ function GoogleBtn({ onClick }) {
   return (
     <button
       onClick={onClick}
-      style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:10, background:'white', border:'1.5px solid #E5E7EB', borderRadius:8, padding:'13px', fontWeight:700, fontSize:14, color:'#1F1F1F', cursor:'pointer', fontFamily:'Inter,sans-serif', boxShadow:'0 1px 4px rgba(0,0,0,0.06)', marginBottom:12, transition:'box-shadow 0.2s' }}
-      onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,0.1)'}
-      onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)'}
+      style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:10, background:'rgba(255,255,255,0.92)', border:'none', borderRadius:8, padding:'13px', fontWeight:700, fontSize:14, color:'#1F1F1F', cursor:'pointer', fontFamily:'Inter,sans-serif', boxShadow:'0 2px 12px rgba(0,0,0,0.2)', marginBottom:12, transition:'opacity 0.2s' }}
+      onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
+      onMouseLeave={e => e.currentTarget.style.opacity = '1'}
     >
       <GoogleIcon /> Continue with Google
     </button>
@@ -507,9 +559,9 @@ function GoogleBtn({ onClick }) {
 function Divider({ label }) {
   return (
     <div style={{ display:'flex', alignItems:'center', gap:10, margin:'4px 0 14px' }}>
-      <div style={{ flex:1, height:1, background:'#E5E7EB' }} />
-      <span style={{ fontSize:11, fontWeight:700, color:'#9CA3AF', letterSpacing:'0.08em' }}>{label}</span>
-      <div style={{ flex:1, height:1, background:'#E5E7EB' }} />
+      <div style={{ flex:1, height:1, background:'rgba(255,255,255,0.25)' }} />
+      <span style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.55)', letterSpacing:'0.08em' }}>{label}</span>
+      <div style={{ flex:1, height:1, background:'rgba(255,255,255,0.25)' }} />
     </div>
   )
 }
@@ -530,7 +582,7 @@ function Field({ label, type, value, onChange, placeholder }) {
 
 function ErrBox({ children }) {
   return (
-    <div style={{ background:'#FDEAEC', border:'1px solid #C0152F30', borderRadius:8, padding:'8px 12px', fontSize:12, color:'#C0152F', marginBottom:14 }}>
+    <div style={{ background:'rgba(192,21,47,0.25)', border:'1px solid rgba(192,21,47,0.5)', borderRadius:8, padding:'8px 12px', fontSize:12, color:'#FFB3B3', marginBottom:14 }}>
       {children}
     </div>
   )
@@ -549,11 +601,11 @@ function GoogleIcon() {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const heading   = { fontWeight:800, fontSize:22, color:'#1F1F1F', marginBottom:20, letterSpacing:'-0.4px' }
-const labelS    = { display:'block', fontSize:10, fontWeight:700, color:'#9CA3AF', letterSpacing:'0.1em', marginBottom:5 }
-const inputS    = { width:'100%', padding:'12px 13px', borderRadius:8, fontSize:14, background:'#F5F7FA', border:'1.5px solid #E5E7EB', color:'#1F1F1F', outline:'none', fontFamily:'Inter,sans-serif', transition:'border-color 0.2s', boxSizing:'border-box' }
-const toggleRow = { textAlign:'center', marginTop:16, fontSize:13, color:'#6B7280' }
-const link      = { background:'none', border:'none', cursor:'pointer', color: COURSERA_BLUE, fontWeight:700, fontSize:13, fontFamily:'Inter,sans-serif', padding:0 }
+const heading   = { fontWeight:800, fontSize:22, color:'white', marginBottom:20, letterSpacing:'-0.4px' }
+const labelS    = { display:'block', fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.7)', letterSpacing:'0.1em', marginBottom:5 }
+const inputS    = { width:'100%', padding:'12px 13px', borderRadius:8, fontSize:14, background:'rgba(255,255,255,0.15)', backdropFilter:'blur(8px)', border:'1.5px solid rgba(255,255,255,0.3)', color:'white', outline:'none', fontFamily:'Inter,sans-serif', transition:'border-color 0.2s', boxSizing:'border-box' }
+const toggleRow = { textAlign:'center', marginTop:16, fontSize:13, color:'rgba(255,255,255,0.7)' }
+const link      = { background:'none', border:'none', cursor:'pointer', color:'white', fontWeight:700, fontSize:13, fontFamily:'Inter,sans-serif', padding:0, textDecoration:'underline' }
 
 const ctaBtnS = {
   display:'block', width:'100%',
