@@ -284,8 +284,16 @@ export default function LandingPage({ user, profile, refreshProfile }) {
 
   async function saveStreams() {
     if (!pendingStreams.length) return
+
+    // Explore mode — no account, go straight to the chosen stream
+    if (sessionStorage.getItem('nx_explore') === '1') {
+      sessionStorage.setItem('nx_explore_stream', pendingStreams[0])
+      navigate(`/${pendingStreams[0]}`)
+      return
+    }
+
     if (!user) {
-      // Not signed in — navigate to auth with the selection saved in session
+      // Not signed in — save selection and send to auth
       sessionStorage.setItem('nx_pending_streams', JSON.stringify(pendingStreams))
       navigate('/?signin=1')
       return
