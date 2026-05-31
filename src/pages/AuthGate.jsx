@@ -64,7 +64,7 @@ const WHY_POINTS = [
   { icon:'📈', text:'Scientific Spaced Repetition – Smart scheduling cuts study time in half.' },
   { icon:'🎓', text:'Global Coverage – GCSE, A-Level, IGCSE, IB, SAT, ACT, AP & beyond.' },
   { icon:'📅', text:'Countdown to Success – Personalised study plan tied to your exam date.' },
-  { icon:'🎁', text:'100% Free, Zero Friction – No card, no paywalls, no catch.' },
+  { icon:'🎁', text:'Student-Friendly Freemium Plans – Start free, upgrade only when you need more.' },
 ]
 
 function WhyNexoraPanel() {
