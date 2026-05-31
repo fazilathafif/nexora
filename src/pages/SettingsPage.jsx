@@ -11,6 +11,7 @@ import { trialDaysLeft, getEffectivePlan, PLANS } from '../lib/subscription.js'
 import IAChecklist       from '../components/IAChecklist.jsx'
 import CASTracker        from '../components/CASTracker.jsx'
 import IGCSEGradeToggle, { useIGCSEScheme } from '../components/IGCSEGradeToggle.jsx'
+import ContactForm from '../components/ContactForm.jsx'
 
 const APP_VERSION = '1.0.0-beta'
 
@@ -526,11 +527,11 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
           </>
         )}
       </SectionBox>
-      <SectionBox title="Support" C={C}>
-        <SettingsRow C={C} icon="✉️" label="Contact Support" sublabel="support@nexoralearn.app" onClick={() => window.open('mailto:support@nexoralearn.app')} />
-        <Divider C={C} />
-        <SettingsRow C={C} icon="🐞" label="Report a Bug" sublabel="Help us improve Nexora" onClick={() => window.open('mailto:support@nexoralearn.app?subject=Bug%20Report')} />
-      </SectionBox>
+      <CollapsibleSection title="Contact Us" icon="✉️" C={C}>
+        <div style={{ padding:'14px 16px' }}>
+          <ContactForm C={C} user={user} />
+        </div>
+      </CollapsibleSection>
       <SectionBox title="Legal" C={C}>
         <SettingsRow C={C} icon="🔒" label="Privacy Policy" sublabel="How we use your data" onClick={() => navigate('/privacy')} />
         <Divider C={C} />

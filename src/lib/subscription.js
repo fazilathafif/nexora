@@ -21,7 +21,7 @@ export const PLANS = {
     name:            'Freemium',
     badge:           'Free',
     badgeColor:      '#64748B',
-    questionsPerDay: 15,
+    questionsPerDay: 5,
     flashcardsPerDay:20,
     aiUsesPerDay:    0,
     subjects:        2,

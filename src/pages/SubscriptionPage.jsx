@@ -26,7 +26,15 @@ const PLAN_CARDS = [
     name: 'Free',
     price: 'Free forever',
     priceNote: '1 track only · no card needed',
-    features: ['1 track included', '15 questions / day', '2 subjects per track', 'Basic progress tracking', 'Community leaderboard'],
+    features: [
+      '✓ 1 track included',
+      '✓ 5 questions / day',
+      '✓ 2 subjects per track',
+      '✓ Basic progress tracking',
+      '✗ Mock exams (Pro)',
+      '✗ AI explanations (Pro)',
+      '✗ Unlimited questions (Pro)',
+    ],
     color: '#64748B',
     highlight: false,
   },
@@ -35,7 +43,7 @@ const PLAN_CARDS = [
     name: 'Pro',
     price: `£${PRO_PRICE_PER_TRACK}`,
     priceNote: 'per track / month',
-    features: ['Unlimited questions', 'All subjects in the track', 'AI explanations & notes', 'Mock exams', 'Full study plan', 'Streak & XP'],
+    features: ['✓ Unlimited questions', '✓ All subjects in the track', '✓ AI explanations & notes', '✓ Mock exams', '✓ Full study plan', '✓ Streak & XP'],
     color: '#0056D2',
     highlight: true,
   },
@@ -44,7 +52,7 @@ const PLAN_CARDS = [
     name: 'Group',
     price: `£${GROUP_PRICE_PER_TRACK}`,
     priceNote: 'per track / student / month',
-    features: ['All Pro features per track', 'Teacher dashboard', 'Class progress reports', 'Class leaderboard', 'Min. 5 students', 'Priority support'],
+    features: ['✓ All Pro features per track', '✓ Teacher dashboard', '✓ Class progress reports', '✓ Class leaderboard', '✓ Min. 5 students', '✓ Priority support'],
     color: '#059669',
     highlight: false,
   },
@@ -299,12 +307,19 @@ export default function SubscriptionPage({ user, profile, isDark }) {
                 <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>{card.priceNote}</div>
               </div>
               <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
-                {card.features.map(f => (
-                  <div key={f} style={{ display:'flex', alignItems:'center', gap:8, fontSize:12, color:C.navy }}>
-                    <span style={{ color:card.color, fontWeight:800, fontSize:13 }}>✓</span>
-                    {f}
-                  </div>
-                ))}
+                {card.features.map(f => {
+                  const locked = f.startsWith('✗')
+                  return (
+                    <div key={f} style={{ display:'flex', alignItems:'center', gap:8, fontSize:12, color: locked ? '#94A3B8' : C.navy }}>
+                      <span style={{ color: locked ? '#CBD5E1' : card.color, fontWeight:800, fontSize:13, flexShrink:0 }}>
+                        {locked ? '✗' : '✓'}
+                      </span>
+                      <span style={{ color: locked ? '#94A3B8' : C.navy }}>
+                        {f.replace(/^[✓✗] /, '')}
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
               {card.key !== 'free' && (
                 <div style={{ marginTop:18, padding:'10px', textAlign:'center', background:isSelected ? card.color : `${card.color}12`, borderRadius:10, fontSize:12, fontWeight:800, color:isSelected ? 'white' : card.color, transition:'all 0.2s' }}>

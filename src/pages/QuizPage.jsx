@@ -15,6 +15,7 @@ import { getRandomBreak }              from '../data/breaks.js'
 import { NAV_HEIGHT }                  from '../styles/tokens.js'
 import { useBreakpoint }               from '../hooks/useBreakpoint.js'
 import { saveNote, getNotes, NOTES_MAX } from '../lib/notes.js'
+import { getEffectivePlan, PLANS } from '../lib/subscription.js'
 
 function CopyButton({ text }) {
   const [copied, setCopied] = useState(false)
@@ -59,6 +60,8 @@ function SaveNoteButton({ onSave, saved, notesCount }) {
 
 export default function QuizPage({ user, profile, refreshProfile, isDark }) {
   const { stream, subject } = useParams()
+  const effectivePlan = getEffectivePlan(profile)
+  const dailyLimit    = PLANS[effectivePlan]?.questionsPerDay ?? 5
   const [searchParams]      = useSearchParams()
   const reviewMode          = searchParams.get('review') === '1'
   const dailyMode           = searchParams.get('daily')  === '1'
@@ -229,6 +232,42 @@ export default function QuizPage({ user, profile, refreshProfile, isDark }) {
     }
   }, []) // eslint-disable-line
 
+  const [limitReached] = useState(() => {
+    if (effectivePlan === 'free' || effectivePlan === 'trial') {
+      const todayKey = `nx_q_count_${new Date().toISOString().split('T')[0]}`
+      const usedToday = parseInt(localStorage.getItem(todayKey) ?? '0', 10)
+      return PLANS[effectivePlan]?.questionsPerDay !== Infinity && usedToday >= (PLANS[effectivePlan]?.questionsPerDay ?? 5)
+    }
+    return false
+  })
+
+  if (limitReached) {
+    return (
+      <Shell C={C} isDark={isDark}>
+        <div style={{ textAlign:'center', padding:'60px 24px' }}>
+          <div style={{ fontSize:48, marginBottom:16 }}>⏱️</div>
+          <div style={{ fontSize:20, fontWeight:900, color:C.navy, marginBottom:8 }}>Daily limit reached</div>
+          <div style={{ fontSize:14, color:C.muted, marginBottom:24, lineHeight:1.6 }}>
+            You've used your {PLANS[effectivePlan]?.questionsPerDay} questions for today on the free plan.<br/>
+            Come back tomorrow or upgrade for unlimited practice.
+          </div>
+          <button
+            onClick={() => navigate(`/${stream}/subscription`)}
+            style={{ background:C.primary, color:'white', border:'none', borderRadius:12, padding:'13px 28px', fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:'Inter,sans-serif', marginBottom:12, display:'block', width:'100%' }}
+          >
+            Upgrade for unlimited →
+          </button>
+          <button
+            onClick={() => navigate(`/${stream}`)}
+            style={{ background:'none', border:'none', color:C.muted, cursor:'pointer', fontSize:13, fontWeight:600, fontFamily:'Inter,sans-serif' }}
+          >
+            Back to home
+          </button>
+        </div>
+      </Shell>
+    )
+  }
+
   if (!questions.length) {
     return (
       <Shell C={C} isDark={isDark}>
@@ -254,6 +293,10 @@ export default function QuizPage({ user, profile, refreshProfile, isDark }) {
     if (sessionStorage.getItem('nx_explore') === '1' && answers.length + 1 >= 3) {
       setShowTrialWall(true)
     }
+    // Increment daily counter
+    const todayKey = `nx_q_count_${new Date().toISOString().split('T')[0]}`
+    const used = parseInt(localStorage.getItem(todayKey) ?? '0', 10)
+    localStorage.setItem(todayKey, String(used + 1))
   }
 
   async function handleNext() {
