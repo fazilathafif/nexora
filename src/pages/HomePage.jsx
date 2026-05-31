@@ -313,6 +313,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
               ? <HeroIconBtn onClick={signOut} title="Sign Out"><SignOutIcon color="white" size={18} /></HeroIconBtn>
               : null
           }
+          <HeroIconBtn onClick={() => navigate(`/${stream}/settings?contact=1`)} title="Contact Us"><MailIcon color="white" size={18} /></HeroIconBtn>
           <HeroIconBtn onClick={() => navigate('/landing')} title="Manage tracks"><SwitchIcon color="white" size={18} /></HeroIconBtn>
         </div>
       </div>
@@ -1443,6 +1444,15 @@ function SignInIcon({ color, size=20 }) {
       <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
       <polyline points="10 17 15 12 10 7" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
       <line x1="15" y1="12" x2="3" y2="12" stroke={color} strokeWidth={2} strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function MailIcon({ color, size=20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
+      <polyline points="22,6 12,13 2,6" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   )
 }

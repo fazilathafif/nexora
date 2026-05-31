@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import { Shell, getColors } from './HomePage.jsx'
 import { useBreakpoint } from '../hooks/useBreakpoint.js'
@@ -31,8 +31,8 @@ const NOTE_ACHIEVEMENTS = [
   { id:'note10',  icon:'🧑‍🎓', label:'Expert',      desc:'Saved 10 AI notes',        checkN:(n)=>n.length>=10 },
 ]
 
-function CollapsibleSection({ title, icon, children, C }) {
-  const [open, setOpen] = useState(false)
+function CollapsibleSection({ title, icon, children, C, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen)
   return (
     <div style={{ marginBottom:20 }}>
       <button
@@ -306,6 +306,8 @@ function Card({ children, style, C }) {
 export default function SettingsPage({ user, profile, signOut, refreshProfile, isDark }) {
   const { stream } = useParams()
   const navigate   = useNavigate()
+  const [searchParams] = useSearchParams()
+  const openContact = searchParams.get('contact') === '1'
   const C          = getColors(stream, null, isDark)
   const { isMobile, isTablet, isDesktop } = useBreakpoint()
   const { mode, setMode } = useTheme()
@@ -527,7 +529,7 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
           </>
         )}
       </SectionBox>
-      <CollapsibleSection title="Contact Us" icon="✉️" C={C}>
+      <CollapsibleSection title="Contact Us" icon="✉️" C={C} defaultOpen={openContact}>
         <div style={{ padding:'14px 16px' }}>
           <ContactForm C={C} user={user} profile={profile} />
         </div>
