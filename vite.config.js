@@ -43,6 +43,7 @@ export default defineConfig({
         skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MiB — covers large question bank bundle
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         navigateFallback: null,
         runtimeCaching: [
