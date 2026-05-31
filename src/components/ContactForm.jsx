@@ -58,22 +58,26 @@ export default function ContactForm({ C, user, profile, onClose }) {
     setSending(true)
     setError(null)
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-contact`,
-        {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-contact`
+      const key = import.meta.env.VITE_SUPABASE_ANON_KEY
+      if (!url || !key || url === 'undefined/functions/v1/send-contact') {
+        throw new Error('missing-env')
+      }
+      const res = await fetch(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'apikey': key,
+            'Authorization': `Bearer ${key}`,
           },
           body: JSON.stringify({ name, email, type, subject, message }),
         }
       )
-      if (!res.ok) throw new Error('non-ok response')
+      if (!res.ok) throw new Error(`http-${res.status}`)
       setSent(true)
-    } catch {
-      setError(true)
+    } catch (err) {
+      console.error('ContactForm error:', err?.message)
+      setError(err?.message ?? 'unknown')
     } finally {
       setSending(false)
     }
@@ -175,11 +179,10 @@ export default function ContactForm({ C, user, profile, onClose }) {
           border: '1px solid #FCA5A5', borderRadius: 8,
           padding: '8px 12px', marginBottom: 12, lineHeight: 1.5,
         }}>
-          Something went wrong — please email{' '}
-          <a href="mailto:support@nexoralearn.app" style={{ color: '#DC2626', fontWeight: 700 }}>
-            support@nexoralearn.app
-          </a>{' '}
-          directly.
+          {error === 'missing-env'
+            ? 'Configuration error — contact us at customerrelations.nexora@gmail.com'
+            : `Error (${error}) — please email customerrelations.nexora@gmail.com directly`
+          }
         </div>
       )}
 
