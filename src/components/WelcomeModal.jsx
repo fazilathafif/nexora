@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 
 const SESSION_KEY = 'nx_welcome_shown'
 
 export default function WelcomeModal({ user, C, dark }) {
   const [visible, setVisible] = useState(false)
+  const navigate = useNavigate()
+  const { stream } = useParams()
 
   useEffect(() => {
     if (!user) return
@@ -16,7 +19,8 @@ export default function WelcomeModal({ user, C, dark }) {
   if (!visible) return null
 
   function sendFeedback() {
-    window.open('mailto:afif@nexorauk.com?subject=Nexora Beta Feedback', '_blank')
+    setVisible(false)
+    navigate(`/${stream ?? 'gcse'}/settings?contact=1`)
   }
 
   return (

@@ -480,7 +480,7 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
   // ── Account section ──────────────────────────────────────────────────────────
   const accountSection = (
     <>
-      <SectionBox title="Account" C={C}>
+      <CollapsibleSection title="Account" icon="👤" C={C}>
         {/* Email — mandatory */}
         <div style={{ padding:'12px 16px 0' }}>
           <div style={{ fontSize:11, fontWeight:700, color:C.muted, marginBottom:5, textTransform:'uppercase', letterSpacing:'0.06em' }}>
@@ -528,7 +528,7 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
             <SettingsRow C={C} icon="🚪" label="Sign Out" sublabel="You can sign back in at any time" onClick={() => { signOut?.(); navigate('/') }} danger right={null} />
           </>
         )}
-      </SectionBox>
+      </CollapsibleSection>
       <CollapsibleSection title="Contact Us" icon="✉️" C={C} defaultOpen={openContact}>
         <div style={{ padding:'14px 16px' }}>
           <ContactForm C={C} user={user} profile={profile} />
