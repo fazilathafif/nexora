@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { updateProfile } from '../lib/db.js'
 import { STREAM_CONFIG } from '../data/questions.js'
@@ -281,15 +281,27 @@ const WHY_POINTS = [
 
 function WhyNexoraButton({ onSave, saving, disabled, label }) {
   const [hovered, setHovered] = useState(false)
+  const btnRef = React.useRef(null)
+  const [tooltipPos, setTooltipPos] = useState({ left: '50%', bottom: 80 })
+
+  function updatePos() {
+    if (!btnRef.current) return
+    const rect = btnRef.current.getBoundingClientRect()
+    setTooltipPos({
+      left: rect.left + rect.width / 2,
+      bottom: window.innerHeight - rect.top + 10,
+    })
+  }
 
   return (
     <div style={{ position:'relative', flex:1 }}>
       <button
+        ref={btnRef}
         onClick={onSave}
         disabled={disabled}
-        onMouseEnter={() => setHovered(true)}
+        onMouseEnter={() => { updatePos(); setHovered(true) }}
         onMouseLeave={() => setHovered(false)}
-        onFocus={() => setHovered(true)}
+        onFocus={() => { updatePos(); setHovered(true) }}
         onBlur={() => setHovered(false)}
         style={{
           width:'100%', padding:'13px 0',
@@ -306,24 +318,23 @@ function WhyNexoraButton({ onSave, saving, disabled, label }) {
 
       {hovered && !disabled && (
         <div style={{
-          position:'absolute', bottom:'calc(100% + 12px)', left:'50%',
+          position:'fixed',
+          bottom: tooltipPos.bottom,
+          left: tooltipPos.left,
           transform:'translateX(-50%)',
           background:'#0F172A',
           borderRadius:16, padding:'20px 22px',
           boxShadow:'0 16px 48px rgba(0,0,0,0.28)',
-          width:320, zIndex:300,
+          width:300, zIndex:9999,
           fontFamily:'Inter,sans-serif',
           pointerEvents:'none',
         }}>
-          {/* Header */}
           <div style={{ fontSize:15, fontWeight:900, color:'white', marginBottom:4, letterSpacing:'-0.2px' }}>
             Why Nexora?
           </div>
           <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', marginBottom:14 }}>
             Not just another revision app.
           </div>
-
-          {/* Points */}
           <div style={{ display:'flex', flexDirection:'column', gap:11 }}>
             {WHY_POINTS.map((p, i) => (
               <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
@@ -332,8 +343,6 @@ function WhyNexoraButton({ onSave, saving, disabled, label }) {
               </div>
             ))}
           </div>
-
-          {/* Caret */}
           <div style={{
             position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)',
             width:0, height:0,
