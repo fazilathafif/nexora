@@ -10,6 +10,8 @@ const US_CHIPS   = ['🇺🇸 SAT Math', '📝 SAT R&W', '🧮 ACT', '🏆 AP Ca
 const TRACK_GROUPS = [
   { region: '🇬🇧 United Kingdom', label: 'GCSE',              chips: ['📐 Maths', '📚 English', '🔬 Science', '🏛️ History', '🌍 Geography', '🇪🇸 Spanish', '🇫🇷 French', '🇩🇪 German', '💻 CS', '☯️ RS', '💼 Business'] },
   { region: '🇬🇧 United Kingdom', label: 'A-Level Entrance',  chips: ['🏥 UCAT', '⚖️ LNAT', '∑ TMUA', '⚗️ ESAT', '🧠 TARA', '📐 MAT', '⚛️ PAT', '📊 STEP'] },
+  { region: '🌍 International',   label: 'IGCSE',             chips: ['📐 Maths', '📚 English Lang', '✍️ English Lit', '🧬 Biology', '⚗️ Chemistry', '⚛️ Physics', '🔬 Combined Sci', '🏛️ History', '🌍 Geography', '💹 Economics', '💻 CS', '💼 Business', '🇪🇸 Spanish', '🇫🇷 French'] },
+  { region: '🌍 International',   label: 'IB Diploma',        chips: ['∑ Maths AA', '📊 Maths AI', '🧬 Biology', '⚗️ Chemistry', '⚛️ Physics', '📚 English A', '🇫🇷 French B', '🇪🇸 Spanish B', '🏛️ History', '💹 Economics', '🌍 Geography', '🧠 Psychology', '💼 Business', '🤔 ToK', '💻 CS', '🌱 ESS', '🎨 Visual Arts'] },
   { region: '🇺🇸 United States',  label: 'SAT',               chips: ['📐 SAT Math', '📝 SAT Reading & Writing'] },
   { region: '🇺🇸 United States',  label: 'ACT',               chips: ['🧮 ACT Math', '📖 ACT English', '🔬 ACT Science', '📚 ACT Reading'] },
   { region: '🇺🇸 United States',  label: 'AP',                chips: ['∫ AP Calculus', '🧬 AP Biology', '⚗️ AP Chemistry', '⚛️ AP Physics', '📜 AP US History', '✍️ AP English Lang', '💻 AP CS', '💰 AP Economics', '📊 AP Statistics'] },
