@@ -12,6 +12,8 @@ const TRACK_META = {
   act:    { flag:'🇺🇸', stars:4.8, region:'us' },
   ap:     { flag:'🇺🇸', stars:4.9, region:'us' },
   psat:   { flag:'🇺🇸', stars:4.7, region:'us' },
+  igcse: { flag:'🌍', stars:4.8, region:'international' },
+  ib:    { flag:'🌐', stars:4.9, region:'international' },
 }
 
 function StarRating({ val }) {
@@ -323,6 +325,7 @@ export default function LandingPage({ user, profile, refreshProfile }) {
 
   const ukTracks = ['gcse', 'alevel']
   const usTracks = ['sat', 'act', 'ap', 'psat']
+  const internationalTracks = ['igcse', 'ib']
 
   return (
     <div style={{
@@ -420,6 +423,31 @@ export default function LandingPage({ user, profile, refreshProfile }) {
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
             {usTracks.map(id => (
+              <TrackCard
+                key={id}
+                streamId={id}
+                cfg={STREAM_CONFIG[id]}
+                meta={TRACK_META[id]}
+                enrolled={pendingStreams.includes(id)}
+                onToggle={toggleStream}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* International section */}
+        <div style={{ marginTop:24, marginBottom:8 }}>
+          <div style={{
+            display:'flex', alignItems:'center', gap:8, marginBottom:14,
+            fontSize:11, fontWeight:800, color:'#6B7280',
+            letterSpacing:'0.08em', textTransform:'uppercase',
+          }}>
+            <span>🌍</span>
+            <span>International</span>
+            <div style={{ flex:1, height:1, background:'#E5E7EB' }} />
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            {internationalTracks.map(id => (
               <TrackCard
                 key={id}
                 streamId={id}

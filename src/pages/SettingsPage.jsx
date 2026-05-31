@@ -8,10 +8,13 @@ import { STREAM_CONFIG } from '../data/questions.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import { useTheme } from '../hooks/useTheme.js'
 import { trialDaysLeft, getEffectivePlan, PLANS } from '../lib/subscription.js'
+import IAChecklist       from '../components/IAChecklist.jsx'
+import CASTracker        from '../components/CASTracker.jsx'
+import IGCSEGradeToggle, { useIGCSEScheme } from '../components/IGCSEGradeToggle.jsx'
 
 const APP_VERSION = '1.0.0-beta'
 
-const STREAM_LABELS = { gcse:'GCSE', alevel:'A-Level', sat:'SAT', act:'ACT', ap:'AP', psat:'PSAT' }
+const STREAM_LABELS = { gcse:'GCSE', alevel:'A-Level', sat:'SAT', act:'ACT', ap:'AP', psat:'PSAT', igcse:'IGCSE', ib:'IB Diploma' }
 
 const ACHIEVEMENTS = [
   { id:'first_q', icon:'🎯', label:'First Step',   desc:'Answered first question',  check:(p)=>(p?.xp??0)>0 },
@@ -536,6 +539,32 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
     </>
   )
 
+  // ── IB-specific sections ─────────────────────────────────────────────────────
+  const ibSections = stream === 'ib' ? (
+    <>
+      <CollapsibleSection title="IA Checklist" icon="📋" C={C}>
+        <div style={{ padding:'14px 16px' }}>
+          <IAChecklist userId={user?.id} C={C} />
+        </div>
+      </CollapsibleSection>
+      <CollapsibleSection title="CAS Tracker" icon="🌱" C={C}>
+        <div style={{ padding:'14px 16px' }}>
+          <CASTracker userId={user?.id} C={C} />
+        </div>
+      </CollapsibleSection>
+    </>
+  ) : null
+
+  // ── IGCSE-specific sections ──────────────────────────────────────────────────
+  const igcseSection = stream === 'igcse' ? (
+    <CollapsibleSection title="Grade Display" icon="🎓" C={C}>
+      <div style={{ padding:'14px 16px' }}>
+        <div style={{ fontSize:12, color:C.muted, marginBottom:10 }}>Choose how your grades are displayed in results and progress.</div>
+        <IGCSEGradeToggle C={C} />
+      </div>
+    </CollapsibleSection>
+  ) : null
+
   // ── Appearance + Accessibility + Privacy — single collapsible ────────────────
   const preferencesSection = (
     <CollapsibleSection title="Appearance, Accessibility & Privacy" icon="🎨" C={C}>
@@ -598,6 +627,8 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
                 {statsData.map(s => <StatCard key={s.label} compact {...s} />)}
               </div>
             </Card>
+            {ibSections}
+            {igcseSection}
             {preferencesSection}
             {accountSection}
             {appInfo}
@@ -623,6 +654,8 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
           <SL C={C}>Achievements</SL>
           {achievementsGrid(4)}
         </div>
+        {ibSections}
+        {igcseSection}
         {preferencesSection}
         {accountSection}
         {appInfo}
@@ -645,6 +678,8 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
           ))}
         </div>
       </div>
+      {ibSections}
+      {igcseSection}
       {preferencesSection}
       {accountSection}
       {appInfo}

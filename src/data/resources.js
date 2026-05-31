@@ -202,6 +202,93 @@ export const RESOURCES = {
       { title: 'College Board PSAT Practice Tests', type: 'practice', url: 'https://satsuite.collegeboard.org/psat-nmsqt/practice', desc: 'Official free practice tests' },
     ],
   },
+
+  // ── IGCSE ───────────────────────────────────────────────────────────────────
+  igcse: {
+    _stream: { label: 'IGCSE', region: 'International (Cambridge/Edexcel)' },
+    igcse_maths: [
+      { title: 'Cambridge IGCSE Mathematics Core and Extended', author: 'Ric Pimentel & Terry Wall', type: 'textbook', publisher: 'Hodder Education' },
+      { title: 'Cambridge IGCSE Maths Revision Guide', type: 'revision', publisher: 'CGP Books' },
+      { title: 'Cambridge IGCSE Past Papers', type: 'practice', url: 'https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-mathematics-0580/past-papers/', desc: 'Official past papers and mark schemes' },
+    ],
+    igcse_english_lang: [
+      { title: 'Cambridge IGCSE English Language', author: 'Marian Cox', type: 'textbook', publisher: 'Hodder Education' },
+      { title: 'Cambridge IGCSE English Language Past Papers', type: 'practice', url: 'https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-english-language-0500/past-papers/', desc: 'Official past papers 2017–2024' },
+    ],
+    igcse_biology: [
+      { title: 'Cambridge IGCSE Biology', author: 'D.G. Mackean & Dave Hayward', type: 'textbook', publisher: 'Hodder Education' },
+      { title: 'Cambridge IGCSE Biology Revision Guide', type: 'revision', publisher: 'Hodder Education' },
+      { title: 'Cambridge IGCSE Biology Past Papers', type: 'practice', url: 'https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-biology-0610/past-papers/', desc: 'Official past papers and mark schemes' },
+    ],
+    igcse_chemistry: [
+      { title: 'Cambridge IGCSE Chemistry', author: 'Bryan Earl & Doug Wilford', type: 'textbook', publisher: 'Hodder Education' },
+      { title: 'Cambridge IGCSE Chemistry Revision Guide', type: 'revision', publisher: 'Hodder Education' },
+      { title: 'ChemRevise IGCSE', type: 'free-online', url: 'https://chemrevise.org', desc: 'Free notes covering IGCSE Chemistry topics' },
+    ],
+    igcse_physics: [
+      { title: 'Cambridge IGCSE Physics', author: 'Tom Duncan & Heather Kennett', type: 'textbook', publisher: 'Hodder Education' },
+      { title: 'Cambridge IGCSE Physics Revision Guide', type: 'revision', publisher: 'Hodder Education' },
+      { title: 'Cambridge IGCSE Physics Past Papers', type: 'practice', url: 'https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-physics-0625/past-papers/', desc: 'Official past papers and mark schemes' },
+    ],
+    igcse_history: [
+      { title: 'Cambridge IGCSE History', author: 'John Cantrell et al.', type: 'textbook', publisher: 'Hodder Education' },
+      { title: 'Encyclopaedia Britannica', type: 'free-online', url: 'https://www.britannica.com', desc: 'Historical context and summaries' },
+    ],
+    igcse_geography: [
+      { title: 'Cambridge IGCSE Geography', author: 'Paul Guinness & Garrett Nagle', type: 'textbook', publisher: 'Hodder Education' },
+      { title: 'Cambridge IGCSE Geography Revision Guide', type: 'revision', publisher: 'Hodder Education' },
+    ],
+    igcse_economics: [
+      { title: 'Cambridge IGCSE Economics', author: 'Susan Grant', type: 'textbook', publisher: 'Hodder Education' },
+      { title: 'Economics Help', type: 'free-online', url: 'https://www.economicshelp.org', desc: 'Free economics explanations and diagrams' },
+    ],
+    igcse_business: [
+      { title: 'Cambridge IGCSE Business Studies', author: 'Peter Stimpson & Karen Borrington', type: 'textbook', publisher: 'Hodder Education' },
+    ],
+    igcse_cs: [
+      { title: 'Cambridge IGCSE Computer Science', author: 'David Watson & Helen Williams', type: 'textbook', publisher: 'Hodder Education' },
+    ],
+  },
+
+  // ── IB Diploma ──────────────────────────────────────────────────────────────
+  ib: {
+    _stream: { label: 'IB Diploma', region: 'International (IBO)' },
+    ib_maths_aa: [
+      { title: 'Mathematics: Analysis and Approaches (HL)', author: 'Paul La Rondie et al.', type: 'textbook', publisher: 'Hodder Education' },
+      { title: 'Mathematics: Analysis and Approaches (SL)', author: 'Natasha Awada et al.', type: 'textbook', publisher: 'Hodder Education' },
+      { title: 'Revision Village — IB Maths AA', type: 'free-online', url: 'https://www.revisionvillage.com/ib-math/analysis-approaches/', desc: 'IB-specific question banks and past papers' },
+      { title: 'IB Maths AA Past Papers', type: 'practice', url: 'https://www.ibo.org/programmes/diploma-programme/curriculum/mathematics/past-papers/', desc: 'Official IB specimen papers' },
+    ],
+    ib_maths_ai: [
+      { title: 'Mathematics: Applications and Interpretation (HL/SL)', author: 'Paul La Rondie et al.', type: 'textbook', publisher: 'Hodder Education' },
+      { title: 'Revision Village — IB Maths AI', type: 'free-online', url: 'https://www.revisionvillage.com/ib-math/applications-interpretation/', desc: 'IB-specific question banks and past papers' },
+    ],
+    ib_biology: [
+      { title: 'Biology for the IB Diploma (2nd ed.)', author: 'C.J. Clegg', type: 'textbook', publisher: 'Hodder Education' },
+      { title: 'IB Biology Revision Guide', type: 'revision', publisher: 'Hodder Education' },
+      { title: 'IB Biology Past Papers', type: 'practice', url: 'https://www.ibo.org/programmes/diploma-programme/curriculum/sciences/biology/', desc: 'Official IB specimen papers and question banks' },
+    ],
+    ib_chemistry: [
+      { title: 'Chemistry for the IB Diploma (2nd ed.)', author: 'Steve Owen', type: 'textbook', publisher: 'Hodder Education' },
+      { title: 'ChemRevise — IB Chemistry', type: 'free-online', url: 'https://chemrevise.org', desc: 'Free notes covering IB Chemistry topics' },
+    ],
+    ib_physics: [
+      { title: 'Physics for the IB Diploma (2nd ed.)', author: 'K.A. Tsokos', type: 'textbook', publisher: 'Cambridge University Press' },
+      { title: 'IB Physics Revision Guide', type: 'revision', publisher: 'Hodder Education' },
+    ],
+    ib_history: [
+      { title: 'History for the IB Diploma: Authoritarian States', author: 'Mike Wells', type: 'textbook', publisher: 'Cambridge University Press' },
+      { title: 'History for the IB Diploma: The Cold War', author: 'Bill Norton', type: 'textbook', publisher: 'Cambridge University Press' },
+    ],
+    ib_economics: [
+      { title: 'Economics for the IB Diploma', author: 'Ellie Tragakes', type: 'textbook', publisher: 'Cambridge University Press' },
+      { title: 'Economics Help', type: 'free-online', url: 'https://www.economicshelp.org', desc: 'Free explanations and diagrams' },
+    ],
+    ib_tok: [
+      { title: 'Theory of Knowledge for the IB Diploma', author: 'Richard van de Lagemaat', type: 'textbook', publisher: 'Cambridge University Press' },
+      { title: 'IBO — ToK Guide 2022', type: 'practice', url: 'https://www.ibo.org/programmes/diploma-programme/curriculum/theory-of-knowledge/', desc: 'Official IBO ToK guide and prescribed titles' },
+    ],
+  },
 }
 
 /** Returns the resource list for a given stream and subject (case-insensitive match). */

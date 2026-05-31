@@ -65,6 +65,7 @@ export default function QuizPage({ user, profile, refreshProfile, isDark }) {
   const challengeMode       = searchParams.get('challenge') === '1'
   const challengeTarget     = challengeMode ? Number(searchParams.get('target') ?? 0) : null
   const topicFilter         = searchParams.get('topic') ?? null
+  const tierParam           = searchParams.get('tier') ?? null
   const navigate            = useNavigate()
   const C                   = getColors(stream, subject, isDark)
   const dark                = isDark
@@ -76,7 +77,7 @@ export default function QuizPage({ user, profile, refreshProfile, isDark }) {
   // re-sort mid-quiz and questions[qIndex] would silently change to a different
   // question while chosen still held the previous answer's value.
   const [questions] = useState(() => {
-    const allQs = getQuestions(stream, subject, topicFilter)
+    const allQs = getQuestions(stream, subject, topicFilter, tierParam)
     const base = reviewMode
       ? allQs.filter(q => getDueIds(allQs).includes(q.id))
       : sortByDue(allQs)

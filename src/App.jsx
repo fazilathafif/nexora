@@ -67,7 +67,7 @@ export default function App() {
     return <StreamOnboarding user={user} refreshProfile={refreshProfile} isDark={isDark} />
   }
 
-  const VALID_STREAMS = ['gcse','alevel','sat','act','ap','psat']
+  const VALID_STREAMS = ['gcse','alevel','sat','act','ap','psat','igcse','ib']
   const showNav = VALID_STREAMS.some(s => location.pathname.startsWith(`/${s}`))
   const activeStream = profile?.active_stream ?? profile?.stream
 

@@ -9,6 +9,8 @@ export const TRACK_COLORS = {
   act:    '#B45309',
   ap:     '#BE185D',
   psat:   '#1D4ED8',
+  igcse: '#0D9488',
+  ib:    '#5B21B6',
 }
 
 export function getTheme(stream, isDark = false) {

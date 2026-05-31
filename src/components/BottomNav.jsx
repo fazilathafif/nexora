@@ -10,7 +10,7 @@ import { COURSERA_BLUE } from '../styles/courseraTokens.js'
 
 function useStream() {
   const { pathname } = useLocation()
-  const m = pathname.match(/^\/(gcse|alevel|sat|act|ap|psat)/)
+  const m = pathname.match(/^\/(gcse|alevel|sat|act|ap|psat|igcse|ib)/)
   return m ? m[1] : null
 }
 

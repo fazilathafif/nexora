@@ -16,6 +16,8 @@ import { getColors, Shell, SectionLabel } from './HomePage.jsx'
 import { useBreakpoint } from '../hooks/useBreakpoint.js'
 import { useMastery } from '../hooks/useMastery.js'
 import { TRACK_COLORS, COURSERA_BLUE } from '../styles/courseraTokens.js'
+import IBPointsCalculator   from '../components/IBPointsCalculator.jsx'
+import IGCSEGradeToggle     from '../components/IGCSEGradeToggle.jsx'
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -788,11 +790,37 @@ export default function LearnHubPage({ user, profile, isDark }) {
         subjects={cfg.subjects} stream={activeTrack} C={C}
         cols={isDesktop ? 3 : isTablet ? 3 : 2}
       />
+      {activeTrack === 'ib' && (
+        <button
+          onClick={() => navigate(`/${activeTrack}/settings`)}
+          style={{
+            width:'100%', display:'flex', alignItems:'center', gap:10,
+            background:'#5B21B615', border:'1.5px solid #5B21B630',
+            borderRadius:14, padding:'12px 14px', marginBottom:12,
+            cursor:'pointer', fontFamily:'Inter,sans-serif', textAlign:'left',
+            WebkitTapHighlightColor:'transparent',
+          }}
+        >
+          <span style={{ fontSize:20 }}>🌱</span>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:13, fontWeight:700, color:'#1E293B' }}>CAS Tracker</div>
+            <div style={{ fontSize:11, color:'#64748B', marginTop:1 }}>Log Creativity, Activity &amp; Service hours</div>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M9 18l6-6-6-6" stroke="#94A3B8" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      )}
     </div>
   )
 
   const progressPanel = (
     <div>
+      {activeTrack === 'igcse' && (
+        <div style={{ marginBottom:12 }}>
+          <IGCSEGradeToggle C={C} />
+        </div>
+      )}
       <StatStrip streak={streak} xp={xp} level={level} C={C} />
       <WeeklyHeatmap heatmap={heatmap} maxSessions={maxSessions} loading={loading} C={C} />
       <SubjectMasteryStrip streams={enrolledStreams} C={C} />
@@ -894,6 +922,14 @@ export default function LearnHubPage({ user, profile, isDark }) {
           </div>
         )}
       </div>
+      {activeTrack === 'ib' && (
+        <div style={{ marginTop:4 }}>
+          <div style={{ fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:10 }}>
+            IB Points Calculator
+          </div>
+          <IBPointsCalculator topicStats={topics} C={C} />
+        </div>
+      )}
     </div>
   )
 
@@ -1183,6 +1219,18 @@ export default function LearnHubPage({ user, profile, isDark }) {
         >
           📋 Take a Full Mock Exam
         </button>
+      )}
+      {activeTrack === 'ib' && (
+        <div style={{ padding:'14px 16px', background:'#5B21B612', border:'1.5px solid #5B21B628', borderRadius:14, fontSize:13, color:'#5B21B6', lineHeight:1.5, marginBottom:12 }}>
+          📋 <strong>IA Checklist</strong> — track your Internal Assessment milestones in the{' '}
+          <button
+            onClick={() => navigate(`/${activeTrack}/settings`)}
+            style={{ background:'none', border:'none', color:'#5B21B6', fontWeight:800, cursor:'pointer', padding:0, fontFamily:'Inter,sans-serif', fontSize:13, textDecoration:'underline' }}
+          >
+            Profile tab
+          </button>
+          .
+        </div>
       )}
     </div>
   )

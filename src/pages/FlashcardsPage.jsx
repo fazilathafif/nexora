@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getQuestions } from '../data/questions.js'
-import { scheduleReview } from '../lib/srs.js'
+import { scheduleReview, sortByDue } from '../lib/srs.js'
 import { getColors, Shell } from './HomePage.jsx'
 import { useBreakpoint } from '../hooks/useBreakpoint.js'
 import { useTheme } from '../hooks/useTheme.js'
@@ -58,7 +58,7 @@ export default function FlashcardsPage() {
   const { isDark } = useTheme()
   const C         = getColors(stream, subject, isDark)
   const dark      = isDark
-  const allQs     = getQuestions(stream, subject)
+  const allQs     = sortByDue(getQuestions(stream, subject))
   const deckRef   = useRef(null)
   const { isDesktop } = useBreakpoint()
   const ratingQualityRef = useRef(null)  // set before programmatic dismiss to route quality

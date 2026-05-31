@@ -42,6 +42,40 @@ import { AP_US_HISTORY_BATCH } from './batch_ap_us_history.js'
 import { AP_ENGLISH_LANG_BATCH } from './batch_ap_english_lang.js'
 import { AP_CS_A_BATCH }       from './batch_ap_cs_a.js'
 import { AP_ECONOMICS_BATCH }  from './batch_ap_economics.js'
+import { IGCSE_MATHS_BATCH }        from './batch_igcse_maths.js'
+import { IGCSE_ENGLISH_LANG_BATCH } from './batch_igcse_english_lang.js'
+import { IGCSE_ENGLISH_LIT_BATCH }  from './batch_igcse_english_lit.js'
+import { IGCSE_BIOLOGY_BATCH }      from './batch_igcse_biology.js'
+import { IGCSE_CHEMISTRY_BATCH }    from './batch_igcse_chemistry.js'
+import { IGCSE_PHYSICS_BATCH }      from './batch_igcse_physics.js'
+import { IGCSE_COMBINED_SCI_BATCH } from './batch_igcse_combined_sci.js'
+import { IGCSE_HISTORY_BATCH }      from './batch_igcse_history.js'
+import { IGCSE_GEOGRAPHY_BATCH }    from './batch_igcse_geography.js'
+import { IGCSE_ECONOMICS_BATCH }    from './batch_igcse_economics.js'
+import { IGCSE_BUSINESS_BATCH }     from './batch_igcse_business.js'
+import { IGCSE_CS_BATCH }           from './batch_igcse_cs.js'
+import { IGCSE_SPANISH_BATCH }      from './batch_igcse_spanish.js'
+import { IGCSE_FRENCH_BATCH }       from './batch_igcse_french.js'
+import { IB_MATHS_AA_BATCH }        from './batch_ib_maths_aa.js'
+import { IB_MATHS_AI_BATCH }        from './batch_ib_maths_ai.js'
+import { IB_BIOLOGY_BATCH }         from './batch_ib_biology.js'
+import { IB_CHEMISTRY_BATCH }       from './batch_ib_chemistry.js'
+import { IB_PHYSICS_BATCH }         from './batch_ib_physics.js'
+import { IB_CS_BATCH }              from './batch_ib_cs.js'
+import { IB_ESS_BATCH }             from './batch_ib_ess.js'
+import { IB_HISTORY_BATCH }         from './batch_ib_history.js'
+import { IB_ECONOMICS_BATCH }       from './batch_ib_economics.js'
+import { IB_GEOGRAPHY_BATCH }       from './batch_ib_geography.js'
+import { IB_PSYCHOLOGY_BATCH }      from './batch_ib_psychology.js'
+import { IB_BUSINESS_BATCH }        from './batch_ib_business.js'
+import { IB_ENGLISH_A_LANLIT_BATCH } from './batch_ib_english_a_lanlit.js'
+import { IB_ENGLISH_A_LIT_BATCH }   from './batch_ib_english_a_lit.js'
+import { IB_FRENCH_B_BATCH }        from './batch_ib_french_b.js'
+import { IB_SPANISH_B_BATCH }       from './batch_ib_spanish_b.js'
+import { IB_MANDARIN_B_BATCH }      from './batch_ib_mandarin_b.js'
+import { IB_VISUAL_ARTS_BATCH }     from './batch_ib_visual_arts.js'
+import { IB_THEATRE_BATCH }         from './batch_ib_theatre.js'
+import { IB_TOK_BATCH }             from './batch_ib_tok.js'
 
 // ── GCSE STREAM ───────────────────────────────────────────────────────────────
 
@@ -666,9 +700,51 @@ export const AP = {
 }
 export const PSAT = { sat_math: [...SAT_MATH_BATCH], sat_rw: [...SAT_RW_BATCH] }
 
+// ── IGCSE question banks ───────────────────────────────────────────────────────
+export const IGCSE_BANK = {
+  igcse_maths:        [ ...IGCSE_MATHS_BATCH ],
+  igcse_english_lang: [ ...IGCSE_ENGLISH_LANG_BATCH ],
+  igcse_english_lit:  [ ...IGCSE_ENGLISH_LIT_BATCH ],
+  igcse_biology:      [ ...IGCSE_BIOLOGY_BATCH ],
+  igcse_chemistry:    [ ...IGCSE_CHEMISTRY_BATCH ],
+  igcse_physics:      [ ...IGCSE_PHYSICS_BATCH ],
+  igcse_combined_sci: [ ...IGCSE_COMBINED_SCI_BATCH ],
+  igcse_history:      [ ...IGCSE_HISTORY_BATCH ],
+  igcse_geography:    [ ...IGCSE_GEOGRAPHY_BATCH ],
+  igcse_economics:    [ ...IGCSE_ECONOMICS_BATCH ],
+  igcse_business:     [ ...IGCSE_BUSINESS_BATCH ],
+  igcse_cs:           [ ...IGCSE_CS_BATCH ],
+  igcse_spanish:      [ ...IGCSE_SPANISH_BATCH ],
+  igcse_french:       [ ...IGCSE_FRENCH_BATCH ],
+}
+
+// ── IB Diploma question banks — 30 questions per subject (15 SL + 15 HL) ──────
+export const IB_BANK = {
+  ib_maths_aa:         [ ...IB_MATHS_AA_BATCH ],
+  ib_maths_ai:         [ ...IB_MATHS_AI_BATCH ],
+  ib_biology:          [ ...IB_BIOLOGY_BATCH ],
+  ib_chemistry:        [ ...IB_CHEMISTRY_BATCH ],
+  ib_physics:          [ ...IB_PHYSICS_BATCH ],
+  ib_cs:               [ ...IB_CS_BATCH ],
+  ib_ess:              [ ...IB_ESS_BATCH ],
+  ib_history:          [ ...IB_HISTORY_BATCH ],
+  ib_economics:        [ ...IB_ECONOMICS_BATCH ],
+  ib_geography:        [ ...IB_GEOGRAPHY_BATCH ],
+  ib_psychology:       [ ...IB_PSYCHOLOGY_BATCH ],
+  ib_business:         [ ...IB_BUSINESS_BATCH ],
+  ib_english_a_lanlit: [ ...IB_ENGLISH_A_LANLIT_BATCH ],
+  ib_english_a_lit:    [ ...IB_ENGLISH_A_LIT_BATCH ],
+  ib_french_b:         [ ...IB_FRENCH_B_BATCH ],
+  ib_spanish_b:        [ ...IB_SPANISH_B_BATCH ],
+  ib_mandarin_b:       [ ...IB_MANDARIN_B_BATCH ],
+  ib_visual_arts:      [ ...IB_VISUAL_ARTS_BATCH ],
+  ib_theatre:          [ ...IB_THEATRE_BATCH ],
+  ib_tok:              [ ...IB_TOK_BATCH ],
+}
+
 // ── Helper: get questions for a subject ──────────────────────────────────────
 
-const BANK_MAP = { gcse: GCSE, alevel: ALEVEL, sat: SAT, act: ACT, ap: AP, psat: PSAT }
+const BANK_MAP = { gcse: GCSE, alevel: ALEVEL, sat: SAT, act: ACT, ap: AP, psat: PSAT, igcse: IGCSE_BANK, ib: IB_BANK }
 
 export function getQuestions(stream, subject, topicFilter = null, tier = null) {
   const bank = BANK_MAP[stream] ?? GCSE
@@ -770,6 +846,58 @@ export const STREAM_CONFIG = {
       { id:'sat_rw',   label:'Reading & Writing',emoji:'📖', desc:'Craft & Structure, Conventions' },
     ],
   },
+
+  igcse: {
+    label: 'IGCSE Track',
+    flag: '🌍',
+    years: 'Years 9–11 (Ages 14–16)',
+    region: 'international',
+    subjects: [
+      { id:'igcse_maths',        label:'Maths',              emoji:'📐', desc:'Cambridge/Edexcel IGCSE Maths',      group:'Core', boards:['cambridge','edexcel'] },
+      { id:'igcse_english_lang', label:'English Language',   emoji:'📚', desc:'Reading, Writing, Communication',    group:'Core', boards:['cambridge','edexcel'] },
+      { id:'igcse_english_lit',  label:'English Literature', emoji:'✍️',  desc:'Prose, Poetry, Drama',               group:'Core', boards:['cambridge','edexcel'] },
+      { id:'igcse_biology',      label:'Biology',            emoji:'🧬', desc:'Cells, Genetics, Ecology',            group:'Sciences', boards:['cambridge','edexcel'] },
+      { id:'igcse_chemistry',    label:'Chemistry',          emoji:'⚗️',  desc:'Atoms, Bonding, Reactions',          group:'Sciences', boards:['cambridge','edexcel'] },
+      { id:'igcse_physics',      label:'Physics',            emoji:'⚛️',  desc:'Forces, Waves, Electricity',         group:'Sciences', boards:['cambridge','edexcel'] },
+      { id:'igcse_combined_sci', label:'Combined Science',   emoji:'🔬', desc:'Double Award — all sciences',        group:'Sciences', boards:['cambridge'] },
+      { id:'igcse_history',      label:'History',            emoji:'🏛️',  desc:'International History, 20th Century', group:'Humanities', boards:['cambridge','edexcel'] },
+      { id:'igcse_geography',    label:'Geography',          emoji:'🌍', desc:'Physical & Human Geography',         group:'Humanities', boards:['cambridge','edexcel'] },
+      { id:'igcse_economics',    label:'Economics',          emoji:'💹', desc:'Micro & Macro Economics',            group:'Humanities', boards:['cambridge','edexcel'] },
+      { id:'igcse_business',     label:'Business Studies',   emoji:'💼', desc:'Operations, Finance, Marketing',     group:'Business & Tech', boards:['cambridge','edexcel'] },
+      { id:'igcse_cs',           label:'Computer Science',   emoji:'💻', desc:'Algorithms, Networks, Programming',  group:'Business & Tech', boards:['cambridge','edexcel'] },
+      { id:'igcse_spanish',      label:'Spanish',            emoji:'🇪🇸', desc:'IGCSE Spanish Foreign Language',    group:'Languages', mfl:true, mflLang:'es', boards:['cambridge','edexcel'] },
+      { id:'igcse_french',       label:'French',             emoji:'🇫🇷', desc:'IGCSE French Foreign Language',     group:'Languages', mfl:true, mflLang:'fr', boards:['cambridge','edexcel'] },
+    ],
+  },
+
+  ib: {
+    label: 'IB Diploma',
+    flag: '🌐',
+    years: 'Years 12–13 (Ages 16–19)',
+    region: 'international',
+    subjects: [
+      { id:'ib_english_a_lanlit', label:'English A: Lang & Lit',         emoji:'📚', desc:'Language, Literature, Media',         group:'Group 1' },
+      { id:'ib_english_a_lit',    label:'English A: Literature',          emoji:'✍️',  desc:'Literary Analysis, World Literature',  group:'Group 1' },
+      { id:'ib_french_b',         label:'French B',                       emoji:'🇫🇷', desc:'Language Acquisition',               group:'Group 2', mfl:true, mflLang:'fr' },
+      { id:'ib_spanish_b',        label:'Spanish B',                      emoji:'🇪🇸', desc:'Language Acquisition',               group:'Group 2', mfl:true, mflLang:'es' },
+      { id:'ib_mandarin_b',       label:'Mandarin B',                     emoji:'🇨🇳', desc:'Language Acquisition',               group:'Group 2', mfl:true, mflLang:'zh' },
+      { id:'ib_history',          label:'History',                        emoji:'🏛️',  desc:'World & Regional History',            group:'Group 3' },
+      { id:'ib_economics',        label:'Economics',                      emoji:'💹', desc:'Micro & Macro, Development',           group:'Group 3' },
+      { id:'ib_geography',        label:'Geography',                      emoji:'🌍', desc:'Global Interactions, Environments',    group:'Group 3' },
+      { id:'ib_psychology',       label:'Psychology',                     emoji:'🧠', desc:'Approaches, Research, Applied',        group:'Group 3' },
+      { id:'ib_business',         label:'Business Management',            emoji:'💼', desc:'Operations, Finance, HR, Marketing',   group:'Group 3' },
+      { id:'ib_biology',          label:'Biology',                        emoji:'🧬', desc:'Updated 2023 syllabus',                group:'Group 4' },
+      { id:'ib_chemistry',        label:'Chemistry',                      emoji:'⚗️',  desc:'Updated 2023 syllabus',              group:'Group 4' },
+      { id:'ib_physics',          label:'Physics',                        emoji:'⚛️',  desc:'Updated 2023 syllabus',              group:'Group 4' },
+      { id:'ib_cs',               label:'Computer Science',               emoji:'💻', desc:'Systems, Algorithms, OOP',             group:'Group 4' },
+      { id:'ib_ess',              label:'Environmental Systems',          emoji:'🌱', desc:'Cross-group 3/4 Sciences',             group:'Group 4' },
+      { id:'ib_maths_aa',         label:'Maths: Analysis & Approaches',   emoji:'∑',  desc:'Pure Maths focus, post-2019',         group:'Group 5' },
+      { id:'ib_maths_ai',         label:'Maths: Applications & Interp.', emoji:'📊', desc:'Applied/Stats focus, post-2019',       group:'Group 5' },
+      { id:'ib_visual_arts',      label:'Visual Arts',                    emoji:'🎨', desc:'Studio Art & Critical Analysis',       group:'Group 6' },
+      { id:'ib_theatre',          label:'Theatre',                        emoji:'🎭', desc:'Creating, Presenting, Researching',    group:'Group 6' },
+      { id:'ib_tok',              label:'Theory of Knowledge',            emoji:'🤔', desc:'Exhibition & Essay prompts',           group:'Core' },
+    ],
+  },
 }
 
 // ── Timer config (seconds per question, 0 = untimed) ─────────────────────────
@@ -781,6 +909,16 @@ export const TIMER_CONFIG = {
   act:    { act_english: 36, act_math: 60, act_science: 53 },
   ap:     90,
   psat:   { sat_math: 96, sat_rw: 71 },
+  igcse:  90,
+  ib: {
+    ib_maths_aa: 120, ib_maths_ai: 120,
+    ib_biology: 90, ib_chemistry: 90, ib_physics: 90, ib_cs: 90, ib_ess: 90,
+    ib_history: 0, ib_economics: 90, ib_geography: 90,
+    ib_psychology: 90, ib_business: 90,
+    ib_english_a_lanlit: 0, ib_english_a_lit: 0,
+    ib_french_b: 60, ib_spanish_b: 60, ib_mandarin_b: 60,
+    ib_visual_arts: 0, ib_theatre: 0, ib_tok: 0,
+  },
 }
 
 // ── Mock exam config ──────────────────────────────────────────────────────────
@@ -802,4 +940,27 @@ export const MOCK_CONFIG = {
   act:    { duration: 10500, label: 'ACT Full Test (175 min)' },
   ap:     { duration: 9000,  label: 'AP Exam Simulation (150 min)' },
   psat:   { duration: 8520,  label: 'PSAT Full Test (142 min)' },
+  igcse:  { duration: 3600,  label: 'IGCSE Full Paper (60 min)' },
+  ib: {
+    ib_maths_aa:  { duration: 7200, label: 'IB Maths AA Full Paper (120 min)' },
+    ib_maths_ai:  { duration: 7200, label: 'IB Maths AI Full Paper (120 min)' },
+    ib_biology:   { duration: 5400, label: 'IB Biology Paper (90 min)' },
+    ib_chemistry: { duration: 5400, label: 'IB Chemistry Paper (90 min)' },
+    ib_physics:   { duration: 5400, label: 'IB Physics Paper (90 min)' },
+    ib_cs:        { duration: 5400, label: 'IB Computer Science Paper (90 min)' },
+    ib_ess:       { duration: 5400, label: 'IB ESS Paper (90 min)' },
+    ib_history:   { duration: 5400, label: 'IB History Paper (90 min)' },
+    ib_economics: { duration: 5400, label: 'IB Economics Paper (90 min)' },
+    ib_geography: { duration: 5400, label: 'IB Geography Paper (90 min)' },
+    ib_psychology:       { duration: 5400, label: 'IB Psychology Paper (90 min)' },
+    ib_business:         { duration: 5400, label: 'IB Business Management Paper (90 min)' },
+    ib_english_a_lanlit: { duration: 5400, label: 'IB English A: Lang & Lit Paper (90 min)' },
+    ib_english_a_lit:    { duration: 5400, label: 'IB English A: Literature Paper (90 min)' },
+    ib_french_b:         { duration: 5400, label: 'IB French B Paper (90 min)' },
+    ib_spanish_b:        { duration: 5400, label: 'IB Spanish B Paper (90 min)' },
+    ib_mandarin_b:       { duration: 5400, label: 'IB Mandarin B Paper (90 min)' },
+    ib_visual_arts:      { duration: 3600, label: 'IB Visual Arts Practice (60 min)' },
+    ib_theatre:          { duration: 3600, label: 'IB Theatre Practice (60 min)' },
+    ib_tok:              { duration: 3600, label: 'ToK Practice Session (60 min)' },
+  },
 }

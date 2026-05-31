@@ -20,6 +20,9 @@ import { useBreakpoint } from '../hooks/useBreakpoint.js'
 import AuthModal from '../components/AuthModal.jsx'
 import WelcomeModal from '../components/WelcomeModal.jsx'
 import FanDeck from '../components/FanDeck.jsx'
+import IBTierToggle from '../components/IBTierToggle.jsx'
+import { useIBTier } from '../hooks/useIBTier.js'
+import { TRACK_COLORS } from '../styles/courseraTokens.js'
 
 function daysUntil(dateStr) {
   if (!dateStr) return null
@@ -582,7 +585,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
 
           {/* MAIN — subject grid */}
           <div>
-            {stream === 'gcse' ? (
+            {(stream === 'gcse' || stream === 'igcse' || stream === 'ib') ? (
               <GcseSubjectGrid
                 subjects={ebaccOnly
                   ? cfg.subjects.filter(s => s.ebacc && (!s.mfl || s.id === ebaccLang))
@@ -611,8 +614,11 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
         <>
           {/* ── Subject picker ──────────────────────────────────────────────── */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-            <div style={{ fontSize:20, fontWeight:900, color:'#1E293B', letterSpacing:'-0.4px' }}>
-              {stream === 'alevel' ? 'Choose Your Exam' : 'Subjects'}
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <div style={{ fontSize:20, fontWeight:900, color:'#1E293B', letterSpacing:'-0.4px' }}>
+                {stream === 'alevel' ? 'Choose Your Exam' : 'Subjects'}
+              </div>
+              <FormatInfoButton />
             </div>
             {stream === 'gcse' && (
               <button
@@ -654,7 +660,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
           )}
 
           <div style={{ marginBottom:24 }}>
-            {stream === 'gcse' ? (
+            {(stream === 'gcse' || stream === 'igcse' || stream === 'ib') ? (
               <GcseSubjectGrid
                 subjects={ebaccOnly
                   ? cfg.subjects.filter(s => s.ebacc && (!s.mfl || s.id === ebaccLang))
@@ -812,7 +818,66 @@ const EXAM_META = {
   step:  { type:'Cambridge Mathematics',             unis:'Cambridge — conditional on offer (taken June)' },
 }
 
-function ExamRowCard({ subject, C, dark, onClick, onMock, onFlashcards }) {
+// ── Format info tooltip ───────────────────────────────────────────────────────
+
+const FORMAT_INFO = [
+  { icon:'📝', label:'Quiz',      desc:'10 random questions · timed · scored' },
+  { icon:'🃏', label:'Flashcards', desc:'All cards · SRS order · self-rate' },
+  { icon:'📋', label:'Mock',      desc:'Full paper · shuffled · submit at end' },
+  { icon:'🧠', label:'Learn',     desc:'AI explanations shown upfront · untimed' },
+]
+
+function FormatInfoButton() {
+  const [visible, setVisible] = useState(false)
+  return (
+    <div style={{ position:'relative', display:'inline-flex' }}>
+      <button
+        onMouseEnter={() => setVisible(true)}
+        onMouseLeave={() => setVisible(false)}
+        onFocus={() => setVisible(true)}
+        onBlur={() => setVisible(false)}
+        onClick={() => setVisible(v => !v)}
+        aria-label="How do the practice formats differ?"
+        style={{
+          width:20, height:20, borderRadius:'50%',
+          background:'#E2E8F0', border:'none',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          fontSize:11, fontWeight:800, color:'#64748B',
+          cursor:'pointer', flexShrink:0,
+          fontFamily:'Inter,sans-serif',
+          WebkitTapHighlightColor:'transparent',
+        }}
+      >
+        i
+      </button>
+      {visible && (
+        <div style={{
+          position:'absolute', top:'calc(100% + 8px)', left:0,
+          background:'white', border:'1px solid #E2E8F0',
+          borderRadius:14, padding:'12px 14px',
+          boxShadow:'0 8px 24px rgba(0,0,0,0.12)',
+          zIndex:200, minWidth:220,
+          fontFamily:'Inter,sans-serif',
+        }}>
+          <div style={{ fontSize:11, fontWeight:800, color:'#94A3B8', letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:8 }}>
+            Practice formats
+          </div>
+          {FORMAT_INFO.map(f => (
+            <div key={f.label} style={{ display:'flex', alignItems:'baseline', gap:7, marginBottom:6 }}>
+              <span style={{ fontSize:14, flexShrink:0 }}>{f.icon}</span>
+              <div>
+                <span style={{ fontSize:12, fontWeight:800, color:'#1E293B' }}>{f.label}</span>
+                <span style={{ fontSize:11, color:'#64748B' }}> — {f.desc}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ExamRowCard({ subject, C, dark, onClick, onMock, onFlashcards, onLearn }) {
   const SC = SUBJECT_COLORS[subject.id] || C
   const meta = EXAM_META[subject.id] || {}
   return (
@@ -906,6 +971,18 @@ function ExamRowCard({ subject, C, dark, onClick, onMock, onFlashcards }) {
         >
           Cards 🃏
         </button>
+        <button
+          onClick={onLearn}
+          style={{
+            background:'transparent',border:`1.5px solid ${SC.primary}50`,
+            borderRadius:10,padding:'10px 6px',
+            fontSize:12,fontWeight:800,color:SC.primary,cursor:'pointer',fontFamily:'Inter,sans-serif',
+          }}
+          onMouseEnter={e=>{e.currentTarget.style.background=`${SC.primary}15`}}
+          onMouseLeave={e=>{e.currentTarget.style.background='transparent'}}
+        >
+          🧠 Learn
+        </button>
       </div>
     </div>
   )
@@ -932,11 +1009,12 @@ function MasteryBadge({ badge }) {
   )
 }
 
-function SubjectCard({ subject, C, dark, stream, onClick, onMock, onFlashcards }) {
+function SubjectCard({ subject, C, dark, stream, onClick, onMock, onFlashcards, onLearn }) {
   const SC      = getColors(dark ? 'alevel' : 'gcse', subject.id)
   const [pressed, setPressed] = useState(false)
   const questions = stream ? getQuestions(stream, subject.id) : []
   const { badge } = useMastery(questions)
+  const [ibTier] = useIBTier(subject.id)
   return (
     <div style={{ position:'relative' }}>
       <MasteryBadge badge={badge} />
@@ -980,9 +1058,27 @@ function SubjectCard({ subject, C, dark, stream, onClick, onMock, onFlashcards }
             <div style={{ fontSize:15, fontWeight:800, color:'#1E293B', letterSpacing:'-0.2px', lineHeight:1.2 }}>
               {subject.label}
             </div>
+            {stream === 'ib' && (
+              <IBTierToggle
+                subjectId={subject.id}
+                accent={TRACK_COLORS.ib ?? '#5B21B6'}
+              />
+            )}
             {subject.desc && (
               <div style={{ fontSize:12, color:'#64748B', marginTop:3, lineHeight:1.4 }}>
                 {subject.desc}
+              </div>
+            )}
+            {stream === 'igcse' && subject.boards?.length > 0 && (
+              <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginTop:2 }}>
+                {subject.boards.map(b => (
+                  <span key={b} style={{
+                    fontSize:9, fontWeight:700, color:'#0D9488',
+                    background:'#0D948812', border:'1px solid #0D948830',
+                    borderRadius:20, padding:'1px 6px', letterSpacing:'0.04em',
+                    textTransform:'capitalize',
+                  }}>{b}</span>
+                ))}
               </div>
             )}
           </div>
@@ -1014,13 +1110,26 @@ function SubjectCard({ subject, C, dark, stream, onClick, onMock, onFlashcards }
             style={{
               flex:1, padding:'10px 0',
               background:`${SC.primary}08`,
-              border:'none',
+              border:'none', borderRight:`1px solid ${SC.primary}12`,
               fontSize:12, fontWeight:700, color:SC.primary,
               cursor:'pointer', fontFamily:'Inter,sans-serif',
               WebkitTapHighlightColor:'transparent',
             }}
           >
             📝 Mock
+          </button>
+          <button
+            onClick={onLearn}
+            style={{
+              flex:1, padding:'10px 0',
+              background:`${SC.primary}08`,
+              border:'none',
+              fontSize:12, fontWeight:700, color:SC.primary,
+              cursor:'pointer', fontFamily:'Inter,sans-serif',
+              WebkitTapHighlightColor:'transparent',
+            }}
+          >
+            🧠 Learn
           </button>
         </div>
       </div>
@@ -1081,9 +1190,22 @@ function GcseSubjectGrid({ subjects, navigate, stream, C }) {
                     C={C}
                     dark={false}
                     stream={stream}
-                    onClick={() => navigate(`/${stream}/quiz/${s.id}`)}
-                    onMock={() => navigate(`/${stream}/mock/${s.id}`)}
-                    onFlashcards={() => navigate(`/${stream}/flashcards/${s.id}`)}
+                    onClick={() => {
+                      const tier = stream === 'ib' ? (localStorage.getItem(`nx_ib_tier_${s.id}`) ?? 'sl') : null
+                      navigate(`/${stream}/quiz/${s.id}${tier ? `?tier=${tier}` : ''}`)
+                    }}
+                    onMock={() => {
+                      const tier = stream === 'ib' ? (localStorage.getItem(`nx_ib_tier_${s.id}`) ?? 'sl') : null
+                      navigate(`/${stream}/mock/${s.id}${tier ? `?tier=${tier}` : ''}`)
+                    }}
+                    onFlashcards={() => {
+                      const tier = stream === 'ib' ? (localStorage.getItem(`nx_ib_tier_${s.id}`) ?? 'sl') : null
+                      navigate(`/${stream}/flashcards/${s.id}${tier ? `?tier=${tier}` : ''}`)
+                    }}
+                    onLearn={() => {
+                      const tier = stream === 'ib' ? (localStorage.getItem(`nx_ib_tier_${s.id}`) ?? 'sl') : null
+                      navigate(`/${stream}/learn/${s.id}${tier ? `?tier=${tier}` : ''}`)
+                    }}
                   />
                 ))}
               </div>
@@ -1232,21 +1354,52 @@ export function IconBtn({ onClick, color, title, children }) {
 }
 
 function HeroIconBtn({ onClick, title, children }) {
+  const [hovered, setHovered] = useState(false)
   return (
-    <button
-      onClick={onClick}
-      title={title}
-      style={{
-        width:36, height:36, flexShrink:0,
-        display:'flex', alignItems:'center', justifyContent:'center',
-        background:'rgba(255,255,255,0.18)', backdropFilter:'blur(6px)',
-        border:'1px solid rgba(255,255,255,0.3)',
-        borderRadius:10, cursor:'pointer', padding:0,
-        WebkitTapHighlightColor:'transparent',
-      }}
-    >
-      {children}
-    </button>
+    <div style={{ position:'relative', display:'inline-flex', flexShrink:0 }}>
+      <button
+        onClick={onClick}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onFocus={() => setHovered(true)}
+        onBlur={() => setHovered(false)}
+        aria-label={title}
+        style={{
+          width:36, height:36, flexShrink:0,
+          display:'flex', alignItems:'center', justifyContent:'center',
+          background: hovered ? 'rgba(255,255,255,0.30)' : 'rgba(255,255,255,0.18)',
+          backdropFilter:'blur(6px)',
+          border:'1px solid rgba(255,255,255,0.3)',
+          borderRadius:10, cursor:'pointer', padding:0,
+          WebkitTapHighlightColor:'transparent',
+          transform: hovered ? 'scale(1.08)' : 'scale(1)',
+          transition:'transform 0.15s ease, background 0.15s ease',
+        }}
+      >
+        {children}
+      </button>
+      {hovered && title && (
+        <div style={{
+          position:'absolute', bottom:'calc(100% + 7px)', left:'50%',
+          transform:'translateX(-50%)',
+          background:'rgba(15,23,42,0.88)', backdropFilter:'blur(8px)',
+          color:'white', fontSize:11, fontWeight:700,
+          borderRadius:7, padding:'4px 10px',
+          whiteSpace:'nowrap', pointerEvents:'none',
+          fontFamily:'Inter,sans-serif', letterSpacing:'0.01em',
+          boxShadow:'0 4px 12px rgba(0,0,0,0.3)',
+        }}>
+          {title}
+          {/* caret */}
+          <div style={{
+            position:'absolute', top:'100%', left:'50%', transform:'translateX(-50%)',
+            width:0, height:0,
+            borderLeft:'5px solid transparent', borderRight:'5px solid transparent',
+            borderTop:'5px solid rgba(15,23,42,0.88)',
+          }} />
+        </div>
+      )}
+    </div>
   )
 }
 

@@ -7,6 +7,8 @@ import { useState } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { fetchExplanation } from '../lib/ai.js'
 import { getColors, Shell } from './HomePage.jsx'
+import { getIGCSEGrade } from '../lib/igcseGrades.js'
+import { useIGCSEScheme } from '../components/IGCSEGradeToggle.jsx'
 
 export default function ResultPage({ user, profile, isDark }) {
   const { stream }  = useParams()
@@ -18,6 +20,8 @@ export default function ResultPage({ user, profile, isDark }) {
 
   const { answers = [], score = 0, total = 1, xpEarned = 0 } = state ?? {}
 
+  const [igcseScheme] = useIGCSEScheme()
+
   const [explaining, setExplaining]   = useState(null)   // answer entry being explained
   const [explanation, setExplanation] = useState('')
   const [aiLoading, setAiLoading]     = useState(false)
@@ -25,6 +29,7 @@ export default function ResultPage({ user, profile, isDark }) {
   const [challengeCopied, setChallengeCopied] = useState(false)
 
   const pct = Math.round((score / total) * 100)
+  const igcseGrade = stream === 'igcse' ? getIGCSEGrade(Math.round((score / total) * 100), igcseScheme) : null
   const medal = pct >= 80 ? '🏆' : pct >= 60 ? '⭐' : '💡'
   const msg   = pct >= 80 ? 'Outstanding!' : pct >= 60 ? 'Well done!' : 'Keep going!'
 
@@ -53,6 +58,22 @@ export default function ResultPage({ user, profile, isDark }) {
       <div style={{display:'flex',justifyContent:'center',marginBottom:22}}>
         <ScoreRing pct={pct} color={pct>=60 ? C.primary : '#F97316'} size={120} />
       </div>
+
+      {/* IGCSE grade badge */}
+      {igcseGrade && (
+        <div style={{display:'flex',justifyContent:'center',marginBottom:22}}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            background: '#0D948815', border: '1.5px solid #0D948840',
+            borderRadius: 12, padding: '6px 16px', marginTop: 8,
+          }}>
+            <span style={{ fontSize: 22, fontWeight: 900, color: '#0D9488' }}>{igcseGrade}</span>
+            <span style={{ fontSize: 11, color: '#64748B', fontWeight: 600 }}>
+              {igcseScheme === 'A*-G' ? 'IGCSE Grade' : 'IGCSE Grade (9-1)'}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Answer breakdown */}
       <div style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:10}}>Review</div>
