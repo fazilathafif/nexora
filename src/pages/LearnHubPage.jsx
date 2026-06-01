@@ -652,6 +652,104 @@ function TopicBar({ topic, pct, C, onDrill }) {
   )
 }
 
+// ── Week Calendar component ───────────────────────────────────────────────────
+
+function WeekCalendar({ weeks, C, navigate, activeTrack }) {
+  const [openWeeks, setOpenWeeks] = useState(() => {
+    // current week open by default
+    const init = {}
+    weeks.forEach((w, i) => { if (w.isCurrentWeek || w.containsToday) init[i] = true })
+    return init
+  })
+
+  function toggle(i) { setOpenWeeks(p => ({ ...p, [i]: !p[i] })) }
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+      {weeks.map((week, wi) => {
+        const isOpen    = !!openWeeks[wi]
+        const mainColor = week.phaseColors?.[0] ?? C.primary
+        return (
+          <div key={wi}>
+            {/* Week header — tap to expand/collapse */}
+            <button
+              onClick={() => toggle(wi)}
+              style={{
+                width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
+                background: isOpen ? `${mainColor}10` : C.card,
+                border:`1.5px solid ${isOpen ? mainColor+'40' : C.border}`,
+                borderRadius: isOpen ? '12px 12px 0 0' : 12,
+                padding:'10px 14px', cursor:'pointer',
+                fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent',
+                transition:'all 0.15s',
+              }}
+            >
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                {week.containsToday && <span style={{ fontSize:9, fontWeight:800, color:mainColor, background:`${mainColor}15`, borderRadius:20, padding:'1px 7px', letterSpacing:'0.04em' }}>NOW</span>}
+                {week.containsExam && <span style={{ fontSize:9, fontWeight:800, color:'#0056D2', background:'#0056D215', borderRadius:20, padding:'1px 7px' }}>EXAM</span>}
+                <span style={{ fontSize:12, fontWeight:800, color:isOpen ? mainColor : C.navy }}>{week.weekLabel}</span>
+              </div>
+              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                {/* Phase colour dots */}
+                <div style={{ display:'flex', gap:3 }}>
+                  {[...new Set(week.days.map(d => d.phaseColor))].map(col => (
+                    <div key={col} style={{ width:6, height:6, borderRadius:3, background:col }} />
+                  ))}
+                </div>
+                <span style={{ fontSize:12, color:C.muted, transform: isOpen ? 'rotate(180deg)' : 'none', transition:'transform 0.2s', display:'inline-block' }}>▾</span>
+              </div>
+            </button>
+
+            {/* Week days — shown when expanded */}
+            {isOpen && (
+              <div style={{
+                background:'white', border:`1.5px solid ${mainColor}40`, borderTop:'none',
+                borderRadius:'0 0 12px 12px', overflow:'hidden',
+              }}>
+                {week.days.map((d, di) => (
+                  <div key={d.date} style={{
+                    display:'flex', alignItems:'center', gap:10, padding:'10px 14px',
+                    background: d.isToday ? `${d.phaseColor}08` : d.isExamDay ? '#EFF6FF' : 'white',
+                    borderBottom: di < week.days.length - 1 ? `1px solid ${C.border}` : 'none',
+                  }}>
+                    {/* Date */}
+                    <div style={{ flexShrink:0, textAlign:'center', minWidth:34 }}>
+                      <div style={{ fontSize:9, fontWeight:700, color:d.isToday ? d.phaseColor : C.muted, textTransform:'uppercase' }}>{d.dayOfWeek}</div>
+                      <div style={{ fontSize:15, fontWeight:900, color:d.isToday ? d.phaseColor : d.isExamDay ? '#0056D2' : C.navy, lineHeight:1 }}>{d.dayNum}</div>
+                      <div style={{ fontSize:9, color:C.muted }}>{d.monthLabel}</div>
+                    </div>
+                    {/* Content */}
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:d.topics.length ? 4 : 0 }}>
+                        <span style={{ fontSize:12 }}>{d.phaseIcon}</span>
+                        <span style={{ fontSize:12, fontWeight:700, color:d.isExamDay ? '#0056D2' : d.phaseColor }}>{d.phaseLabel}</span>
+                        {d.isToday && <span style={{ fontSize:8, fontWeight:800, color:d.phaseColor, background:`${d.phaseColor}20`, borderRadius:20, padding:'1px 6px' }}>TODAY</span>}
+                      </div>
+                      {d.topics.length > 0 && (
+                        <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+                          {d.topics.map(t => (
+                            <button
+                              key={t.topic}
+                              onClick={() => navigate(`/${activeTrack}/quiz/${t.subjectId}?topic=${encodeURIComponent(t.topic)}`)}
+                              style={{ fontSize:10, fontWeight:700, color:d.phaseColor, background:`${d.phaseColor}12`, border:`1px solid ${d.phaseColor}30`, borderRadius:20, padding:'2px 8px', cursor:'pointer', fontFamily:'Inter,sans-serif' }}
+                            >
+                              {t.emoji} {t.topic} {t.pct < 50 ? '🔴' : t.pct < 70 ? '🟡' : '🟢'} {t.pct}%
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── Plan helpers ──────────────────────────────────────────────────────────────
 
 function formatDate(dateStr) {
@@ -1243,55 +1341,16 @@ export default function LearnHubPage({ user, profile, isDark }) {
         </Card>
       )}
 
-      {/* Date-aware week calendar */}
-      {!loading && examDate && days > 0 && (
-        <div style={{ marginBottom:12 }}>
-          <SH label="Study Calendar" C={C} />
-          {getWeekCalendar(topics, examDate).map((week, wi) => (
-            <div key={wi} style={{ marginBottom:14 }}>
-              <div style={{ fontSize:10, fontWeight:800, color:C.muted, letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:8 }}>{week.weekLabel}</div>
-              <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                {week.days.map(d => (
-                  <div key={d.date} style={{
-                    display:'flex', alignItems:'center', gap:10,
-                    background: d.isToday ? `${d.phaseColor}12` : d.isExamDay ? '#0056D210' : 'white',
-                    border: `1.5px solid ${d.isToday ? d.phaseColor : d.isExamDay ? '#0056D2' : C.border}`,
-                    borderRadius:12, padding:'10px 12px',
-                    opacity: d.isPast ? 0.5 : 1,
-                  }}>
-                    {/* Date pill */}
-                    <div style={{ flexShrink:0, textAlign:'center', minWidth:36 }}>
-                      <div style={{ fontSize:9, fontWeight:700, color:d.isToday ? d.phaseColor : C.muted, textTransform:'uppercase' }}>{d.dayOfWeek}</div>
-                      <div style={{ fontSize:16, fontWeight:900, color:d.isToday ? d.phaseColor : C.navy, lineHeight:1 }}>{d.dayNum}</div>
-                    </div>
-                    {/* Phase + topics */}
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:d.topics.length ? 4 : 0 }}>
-                        <span style={{ fontSize:13 }}>{d.phaseIcon}</span>
-                        <span style={{ fontSize:12, fontWeight:700, color: d.isExamDay ? '#0056D2' : d.phaseColor }}>{d.phaseLabel}</span>
-                        {d.isToday && <span style={{ fontSize:9, fontWeight:800, color:d.phaseColor, background:`${d.phaseColor}15`, borderRadius:20, padding:'1px 6px' }}>TODAY</span>}
-                      </div>
-                      {d.topics.length > 0 && (
-                        <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
-                          {d.topics.map(t => (
-                            <button
-                              key={t.topic}
-                              onClick={() => navigate(`/${activeTrack}/quiz/${t.subjectId}?topic=${encodeURIComponent(t.topic)}`)}
-                              style={{ fontSize:10, fontWeight:700, color: d.phaseColor, background:`${d.phaseColor}12`, border:`1px solid ${d.phaseColor}30`, borderRadius:20, padding:'2px 8px', cursor:'pointer', fontFamily:'Inter,sans-serif' }}
-                            >
-                              {t.emoji} {t.topic} ({t.pct}%)
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Date-aware week calendar — all weeks, collapsible */}
+      {!loading && examDate && days > 0 && (() => {
+        const weeks = getWeekCalendar(topics, examDate)
+        return (
+          <div style={{ marginBottom:12 }}>
+            <SH label={`Study Calendar — ${days} days to exam`} C={C} />
+            <WeekCalendar weeks={weeks} C={C} navigate={navigate} activeTrack={activeTrack} />
+          </div>
+        )
+      })()}
 
       {/* Generic phase schedule when no performance data */}
       {!loading && topics.length === 0 && examDate && days > 0 && (
