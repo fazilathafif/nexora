@@ -18,6 +18,8 @@ import { useMastery } from '../hooks/useMastery.js'
 import { TRACK_COLORS, COURSERA_BLUE } from '../styles/courseraTokens.js'
 import IBPointsCalculator   from '../components/IBPointsCalculator.jsx'
 import IGCSEGradeToggle     from '../components/IGCSEGradeToggle.jsx'
+import IAChecklist          from '../components/IAChecklist.jsx'
+import CASTracker           from '../components/CASTracker.jsx'
 import { getEffectivePlan } from '../lib/subscription.js'
 import { getDayPlan, getWeekCalendar, groupTopicsBySubject } from '../lib/studySchedule.js'
 
@@ -1416,9 +1418,21 @@ export default function LearnHubPage({ user, profile, isDark }) {
       )}
 
       {activeTrack === 'ib' && (
-        <div style={{ padding:'14px 16px', background:'#5B21B612', border:'1.5px solid #5B21B628', borderRadius:14, fontSize:13, color:'#5B21B6', lineHeight:1.5, marginTop:12 }}>
-          📋 <strong>IA Checklist</strong> — track your Internal Assessment milestones in the{' '}
-          <button onClick={() => navigate(`/${activeTrack}/settings`)} style={{ background:'none', border:'none', color:'#5B21B6', fontWeight:800, cursor:'pointer', padding:0, fontFamily:'Inter,sans-serif', fontSize:13, textDecoration:'underline' }}>Profile tab</button>.
+        <div style={{ marginTop:12 }}>
+          {/* IA Checklist — inline in Study Plan */}
+          <div style={{ marginBottom:12 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:8 }}>
+              📋 IA Checklist
+            </div>
+            <IAChecklist userId={user?.id} C={C} />
+          </div>
+          {/* CAS Tracker — inline in Study Plan */}
+          <div>
+            <div style={{ fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:8 }}>
+              🌱 CAS Tracker
+            </div>
+            <CASTracker userId={user?.id} C={C} />
+          </div>
         </div>
       )}
     </div>

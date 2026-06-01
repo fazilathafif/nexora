@@ -8,15 +8,40 @@ const PILLARS = [
   { key: 'service',    label: 'Service',     emoji: '🤝' },
 ]
 
+const CAS_DEFAULTS = {
+  creativity: [
+    { id:'c1', name:'Art / Photography', hours:0 },
+    { id:'c2', name:'Music practice', hours:0 },
+    { id:'c3', name:'Creative writing / Blogging', hours:0 },
+    { id:'c4', name:'Learning a new skill', hours:0 },
+    { id:'c5', name:'Drama / Theatre', hours:0 },
+  ],
+  activity: [
+    { id:'a1', name:'School sports team', hours:0 },
+    { id:'a2', name:'Running / Gym', hours:0 },
+    { id:'a3', name:'Swimming', hours:0 },
+    { id:'a4', name:'Yoga / Martial arts', hours:0 },
+    { id:'a5', name:'Dance / Aerobics', hours:0 },
+  ],
+  service: [
+    { id:'s1', name:'Tutoring younger students', hours:0 },
+    { id:'s2', name:'Volunteering at local charity', hours:0 },
+    { id:'s3', name:'Environmental clean-up', hours:0 },
+    { id:'s4', name:'Community fundraising', hours:0 },
+    { id:'s5', name:'Mentoring / Teaching', hours:0 },
+  ],
+}
+
 function loadCAS(userId) {
   try {
     const raw = localStorage.getItem(`nx_cas_${userId}`)
     if (raw) return JSON.parse(raw)
   } catch {}
+  // Return defaults with 0 hours — user can log hours against each
   return {
-    creativity: { hours: 0, activities: [] },
-    activity:   { hours: 0, activities: [] },
-    service:    { hours: 0, activities: [] },
+    creativity: { hours: 0, activities: CAS_DEFAULTS.creativity },
+    activity:   { hours: 0, activities: CAS_DEFAULTS.activity },
+    service:    { hours: 0, activities: CAS_DEFAULTS.service },
   }
 }
 
