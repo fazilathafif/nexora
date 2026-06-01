@@ -230,9 +230,10 @@ export default function AuthGate() {
   const { isDesktop } = useBreakpoint()
 
   async function signInWithGoogle() {
+    const redirectTo = import.meta.env.VITE_APP_URL ?? window.location.origin
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo },
     })
   }
 
