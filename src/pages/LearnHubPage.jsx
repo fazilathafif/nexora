@@ -19,6 +19,7 @@ import { TRACK_COLORS, COURSERA_BLUE } from '../styles/courseraTokens.js'
 import IBPointsCalculator   from '../components/IBPointsCalculator.jsx'
 import IGCSEGradeToggle     from '../components/IGCSEGradeToggle.jsx'
 import { getEffectivePlan } from '../lib/subscription.js'
+import { getDayPlan, getWeekCalendar, groupTopicsBySubject } from '../lib/studySchedule.js'
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -938,6 +939,31 @@ export default function LearnHubPage({ user, profile, isDark }) {
     <div>
       <DailyChallengeCard stream={activeTrack} subjects={cfg.subjects} C={C} navigate={navigate} />
       <GoalCard rec={rec} days={days} studiedToday={studiedToday} C={C} />
+      {/* Schedule-aware today card */}
+      {examDate && days > 0 && (() => {
+        const tp = getDayPlan(topics, examDate)
+        if (!tp || !tp.todayTopics.length) return null
+        return (
+          <div style={{ marginBottom:12, background:'white', border:`1.5px solid ${tp.phaseColor}40`, borderRadius:14, padding:'12px 14px', boxShadow:'0 1px 8px rgba(0,0,0,0.05)' }}>
+            <div style={{ fontSize:11, fontWeight:800, color:tp.phaseColor, letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:8 }}>
+              {tp.phaseIcon} {tp.phaseLabel} — Day {tp.dayOfPlan + 1} of {tp.totalDays}
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+              {tp.todayTopics.map(t => (
+                <button key={t.topic} onClick={() => navigate(`/${activeTrack}/quiz/${t.subjectId}?topic=${encodeURIComponent(t.topic)}`)}
+                  style={{ display:'flex', alignItems:'center', gap:10, background:'white', border:`1px solid ${C.border}`, borderRadius:10, padding:'9px 12px', cursor:'pointer', fontFamily:'Inter,sans-serif', textAlign:'left', WebkitTapHighlightColor:'transparent' }}>
+                  <span style={{ fontSize:16, flexShrink:0 }}>{t.emoji}</span>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:12, fontWeight:700, color:'#1E293B' }}>{t.topic}</div>
+                    <div style={{ fontSize:10, color:C.muted, marginTop:1 }}>{t.pct}% accuracy</div>
+                  </div>
+                  <span style={{ fontSize:11, fontWeight:800, color:tp.phaseColor, flexShrink:0 }}>Start →</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
       <PriorityDrillCard topics={weakTopics} stream={activeTrack} C={C} navigate={navigate} />
       {!loading && !weakTopics.length && (
         <div style={{ marginBottom:12, background:'#F0FDF4', border:'1px solid #10B98130', borderRadius:16, padding:'14px 18px' }}>
@@ -985,34 +1011,57 @@ export default function LearnHubPage({ user, profile, isDark }) {
       <StatStrip streak={streak} xp={xp} level={level} C={C} />
       <WeeklyHeatmap heatmap={heatmap} maxSessions={maxSessions} loading={loading} C={C} />
       <SubjectMasteryStrip streams={[activeTrack]} C={C} navigate={navigate} activeTrack={activeTrack} />
+
+      {/* Combined Topics Card — grouped by subject, replaces old flat TopicBar list */}
       <Card C={C} style={{ marginBottom:12 }}>
-        <SH label={['sat','act','ap','psat'].includes(stream) ? 'Topic Performance' : 'Subject Strength'} C={C} />
-        {loading ? <Skeleton C={C} height={120} /> : topics.length === 0
-          ? cfg.subjects.slice(0,4).map((s,i) => (
-              <TopicBar key={s.id} topic={s.label} pct={[72,58,85,64][i]} C={C} />
-            ))
-          : topics.map(t => (
-              <TopicBar
-                key={t.topic} topic={t.topic} pct={t.pct} C={C}
-                onDrill={() => navigate(`/${activeTrack}/quiz/${guessSubjectForTopic(t.topic, cfg)}?topic=${encodeURIComponent(t.topic)}`)}
-              />
-            ))
-        }
+        <SH label={['sat','act','ap','psat'].includes(activeTrack) ? 'Topic Performance' : 'My Topics'} C={C} />
+        {loading ? <Skeleton C={C} height={120} /> : topics.length === 0 ? (
+          <div style={{ textAlign:'center', padding:'16px 0', color:C.muted, fontSize:12 }}>
+            Complete a few quiz sessions to see your topic breakdown.
+          </div>
+        ) : (
+          groupTopicsBySubject(topics, cfg).map(subj => (
+            <div key={subj.subjectId} style={{ marginBottom:16 }}>
+              {/* Subject header */}
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                <span style={{ fontSize:16 }}>{subj.emoji}</span>
+                <span style={{ fontSize:12, fontWeight:800, color:C.navy }}>{subj.label}</span>
+                <div style={{ flex:1, height:1, background:C.border }} />
+                <span style={{ fontSize:11, fontWeight:700,
+                  color: subj.avgPct >= 75 ? '#10B981' : subj.avgPct >= 50 ? '#F59E0B' : '#EF4444'
+                }}>{subj.avgPct}% avg</span>
+              </div>
+              {/* Topics within subject */}
+              {subj.topics.map(t => (
+                <div key={t.topic} style={{ marginBottom:8, paddingLeft:24 }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:3 }}>
+                    <span style={{ fontSize:12, fontWeight:600, color:C.navy, flex:1, marginRight:8 }}>{t.topic}</span>
+                    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                      {t.pct < 70 && (
+                        <button
+                          onClick={() => navigate(`/${activeTrack}/quiz/${t.subjectId}?topic=${encodeURIComponent(t.topic)}`)}
+                          style={{ background:'#EF444418', border:'1px solid #EF444440', borderRadius:6, padding:'2px 8px', fontSize:10, fontWeight:700, color:'#EF4444', cursor:'pointer' }}
+                        >Drill</button>
+                      )}
+                      <span style={{ fontSize:12, fontWeight:700, minWidth:32, textAlign:'right',
+                        color: t.pct >= 75 ? '#10B981' : t.pct >= 50 ? '#F59E0B' : '#EF4444'
+                      }}>{t.pct}%</span>
+                    </div>
+                  </div>
+                  <div style={{ height:4, background:C.border, borderRadius:999, overflow:'hidden' }}>
+                    <div style={{ width:`${t.pct}%`, height:'100%', borderRadius:999,
+                      background: t.pct >= 75 ? '#10B981' : t.pct >= 50 ? '#F59E0B' : '#EF4444',
+                      transition:'width 0.6s ease',
+                    }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))
+        )}
       </Card>
-      <button
-        onClick={() => navigate(`/${activeTrack}/plan`)}
-        style={{
-          width:'100%', padding:'13px 0',
-          background:C.primary, color:'white',
-          border:'none', borderRadius:12,
-          fontSize:14, fontWeight:800, cursor:'pointer',
-          fontFamily:'Inter,sans-serif', marginBottom:12,
-          display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-        }}
-      >
-        📅 View Full Study Plan
-      </button>
-      <div style={{ padding:'14px 16px', background:`${C.primary}12`, border:`1.5px solid ${C.primary}28`, borderRadius:14, fontSize:13, color:C.primary, lineHeight:1.5 }}>
+
+      <div style={{ padding:'14px 16px', background:`${C.primary}12`, border:`1.5px solid ${C.primary}28`, borderRadius:14, fontSize:13, color:C.primary, lineHeight:1.5, marginBottom:12 }}>
         🏫 <strong>Share with your teacher</strong> — ask them about Nexora School Edition for the whole class!
       </div>
 
@@ -1024,11 +1073,7 @@ export default function LearnHubPage({ user, profile, isDark }) {
           </div>
           {trackNotes.length > 0 && (
             <button
-              onClick={() => {
-                navigator.clipboard.writeText(exportNotesText(trackNotes)).then(() => {
-                  setNotesCopyDone(true); setTimeout(() => setNotesCopyDone(false), 2000)
-                })
-              }}
+              onClick={() => { navigator.clipboard.writeText(exportNotesText(trackNotes)).then(() => { setNotesCopyDone(true); setTimeout(() => setNotesCopyDone(false), 2000) }) }}
               style={{ background: notesCopyDone ? '#DCFCE7' : 'transparent', border:`1px solid ${notesCopyDone ? '#16A34A40' : '#7C3AED30'}`, borderRadius:8, padding:'4px 10px', fontSize:11, fontWeight:700, color: notesCopyDone ? '#16A34A' : '#7C3AED', cursor:'pointer', fontFamily:'Inter,sans-serif' }}
             >
               {notesCopyDone ? '✓ Copied' : '📋 Copy All'}
@@ -1051,24 +1096,16 @@ export default function LearnHubPage({ user, profile, isDark }) {
                   <div style={{ padding:'12px 14px 10px', display:'flex', alignItems:'flex-start', gap:8 }}>
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:6, alignItems:'center' }}>
-                        <span style={{ background:'#7C3AED12', border:'1px solid #7C3AED25', borderRadius:20, padding:'2px 8px', fontSize:9, fontWeight:700, color:'#7C3AED' }}>
-                          {note.topic || note.subject || 'Note'}
-                        </span>
+                        <span style={{ background:'#7C3AED12', border:'1px solid #7C3AED25', borderRadius:20, padding:'2px 8px', fontSize:9, fontWeight:700, color:'#7C3AED' }}>{note.topic || note.subject || 'Note'}</span>
                         <span style={{ marginLeft:'auto', fontSize:10, color:'#94A3B8', fontWeight:600 }}>{savedDate}</span>
                       </div>
                       <p style={{ fontSize:12, fontWeight:600, color:C.navy, margin:0, lineHeight:1.55, ...(!expanded ? { display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' } : {}) }}>
                         {note.question}
                       </p>
                     </div>
-                    <button
-                      onClick={() => { deleteNote(note.id); setAllNotes(getNotes()) }}
-                      style={{ background:'none', border:'none', cursor:'pointer', color:'#CBD5E1', fontSize:18, padding:'0 2px', flexShrink:0, lineHeight:1 }}
-                    >×</button>
+                    <button onClick={() => { deleteNote(note.id); setAllNotes(getNotes()) }} style={{ background:'none', border:'none', cursor:'pointer', color:'#CBD5E1', fontSize:18, padding:'0 2px', flexShrink:0, lineHeight:1 }}>×</button>
                   </div>
-                  <button
-                    onClick={() => setExpandedNote(p => p === note.id ? null : note.id)}
-                    style={{ width:'100%', background:C.bg, border:'none', borderTop:`1px solid ${C.border}`, padding:'7px 14px', display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', fontSize:11, fontWeight:700, color:'#7C3AED', fontFamily:'Inter,sans-serif' }}
-                  >
+                  <button onClick={() => setExpandedNote(p => p === note.id ? null : note.id)} style={{ width:'100%', background:C.bg, border:'none', borderTop:`1px solid ${C.border}`, padding:'7px 14px', display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', fontSize:11, fontWeight:700, color:'#7C3AED', fontFamily:'Inter,sans-serif' }}>
                     <span>{expanded ? 'Hide explanation' : 'Show AI explanation'}</span>
                     <span style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition:'transform 0.2s', display:'inline-block' }}>▾</span>
                   </button>
@@ -1083,11 +1120,10 @@ export default function LearnHubPage({ user, profile, isDark }) {
           </div>
         )}
       </div>
+
       {activeTrack === 'ib' && (
         <div style={{ marginTop:4 }}>
-          <div style={{ fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:10 }}>
-            IB Points Calculator
-          </div>
+          <div style={{ fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:10 }}>IB Points Calculator</div>
           <IBPointsCalculator topicStats={topics} C={C} />
         </div>
       )}
@@ -1184,16 +1220,12 @@ export default function LearnHubPage({ user, profile, isDark }) {
   const planPanel = (
     <div>
       {examDatesCard}
+
       {/* Readiness ring */}
       {!loading && topics.length > 0 && (
         <Card C={C} style={{ marginBottom:12, display:'flex', alignItems:'center', gap:16 }}>
-          <div style={{
-            width:64, height:64, borderRadius:'50%', flexShrink:0,
-            background:`conic-gradient(${readinessColor} ${avgAccuracy}%, ${C.border} 0)`,
-            display:'flex', alignItems:'center', justifyContent:'center',
-            boxShadow:`0 0 0 3px white, 0 0 0 5px ${readinessColor}30`,
-          }}>
-            <div style={{ width:48, height:48, borderRadius:'50%', background:'white', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column' }}>
+          <div style={{ width:64, height:64, borderRadius:'50%', flexShrink:0, background:`conic-gradient(${readinessColor} ${avgAccuracy}%, ${C.border} 0)`, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 0 0 3px white, 0 0 0 5px ${readinessColor}30` }}>
+            <div style={{ width:48, height:48, borderRadius:'50%', background:'white', display:'flex', alignItems:'center', justifyContent:'center' }}>
               <div style={{ fontSize:13, fontWeight:900, color:readinessColor }}>{avgAccuracy}%</div>
             </div>
           </div>
@@ -1211,190 +1243,128 @@ export default function LearnHubPage({ user, profile, isDark }) {
         </Card>
       )}
 
-      {/* Today's priority */}
-      {!loading && allWeak.length > 0 && (
+      {/* Date-aware week calendar */}
+      {!loading && examDate && days > 0 && (
         <div style={{ marginBottom:12 }}>
-          <SH label="Today's Priority" C={C} />
-          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-            {allWeak.slice(0,3).map((t, i) => {
-              const subj = subjectForTopic(t.topic)
-              return (
-                <div key={t.topic} style={{ display:'flex', alignItems:'center', gap:12, background:'white', border:`1px solid ${C.border}`, borderRadius:14, padding:'12px 14px', boxShadow:'0 1px 6px rgba(0,0,0,0.05)' }}>
-                  <div style={{ width:26, height:26, borderRadius:'50%', flexShrink:0, background:i===0?'#EF4444':i===1?'#F59E0B':'#6366F1', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:900, fontSize:11 }}>{i+1}</div>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:12, fontWeight:700, color:'#1E293B', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{t.topic}</div>
-                    <div style={{ fontSize:10, color:C.muted, marginTop:1 }}>{t.pct}% accuracy</div>
+          <SH label="Study Calendar" C={C} />
+          {getWeekCalendar(topics, examDate).map((week, wi) => (
+            <div key={wi} style={{ marginBottom:14 }}>
+              <div style={{ fontSize:10, fontWeight:800, color:C.muted, letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:8 }}>{week.weekLabel}</div>
+              <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                {week.days.map(d => (
+                  <div key={d.date} style={{
+                    display:'flex', alignItems:'center', gap:10,
+                    background: d.isToday ? `${d.phaseColor}12` : d.isExamDay ? '#0056D210' : 'white',
+                    border: `1.5px solid ${d.isToday ? d.phaseColor : d.isExamDay ? '#0056D2' : C.border}`,
+                    borderRadius:12, padding:'10px 12px',
+                    opacity: d.isPast ? 0.5 : 1,
+                  }}>
+                    {/* Date pill */}
+                    <div style={{ flexShrink:0, textAlign:'center', minWidth:36 }}>
+                      <div style={{ fontSize:9, fontWeight:700, color:d.isToday ? d.phaseColor : C.muted, textTransform:'uppercase' }}>{d.dayOfWeek}</div>
+                      <div style={{ fontSize:16, fontWeight:900, color:d.isToday ? d.phaseColor : C.navy, lineHeight:1 }}>{d.dayNum}</div>
+                    </div>
+                    {/* Phase + topics */}
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:d.topics.length ? 4 : 0 }}>
+                        <span style={{ fontSize:13 }}>{d.phaseIcon}</span>
+                        <span style={{ fontSize:12, fontWeight:700, color: d.isExamDay ? '#0056D2' : d.phaseColor }}>{d.phaseLabel}</span>
+                        {d.isToday && <span style={{ fontSize:9, fontWeight:800, color:d.phaseColor, background:`${d.phaseColor}15`, borderRadius:20, padding:'1px 6px' }}>TODAY</span>}
+                      </div>
+                      {d.topics.length > 0 && (
+                        <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+                          {d.topics.map(t => (
+                            <button
+                              key={t.topic}
+                              onClick={() => navigate(`/${activeTrack}/quiz/${t.subjectId}?topic=${encodeURIComponent(t.topic)}`)}
+                              style={{ fontSize:10, fontWeight:700, color: d.phaseColor, background:`${d.phaseColor}12`, border:`1px solid ${d.phaseColor}30`, borderRadius:20, padding:'2px 8px', cursor:'pointer', fontFamily:'Inter,sans-serif' }}
+                            >
+                              {t.emoji} {t.topic} ({t.pct}%)
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <button onClick={() => navigate(`/${activeTrack}/quiz/${subj.id}?topic=${encodeURIComponent(t.topic)}`)} style={{ background:C.primary, color:'white', border:'none', borderRadius:9, padding:'6px 13px', fontWeight:700, cursor:'pointer', fontSize:11, flexShrink:0 }}>Drill →</button>
-                </div>
-              )
-            })}
-          </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Phased schedule — only shown when performance data exists */}
-      {!loading && topics.length > 0 && schedule.length > 0 && (
-        <div style={{ marginBottom:12 }}>
-          <SH label="Study Schedule" C={C} />
-          <Card C={C} style={{ padding:'14px 16px' }}>
-            {schedule.map((phase, i) => (
+      {/* Generic phase schedule when no performance data */}
+      {!loading && topics.length === 0 && examDate && days > 0 && (
+        <div>
+          <div style={{ display:'flex', alignItems:'flex-start', gap:10, background:`${C.primary}10`, border:`1.5px solid ${C.primary}30`, borderRadius:14, padding:'12px 14px', marginBottom:12 }}>
+            <span style={{ fontSize:18, flexShrink:0 }}>🤖</span>
+            <div style={{ fontSize:12, color:C.navy, lineHeight:1.6 }}>
+              <strong>Generic plan</strong> — based on your exam date only. Refines as you practice.
+            </div>
+          </div>
+          <SH label="Suggested Study Schedule" C={C} />
+          <Card C={C} style={{ padding:'14px 16px', marginBottom:12 }}>
+            {buildSchedule(days, [], cfg.subjects).map((phase, i, arr) => (
               <div key={i} style={{ display:'flex', gap:0, position:'relative' }}>
                 <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:32, flexShrink:0 }}>
                   <div style={{ width:26, height:26, borderRadius:'50%', background:`${phase.color}20`, border:`2px solid ${phase.color}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, zIndex:1 }}>{phase.icon}</div>
-                  {i < schedule.length-1 && <div style={{ width:2, flex:1, background:C.border, minHeight:20, marginTop:4 }} />}
+                  {i < arr.length-1 && <div style={{ width:2, flex:1, background:C.border, minHeight:20, marginTop:4 }} />}
                 </div>
-                <div style={{ flex:1, paddingBottom:i<schedule.length-1?18:0, paddingLeft:10 }}>
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:3 }}>
+                <div style={{ flex:1, paddingBottom:i<arr.length-1?18:0, paddingLeft:10 }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
                     <div style={{ fontSize:12, fontWeight:800, color:C.navy }}>{phase.phase}</div>
-                    <div style={{ fontSize:10, color:phase.color, fontWeight:700, background:`${phase.color}18`, borderRadius:6, padding:'2px 8px', flexShrink:0 }}>{phase.duration}</div>
+                    <div style={{ fontSize:10, color:phase.color, fontWeight:700, background:`${phase.color}18`, borderRadius:6, padding:'2px 8px' }}>{phase.duration}</div>
                   </div>
                   <div style={{ fontSize:11, color:C.muted, lineHeight:1.5 }}>{phase.description}</div>
                 </div>
               </div>
             ))}
           </Card>
+          <div style={{ marginBottom:12 }}>
+            <SH label={`${cfg.subjects.filter(s => !s.deprecated).length} Subjects to Cover`} C={C} />
+            <Card C={C} style={{ marginBottom:12 }}>
+              {cfg.subjects.filter(s => !s.deprecated).map(s => (
+                <div key={s.id} style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+                  <div style={{ width:32, height:32, borderRadius:9, background:`${C.primary}15`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>{s.emoji}</div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:12, fontWeight:700, color:C.navy }}>{s.label}</div>
+                  </div>
+                  <button onClick={() => navigate(`/${activeTrack}/quiz/${s.id}`)} style={{ background:`${C.primary}15`, border:`1px solid ${C.primary}30`, color:C.primary, borderRadius:8, padding:'5px 11px', fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>Start →</button>
+                </div>
+              ))}
+            </Card>
+          </div>
+          <button onClick={() => setTab('today')} style={{ width:'100%', padding:'12px 0', background:C.primary, color:'white', border:'none', borderRadius:12, fontSize:13, fontWeight:800, cursor:'pointer', fontFamily:'Inter,sans-serif', marginBottom:12 }}>
+            🎯 Start practising to unlock your personalised plan
+          </button>
         </div>
       )}
 
-      {/* All topics */}
-      {!loading && topics.length > 0 && (
-        <Card C={C} style={{ marginBottom:12 }}>
-          <SH label="All Topics" C={C} />
-          {[...allWeak, ...allStrong].map(t => {
-            const subj = subjectForTopic(t.topic)
-            return (
-              <div key={t.topic} style={{ marginBottom:10 }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
-                  <div style={{ flex:1 }}>
-                    <span style={{ fontSize:12, fontWeight:700, color:C.navy }}>{t.topic}</span>
-                    <span style={{ fontSize:10, color:C.muted, marginLeft:6 }}>{subj?.emoji} {subj?.label}</span>
-                  </div>
-                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                    {t.pct < 70 && (
-                      <button onClick={() => navigate(`/${activeTrack}/quiz/${subj.id}?topic=${encodeURIComponent(t.topic)}`)} style={{ background:'#EF444418', border:'1px solid #EF444440', borderRadius:6, padding:'2px 8px', fontSize:10, fontWeight:700, color:'#EF4444', cursor:'pointer' }}>Drill</button>
-                    )}
-                    <span style={{ fontSize:12, fontWeight:700, color:t.pct>=75?'#10B981':t.pct>=50?'#F59E0B':'#EF4444', minWidth:32, textAlign:'right' }}>{t.pct}%</span>
-                  </div>
-                </div>
-                <div style={{ background:C.border, borderRadius:4, height:5 }}>
-                  <div style={{ width:`${t.pct}%`, background:t.pct>=75?'#10B981':t.pct>=50?'#F59E0B':'#EF4444', height:'100%', borderRadius:4, transition:'width 0.6s ease' }} />
-                </div>
-              </div>
-            )
-          })}
+      {/* No exam date set */}
+      {!examDate && topics.length === 0 && (
+        <Card C={C} style={{ textAlign:'center', padding:'24px' }}>
+          <div style={{ fontSize:32, marginBottom:10 }}>📅</div>
+          <div style={{ fontWeight:800, color:C.navy, fontSize:14, marginBottom:6 }}>Set an exam date to get started</div>
+          <div style={{ fontSize:12, color:C.muted, lineHeight:1.6, marginBottom:14 }}>Add your exam date above and complete a few quiz sessions — your personalised plan will appear here.</div>
+          <button onClick={() => setTab('today')} style={{ background:C.primary, color:'white', border:'none', borderRadius:12, padding:'10px 22px', fontWeight:700, cursor:'pointer', fontSize:13 }}>Go to Today →</button>
         </Card>
       )}
 
-      {/* No performance data — show generic date-based plan */}
-      {!loading && topics.length === 0 && (
-        <div>
-          {/* Disclaimer */}
-          <div style={{
-            display:'flex', alignItems:'flex-start', gap:10,
-            background:`${C.primary}10`, border:`1.5px solid ${C.primary}30`,
-            borderRadius:14, padding:'12px 14px', marginBottom:12,
-          }}>
-            <span style={{ fontSize:18, flexShrink:0 }}>🤖</span>
-            <div style={{ fontSize:12, color:C.navy, lineHeight:1.6 }}>
-              <strong>Generic plan</strong> — based on your exam date only. This will automatically refine as you complete practice sessions and real performance data becomes available.
-            </div>
-          </div>
-
-          {days != null && days > 0 ? (
-            <>
-              {/* Generic schedule based purely on time */}
-              <div style={{ marginBottom:12 }}>
-                <SH label="Suggested Study Schedule" C={C} />
-                <Card C={C} style={{ padding:'14px 16px' }}>
-                  {buildSchedule(days, [], cfg.subjects).map((phase, i, arr) => (
-                    <div key={i} style={{ display:'flex', gap:0, position:'relative' }}>
-                      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:32, flexShrink:0 }}>
-                        <div style={{ width:26, height:26, borderRadius:'50%', background:`${phase.color}20`, border:`2px solid ${phase.color}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, zIndex:1 }}>{phase.icon}</div>
-                        {i < arr.length-1 && <div style={{ width:2, flex:1, background:C.border, minHeight:20, marginTop:4 }} />}
-                      </div>
-                      <div style={{ flex:1, paddingBottom:i<arr.length-1?18:0, paddingLeft:10 }}>
-                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:3 }}>
-                          <div style={{ fontSize:12, fontWeight:800, color:C.navy }}>{phase.phase}</div>
-                          <div style={{ fontSize:10, color:phase.color, fontWeight:700, background:`${phase.color}18`, borderRadius:6, padding:'2px 8px', flexShrink:0 }}>{phase.duration}</div>
-                        </div>
-                        <div style={{ fontSize:11, color:C.muted, lineHeight:1.5 }}>{phase.description}</div>
-                      </div>
-                    </div>
-                  ))}
-                </Card>
-              </div>
-
-              {/* Subjects to cover */}
-              <Card C={C} style={{ marginBottom:12 }}>
-                <SH label={`${cfg.subjects.filter(s => !s.deprecated).length} Subjects to Cover`} C={C} />
-                <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-                  {cfg.subjects.filter(s => !s.deprecated).map(s => (
-                    <div key={s.id} style={{ display:'flex', alignItems:'center', gap:10 }}>
-                      <div style={{ width:32, height:32, borderRadius:9, background:`${C.primary}15`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>{s.emoji}</div>
-                      <div style={{ flex:1 }}>
-                        <div style={{ fontSize:12, fontWeight:700, color:C.navy }}>{s.label}</div>
-                        {s.desc && <div style={{ fontSize:10, color:C.muted }}>{s.desc}</div>}
-                      </div>
-                      <button
-                        onClick={() => navigate(`/${activeTrack}/quiz/${s.id}`)}
-                        style={{ background:`${C.primary}15`, border:`1px solid ${C.primary}30`, color:C.primary, borderRadius:8, padding:'5px 11px', fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'Inter,sans-serif', flexShrink:0 }}
-                      >
-                        Start →
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-
-              <button
-                onClick={() => setTab('today')}
-                style={{ width:'100%', padding:'12px 0', background:C.primary, color:'white', border:'none', borderRadius:12, fontSize:13, fontWeight:800, cursor:'pointer', fontFamily:'Inter,sans-serif', marginBottom:12 }}
-              >
-                🎯 Start practising to unlock your personalised plan
-              </button>
-            </>
-          ) : (
-            /* No exam date set either */
-            <Card C={C} style={{ textAlign:'center', padding:'24px' }}>
-              <div style={{ fontSize:32, marginBottom:10 }}>📅</div>
-              <div style={{ fontWeight:800, color:C.navy, fontSize:14, marginBottom:6 }}>Set an exam date to get started</div>
-              <div style={{ fontSize:12, color:C.muted, lineHeight:1.6, marginBottom:14 }}>
-                Add your exam date above and complete a few quiz sessions — your personalised plan will appear here.
-              </div>
-              <button
-                onClick={() => setTab('today')}
-                style={{ background:C.primary, color:'white', border:'none', borderRadius:12, padding:'10px 22px', fontWeight:700, cursor:'pointer', fontSize:13 }}
-              >
-                Go to Today →
-              </button>
-            </Card>
-          )}
-        </div>
-      )}
-
-      {days != null && days > 0 && days <= 30 && (
-        <button
-          onClick={() => navigate(`/${activeTrack}/mock/${cfg.subjects[0].id}`)}
-          style={{ width:'100%', background:`linear-gradient(135deg,${C.primary},${C.primary}BB)`, color:'white', border:'none', borderRadius:14, padding:'13px', fontSize:14, fontWeight:800, cursor:'pointer', boxShadow:`0 4px 16px ${C.primary}40`, marginTop:4 }}
-        >
+      {days != null && days > 0 && days <= 30 && topics.length > 0 && (
+        <button onClick={() => navigate(`/${activeTrack}/mock/${cfg.subjects[0].id}`)} style={{ width:'100%', background:`linear-gradient(135deg,${C.primary},${C.primary}BB)`, color:'white', border:'none', borderRadius:14, padding:'13px', fontSize:14, fontWeight:800, cursor:'pointer', boxShadow:`0 4px 16px ${C.primary}40`, marginTop:4 }}>
           📋 Take a Full Mock Exam
         </button>
       )}
+
       {activeTrack === 'ib' && (
-        <div style={{ padding:'14px 16px', background:'#5B21B612', border:'1.5px solid #5B21B628', borderRadius:14, fontSize:13, color:'#5B21B6', lineHeight:1.5, marginBottom:12 }}>
+        <div style={{ padding:'14px 16px', background:'#5B21B612', border:'1.5px solid #5B21B628', borderRadius:14, fontSize:13, color:'#5B21B6', lineHeight:1.5, marginTop:12 }}>
           📋 <strong>IA Checklist</strong> — track your Internal Assessment milestones in the{' '}
-          <button
-            onClick={() => navigate(`/${activeTrack}/settings`)}
-            style={{ background:'none', border:'none', color:'#5B21B6', fontWeight:800, cursor:'pointer', padding:0, fontFamily:'Inter,sans-serif', fontSize:13, textDecoration:'underline' }}
-          >
-            Profile tab
-          </button>
-          .
+          <button onClick={() => navigate(`/${activeTrack}/settings`)} style={{ background:'none', border:'none', color:'#5B21B6', fontWeight:800, cursor:'pointer', padding:0, fontFamily:'Inter,sans-serif', fontSize:13, textDecoration:'underline' }}>Profile tab</button>.
         </div>
       )}
     </div>
   )
+
 
   // ── Desktop: 3-column ─────────────────────────────────────────────────────
   if (isDesktop) {
