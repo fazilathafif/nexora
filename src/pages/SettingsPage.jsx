@@ -8,8 +8,6 @@ import { STREAM_CONFIG } from '../data/questions.js'
 import { usePreferences } from '../hooks/usePreferences.js'
 import { useTheme } from '../hooks/useTheme.js'
 import { trialDaysLeft, getEffectivePlan, PLANS } from '../lib/subscription.js'
-import IAChecklist       from '../components/IAChecklist.jsx'
-import CASTracker        from '../components/CASTracker.jsx'
 import IGCSEGradeToggle, { useIGCSEScheme } from '../components/IGCSEGradeToggle.jsx'
 import ContactForm from '../components/ContactForm.jsx'
 
@@ -557,21 +555,8 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
     </>
   )
 
-  // ── IB-specific sections ─────────────────────────────────────────────────────
-  const ibSections = stream === 'ib' ? (
-    <>
-      <CollapsibleSection title="IA Checklist" icon="📋" C={C}>
-        <div style={{ padding:'14px 16px' }}>
-          <IAChecklist userId={user?.id} C={C} />
-        </div>
-      </CollapsibleSection>
-      <CollapsibleSection title="CAS Tracker" icon="🌱" C={C}>
-        <div style={{ padding:'14px 16px' }}>
-          <CASTracker userId={user?.id} C={C} />
-        </div>
-      </CollapsibleSection>
-    </>
-  ) : null
+  // ── IB-specific sections — IA Checklist and CAS Tracker moved to Learn Hub → Study Plan
+  const ibSections = null
 
   // ── IGCSE-specific sections ──────────────────────────────────────────────────
   const igcseSection = stream === 'igcse' ? (
