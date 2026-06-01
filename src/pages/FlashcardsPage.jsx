@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { getQuestions } from '../data/questions.js'
 import { scheduleReview, sortByDue } from '../lib/srs.js'
 import { getColors, Shell } from './HomePage.jsx'
+import { canAccess } from '../lib/subscription.js'
 import { useBreakpoint } from '../hooks/useBreakpoint.js'
 import { useTheme } from '../hooks/useTheme.js'
 import FlashcardDeck from '../components/FlashcardDeck.jsx'
@@ -52,18 +53,17 @@ function incrementEasyCount(id) {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function FlashcardsPage() {
+export default function FlashcardsPage({ profile }) {
   const { stream, subject } = useParams()
   const navigate  = useNavigate()
   const { isDark } = useTheme()
   const C         = getColors(stream, subject, isDark)
   const dark      = isDark
 
-  // Explore mode gate — Flashcards not available in trial
-  if (sessionStorage.getItem('nx_explore') === '1') {
-    navigate('/', { replace: true })
-    return null
-  }
+  // Explore mode gate
+  if (sessionStorage.getItem('nx_explore') === '1') { navigate('/', { replace: true }); return null }
+  // Free plan gate
+  if (!canAccess(profile, 'deepDive')) { navigate(`/${stream}/subscription`, { replace: true }); return null }
   const allQs     = sortByDue(getQuestions(stream, subject))
   const deckRef   = useRef(null)
   const { isDesktop } = useBreakpoint()

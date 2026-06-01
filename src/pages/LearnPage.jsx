@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { getQuestions } from '../data/questions.js'
 import { getColors, Shell } from './HomePage.jsx'
 import { scheduleReview } from '../lib/srs.js'
+import { canAccess } from '../lib/subscription.js'
 
 const WRONG_CAP = 3
 
@@ -15,17 +16,16 @@ function shuffle(arr) {
   return a
 }
 
-export default function LearnPage({ isDark }) {
+export default function LearnPage({ profile, isDark }) {
   const { stream, subject } = useParams()
   const navigate            = useNavigate()
   const C                   = getColors(stream, null, isDark)
   const dark                = isDark
 
-  // Explore mode gate — Learn mode not available in trial
-  if (sessionStorage.getItem('nx_explore') === '1') {
-    navigate('/', { replace: true })
-    return null
-  }
+  // Explore mode gate
+  if (sessionStorage.getItem('nx_explore') === '1') { navigate('/', { replace: true }); return null }
+  // Free plan gate — Learn mode (deepDive) not included
+  if (!canAccess(profile, 'deepDive')) { navigate(`/${stream}/subscription`, { replace: true }); return null }
 
   const allQuestions = getQuestions(stream, subject)
 

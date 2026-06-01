@@ -129,13 +129,13 @@ export default function App() {
           <LearnHubPage user={user} profile={profile} isDark={isDark} />
         } />
         <Route path="/:stream/flashcards/:subject" element={
-          <FlashcardsPage isDark={isDark} />
+          <FlashcardsPage profile={profile} isDark={isDark} />
         } />
         <Route path="/:stream/match/:subject" element={
           <MatchPage isDark={isDark} />
         } />
         <Route path="/:stream/learn/:subject" element={
-          <LearnPage isDark={isDark} />
+          <LearnPage profile={profile} isDark={isDark} />
         } />
         <Route path="/:stream/wellbeing" element={
           <WellbeingPage isDark={isDark} />

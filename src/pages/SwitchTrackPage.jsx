@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { STREAM_CONFIG } from '../data/questions.js'
 import { COURSERA_BLUE, TRACK_COLORS } from '../styles/courseraTokens.js'
+import { getEffectivePlan } from '../lib/subscription.js'
 
 export default function SwitchTrackPage({ profile }) {
   const navigate = useNavigate()
@@ -11,8 +12,10 @@ export default function SwitchTrackPage({ profile }) {
 
   const activeStream = profile?.active_stream ?? profile?.stream
 
-  if (!enrolledStreams.length) {
-    navigate('/landing', { replace: true })
+  // Free plan: only 1 track, no switching needed
+  const isFree = getEffectivePlan(profile) === 'free'
+  if (isFree || enrolledStreams.length <= 1) {
+    navigate(activeStream ? `/${activeStream}` : '/landing', { replace: true })
     return null
   }
 

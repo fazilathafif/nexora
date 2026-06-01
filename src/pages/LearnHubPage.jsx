@@ -18,6 +18,7 @@ import { useMastery } from '../hooks/useMastery.js'
 import { TRACK_COLORS, COURSERA_BLUE } from '../styles/courseraTokens.js'
 import IBPointsCalculator   from '../components/IBPointsCalculator.jsx'
 import IGCSEGradeToggle     from '../components/IGCSEGradeToggle.jsx'
+import { getEffectivePlan } from '../lib/subscription.js'
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -898,8 +899,8 @@ export default function LearnHubPage({ user, profile, isDark }) {
         </div>
       </div>
 
-      {/* Track switcher — only when enrolled in 2+ tracks */}
-      {enrolledStreams.length > 1 && (
+      {/* Track switcher — only for paid users with 2+ tracks */}
+      {enrolledStreams.length > 1 && getEffectivePlan(profile) !== 'free' && (
         <div style={{ display:'flex', gap:5, marginTop:10, flexWrap:'wrap' }}>
           {enrolledStreams.map(s => {
             const sc     = STREAM_CONFIG[s]

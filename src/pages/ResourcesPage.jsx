@@ -18,6 +18,7 @@ import { STREAM_CONFIG } from '../data/questions.js'
 import { EXAM_DATES, EXAM_DATES_VINTAGE } from '../data/officialExamDates.js'
 import { RESOURCES, getResourceSubjects } from '../data/resources.js'
 import { TRACK_COLORS, COURSERA_BLUE } from '../styles/courseraTokens.js'
+import { getEffectivePlan } from '../lib/subscription.js'
 
 const TYPE_META = {
   textbook:     { label: 'Textbook',       color: '#0056D2', bg: '#EFF6FF' },
@@ -197,7 +198,7 @@ export default function ResourcesPage({ user, profile, isDark }) {
   }
 
   // ── Track switcher ────────────────────────────────────────────────────────
-  const trackSwitcher = enrolledStreams.length > 1 && (
+  const trackSwitcher = enrolledStreams.length > 1 && getEffectivePlan(profile) !== 'free' && (
     <div style={{ display: 'flex', gap: 8, marginBottom: 20, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
       {enrolledStreams.map(s => {
         const sc     = STREAM_CONFIG[s]
@@ -426,7 +427,7 @@ export default function ResourcesPage({ user, profile, isDark }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         {/* Left: track pills or single label */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0, flexWrap: 'wrap' }}>
-          {enrolledStreams.length > 1 ? (
+          {enrolledStreams.length > 1 && getEffectivePlan(profile) !== 'free' ? (
             enrolledStreams.map(s => {
               const sc     = STREAM_CONFIG[s]
               const accent = TRACK_COLORS[s] ?? COURSERA_BLUE

@@ -91,6 +91,15 @@ function ResourcesIcon({ color, size = 24 }) {
   )
 }
 
+function ContactIcon({ color, size = 24 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round"/>
+      <polyline points="22,6 12,13 2,6" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
 // ── Subject picker bottom sheet ───────────────────────────────────────────────
 function SubjectSheet({ stream, C, onClose }) {
   const navigate = useNavigate()

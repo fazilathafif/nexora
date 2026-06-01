@@ -6,6 +6,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getQuestions, MOCK_CONFIG } from '../data/questions.js'
+import { canAccess } from '../lib/subscription.js'
 import { useProgress }               from '../hooks/useProgress.js'
 import { scheduleReview }            from '../lib/srs.js'
 import { getColors, Shell, Badge }   from './HomePage.jsx'
@@ -28,11 +29,10 @@ export default function MockPage({ user, profile, refreshProfile, isDark }) {
   const dark                 = isDark
   const { isDesktop }        = useBreakpoint()
 
-  // Explore mode gate — Mock exams not available in trial
-  if (sessionStorage.getItem('nx_explore') === '1') {
-    navigate('/', { replace: true })
-    return null
-  }
+  // Explore mode gate
+  if (sessionStorage.getItem('nx_explore') === '1') { navigate('/', { replace: true }); return null }
+  // Free plan gate — mock exams not included
+  if (!canAccess(profile, 'mockExams')) { navigate(`/${stream}/subscription`, { replace: true }); return null }
 
   const cfg = stream === 'gcse'
     ? MOCK_CONFIG.gcse

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { updateProfile } from '../lib/db.js'
 import { STREAM_CONFIG } from '../data/questions.js'
 import { COURSERA_BLUE, TRACK_COLORS } from '../styles/courseraTokens.js'
+import { canAccess, getEffectivePlan } from '../lib/subscription.js'
 import { fetchTrackRecommendation } from '../lib/ai.js'
 
 const TRACK_META = {
@@ -279,6 +280,13 @@ export default function LandingPage({ user, profile, refreshProfile }) {
   const hasChanges = JSON.stringify([...pendingStreams].sort()) !== JSON.stringify([...originalStreams].sort())
 
   function toggleStream(stream) {
+    const isFree = getEffectivePlan(profile) === 'free'
+    if (isFree && !pendingStreams.includes(stream) && pendingStreams.length >= 1) {
+      // Free plan: only 1 track — redirect to subscription
+      const existing = pendingStreams[0] ?? stream
+      navigate(`/${existing}/subscription`)
+      return
+    }
     setPendingStreams(prev => prev.includes(stream) ? prev.filter(s => s !== stream) : [...prev, stream])
   }
 
