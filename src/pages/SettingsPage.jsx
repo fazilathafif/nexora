@@ -318,7 +318,7 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
   const { prefs, updatePref } = usePreferences(user?.id)
 
   const email   = user?.email ?? ''
-  const isGuest = !email || user?.isGuest
+  const isGuest = !user?.id || user?.isGuest === true
   const initial = (profile?.display_name || email || 'U')[0].toUpperCase()
   const level   = Math.floor((profile?.xp ?? 0) / 150) + 1
 
@@ -516,19 +516,34 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
             {accountSaved ? '✓ Saved' : 'Save changes'}
           </button>
         </div>
-        {!isGuest && (
-          <>
-            <Divider C={C} />
-            <SettingsRow
-              C={C} icon="⭐" label="Subscription" sublabel={planSublabel}
-              onClick={() => navigate(`/${stream}/subscription`)}
-              right={<span style={{ fontSize:10, fontWeight:800, background:`${C.primary}15`, color:C.primary, border:`1px solid ${C.primary}30`, borderRadius:20, padding:'2px 8px', whiteSpace:'nowrap' }}>{planName}</span>}
-            />
-            <Divider C={C} />
-            <SettingsRow C={C} icon="🚪" label="Sign Out" sublabel="You can sign back in at any time" onClick={() => { signOut?.(); navigate('/') }} danger right={null} />
-          </>
-        )}
+        {/* Sign Out inside Account collapsible */}
+        <div style={{ padding:'4px 16px 14px' }}>
+          <button
+            onClick={() => { signOut?.(); navigate('/') }}
+            style={{ width:'100%', background:'#FEE2E2', border:'1px solid #FECACA', borderRadius:10, padding:'10px', fontSize:12, fontWeight:700, color:'#DC2626', cursor:'pointer', fontFamily:'Inter,sans-serif' }}
+          >
+            🚪 Sign Out
+          </button>
+        </div>
       </CollapsibleSection>
+
+      {/* Subscription — always visible for signed-in users */}
+      {!isGuest && (
+        <div style={{ marginBottom:20 }}>
+          <div style={{ fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:8, paddingLeft:2 }}>Subscription</div>
+          <div style={{ background:C.card, borderRadius:16, border:`1px solid ${C.border}`, overflow:'hidden', boxShadow:'0 1px 6px rgba(0,0,0,0.04)' }}>
+            <SettingsRow
+              C={C} icon="⭐" label={planName} sublabel={planSublabel}
+              onClick={() => navigate(`/${stream}/subscription`)}
+              right={
+                <span style={{ fontSize:10, fontWeight:800, background:`${C.primary}15`, color:C.primary, border:`1px solid ${C.primary}30`, borderRadius:20, padding:'2px 10px', whiteSpace:'nowrap' }}>
+                  {trialDays > 0 ? `${trialDays}d left` : 'Manage →'}
+                </span>
+              }
+            />
+          </div>
+        </div>
+      )}
       <CollapsibleSection title="Contact Us" icon="✉️" C={C} defaultOpen={openContact}>
         <div style={{ padding:'14px 16px' }}>
           <ContactForm C={C} user={user} profile={profile} />
