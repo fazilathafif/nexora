@@ -60,11 +60,12 @@ export default function App() {
   // Require sign-in when Supabase is configured (explore mode bypasses auth gate)
   if (isSupabaseConfigured && !user && sessionStorage.getItem('nx_explore') !== '1') return <AuthGate />
 
-  // First-time user — no track chosen yet; show onboarding before the app
-  // Explore mode users skip onboarding (stream is set via AuthGate stream picker)
+  // First-time user — no track chosen yet; redirect to the redesigned landing page
   const isExplore = sessionStorage.getItem('nx_explore') === '1'
   if (!isExplore && user && profile && !profile.active_stream && !profile.stream) {
-    return <StreamOnboarding user={user} refreshProfile={refreshProfile} isDark={isDark} />
+    if (location.pathname !== '/landing') {
+      return <Navigate to="/landing" replace />
+    }
   }
 
   const VALID_STREAMS = ['gcse','alevel','sat','act','ap','psat','igcse','ib']
