@@ -4,7 +4,7 @@
  */
 
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { STREAM_CONFIG, getQuestions } from '../data/questions.js'
 import { UNIVERSITIES, getCoursesForUni, getTestsForCourse } from '../data/uniMapping.js'
 import { getEbaccLang, saveEbaccLang } from '../data/examBoards.js'
@@ -211,6 +211,13 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
 
   const enrolledStreams = profile?.streams?.length ? profile.streams : profile?.stream ? [profile.stream] : [stream]
   const isAnon    = !user?.email || user?.isGuest
+
+  // Free plan subject limit — show only first 2 subjects, rest locked
+  const subjectLimit  = sub.isFree ? (sub.limits.subjects ?? 2) : Infinity
+  const visibleSubjects = cfg.subjects.filter(s => !s.deprecated)
+  const allowedSubjects = sub.isFree
+    ? visibleSubjects.slice(0, subjectLimit)
+    : visibleSubjects
   const xp        = profile?.xp     ?? 0
   const streak    = profile?.streak  ?? 0
   const level     = Math.floor(xp / 150) + 1
@@ -258,7 +265,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         {/* Left: track pills */}
         <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap', flex:1, minWidth:0 }}>
-          {enrolledStreams.length > 1 ? (
+          {enrolledStreams.length > 1 && !sub.isFree ? (
             enrolledStreams.map(s => {
               const sc = STREAM_CONFIG[s]
               const active = s === stream
@@ -623,14 +630,17 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
             {(stream === 'gcse' || stream === 'igcse' || stream === 'ib') ? (
               <GcseSubjectGrid
                 subjects={ebaccOnly
-                  ? cfg.subjects.filter(s => s.ebacc && (!s.mfl || s.id === ebaccLang))
-                  : cfg.subjects}
+                  ? allowedSubjects.filter(s => s.ebacc && (!s.mfl || s.id === ebaccLang))
+                  : allowedSubjects}
                 navigate={navigate}
                 stream={stream}
                 C={C}
               />
             ) : (
-              <FanDeck subjects={cfg.subjects} stream={stream} navigate={navigate} C={C} />
+              <FanDeck subjects={allowedSubjects} stream={stream} navigate={navigate} C={C} />
+            )}
+            {sub.isFree && visibleSubjects.length > subjectLimit && (
+              <FreePlanBanner C={C} stream={stream} navigate={navigate} locked={visibleSubjects.length - subjectLimit} />
             )}
           </div>
 
@@ -698,14 +708,17 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
             {(stream === 'gcse' || stream === 'igcse' || stream === 'ib') ? (
               <GcseSubjectGrid
                 subjects={ebaccOnly
-                  ? cfg.subjects.filter(s => s.ebacc && (!s.mfl || s.id === ebaccLang))
-                  : cfg.subjects}
+                  ? allowedSubjects.filter(s => s.ebacc && (!s.mfl || s.id === ebaccLang))
+                  : allowedSubjects}
                 navigate={navigate}
                 stream={stream}
                 C={C}
               />
             ) : (
-              <FanDeck subjects={cfg.subjects} stream={stream} navigate={navigate} C={C} />
+              <FanDeck subjects={allowedSubjects} stream={stream} navigate={navigate} C={C} />
+            )}
+            {sub.isFree && visibleSubjects.length > subjectLimit && (
+              <FreePlanBanner C={C} stream={stream} navigate={navigate} locked={visibleSubjects.length - subjectLimit} />
             )}
           </div>
 
@@ -851,6 +864,39 @@ const EXAM_META = {
   tara:  { type:'Critical Thinking & Problem Solving',unis:'Oxford (PPE, E&M, History) · UCL' },
   tsa:   { type:'PPE, Economics, Philosophy',        unis:'Legacy — replaced by TARA from 2026' },
   step:  { type:'Cambridge Mathematics',             unis:'Cambridge — conditional on offer (taken June)' },
+}
+
+// ── Free plan banner ─────────────────────────────────────────────────────────
+
+function FreePlanBanner({ C, stream, navigate, locked }) {
+  return (
+    <div style={{
+      marginTop:12, padding:'12px 16px',
+      background:'linear-gradient(135deg,#FFF7ED,#FFFBEB)',
+      border:'1.5px solid #F59E0B40', borderRadius:14,
+      display:'flex', alignItems:'center', gap:12,
+    }}>
+      <span style={{ fontSize:20, flexShrink:0 }}>🔒</span>
+      <div style={{ flex:1 }}>
+        <div style={{ fontSize:13, fontWeight:800, color:'#92400E', marginBottom:2 }}>
+          {locked} subject{locked !== 1 ? 's' : ''} locked on Free plan
+        </div>
+        <div style={{ fontSize:11, color:'#B45309', lineHeight:1.4 }}>
+          Upgrade to Pro to unlock all subjects and unlimited practice.
+        </div>
+      </div>
+      <button
+        onClick={() => navigate(`/${stream}/subscription`)}
+        style={{
+          flexShrink:0, background:'#F59E0B', color:'white',
+          border:'none', borderRadius:9, padding:'7px 13px',
+          fontSize:11, fontWeight:800, cursor:'pointer', fontFamily:'Inter,sans-serif',
+        }}
+      >
+        Upgrade
+      </button>
+    </div>
+  )
 }
 
 // ── Format info tooltip ───────────────────────────────────────────────────────
@@ -1252,8 +1298,39 @@ function GcseSubjectGrid({ subjects, navigate, stream, C }) {
   )
 }
 
+// ── Shell home button — overlaid top-right on every non-home page hero ────────
+
+function HomeBtn({ C, navigate }) {
+  const { pathname } = useLocation()
+  const m = pathname.match(/^\/(gcse|alevel|sat|act|ap|psat|igcse|ib)$/)
+  if (m) return null // already on home page — don't show
+  const stream = pathname.match(/^\/(gcse|alevel|sat|act|ap|psat|igcse|ib)/)?.[1]
+  if (!stream) return null
+  return (
+    <button
+      onClick={() => navigate(`/${stream}`)}
+      title="Home"
+      style={{
+        position:'absolute', top:14, right:14,
+        width:34, height:34, borderRadius:10,
+        background:'rgba(255,255,255,0.18)', backdropFilter:'blur(6px)',
+        border:'1px solid rgba(255,255,255,0.3)',
+        display:'flex', alignItems:'center', justifyContent:'center',
+        cursor:'pointer', zIndex:10,
+        WebkitTapHighlightColor:'transparent',
+      }}
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-4.5v-5a1.5 1.5 0 00-3 0v5H4a1 1 0 01-1-1z"
+          stroke="white" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round"/>
+      </svg>
+    </button>
+  )
+}
+
 export function Shell({ C, isDark, children, noNav, heroContent, contentMax }) {
   const { isDesktop, isTablet } = useBreakpoint()
+  const navigate = useNavigate()
   // heroH removed — hero sections size themselves via their own padding/content
 
   const css = `
@@ -1278,6 +1355,7 @@ export function Shell({ C, isDark, children, noNav, heroContent, contentMax }) {
               position:'relative', zIndex:1,
             }}>
               {heroContent}
+              <HomeBtn C={C} navigate={navigate} />
             </div>
           )}
           <div style={{ maxWidth:contentMax ?? CONTENT_MAX, margin:'0 auto', padding:'24px 32px 40px', animation:'fadeUp 0.35s ease' }}>
@@ -1298,6 +1376,7 @@ export function Shell({ C, isDark, children, noNav, heroContent, contentMax }) {
           position:'relative', zIndex:1,
         }}>
           {heroContent}
+          <HomeBtn C={C} navigate={navigate} />
         </div>
       )}
 

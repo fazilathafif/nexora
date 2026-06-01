@@ -440,29 +440,6 @@ export default function AuthGate() {
           </form>
         )}
 
-        {!AUTH_DISABLED && (
-          <div style={{ marginTop:14 }}>
-            <button
-              onClick={() => {
-                sessionStorage.setItem('nx_explore', '1')
-                sessionStorage.setItem('nx_explore_limit', '3')
-                sessionStorage.setItem('nx_explore_used', '0')
-                navigate('/')
-              }}
-              style={{
-                width:'100%', background:'rgba(255,255,255,0.12)',
-                border:'1.5px solid rgba(255,255,255,0.35)',
-                borderRadius:8, padding:'11px', fontWeight:700,
-                fontSize:13, color:'white', cursor:'pointer',
-                fontFamily:'Inter,sans-serif', transition:'opacity 0.2s',
-              }}
-              onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
-              onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-            >
-              Try 3 free questions first →
-            </button>
-          </div>
-        )}
       </>
     )
   }
