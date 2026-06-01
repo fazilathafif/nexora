@@ -35,9 +35,22 @@ const CAS_DEFAULTS = {
 function loadCAS(userId) {
   try {
     const raw = localStorage.getItem(`nx_cas_${userId}`)
-    if (raw) return JSON.parse(raw)
+    if (raw) {
+      const stored = JSON.parse(raw)
+      // Merge defaults into any pillar that has no activities yet
+      const merged = {}
+      for (const key of ['creativity', 'activity', 'service']) {
+        const pillar = stored[key] ?? { hours: 0, activities: [] }
+        merged[key] = {
+          hours: pillar.hours ?? 0,
+          activities: pillar.activities?.length > 0
+            ? pillar.activities
+            : CAS_DEFAULTS[key],
+        }
+      }
+      return merged
+    }
   } catch {}
-  // Return defaults with 0 hours — user can log hours against each
   return {
     creativity: { hours: 0, activities: CAS_DEFAULTS.creativity },
     activity:   { hours: 0, activities: CAS_DEFAULTS.activity },
