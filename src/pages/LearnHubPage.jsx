@@ -867,7 +867,16 @@ export default function LearnHubPage({ user, profile, isDark }) {
 
   const examDate = examDates[activeTrack] ?? profile?.exam_date ?? null
   const days  = daysUntil(examDate)
-  const rec   = dailyRec(days)
+  const rawRec = dailyRec(days)
+
+  // De-stress Target Adjuster — reads stress index from localStorage (set by sandbox)
+  const sandboxStress = (() => {
+    try { return parseInt(localStorage.getItem(`nx_sandbox_stress_${user?.id}`) ?? '0', 10) } catch { return 0 }
+  })()
+  const stressMode = sandboxStress > 8
+  const rec = stressMode
+    ? { sessions: Math.max(1, Math.round(rawRec.sessions * 0.5)), minutes: rawRec.minutes }
+    : rawRec
   const xp    = profile?.xp    ?? 0
   const streak = profile?.streak ?? 0
   const level  = Math.floor(xp / 150) + 1
@@ -1044,6 +1053,28 @@ export default function LearnHubPage({ user, profile, isDark }) {
 
   const todayPanel = (
     <div>
+      {/* De-stress interceptor warning */}
+      {stressMode && (
+        <div style={{ background:'linear-gradient(135deg,#FEF3C7,#FFFBEB)', border:'1.5px solid #F59E0B50', borderRadius:14, padding:'12px 14px', marginBottom:12, display:'flex', alignItems:'flex-start', gap:10 }}>
+          <span style={{ fontSize:18, flexShrink:0 }}>⚡</span>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:13, fontWeight:800, color:'#92400E', marginBottom:2 }}>De-stress Mode Active</div>
+            <div style={{ fontSize:11, color:'#B45309', lineHeight:1.5 }}>Stress index {sandboxStress}/10. Daily target reduced to protect your wellbeing.</div>
+          </div>
+        </div>
+      )}
+      {/* IB Sandbox entry point */}
+      {activeTrack === 'ib' && import.meta.env.VITE_IB_SANDBOX_ENABLED === 'true' && (
+        <button onClick={() => navigate('/ib/sandbox')}
+          style={{ width:'100%', display:'flex', alignItems:'center', gap:10, background:'rgba(91,33,182,0.08)', border:'1.5px solid rgba(91,33,182,0.25)', borderRadius:12, padding:'11px 14px', cursor:'pointer', marginBottom:12, fontFamily:'Inter,sans-serif', textAlign:'left', WebkitTapHighlightColor:'transparent' }}>
+          <span style={{ fontSize:18, flexShrink:0 }}>🧪</span>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:13, fontWeight:700, color:'#5B21B6' }}>IB Survival Sandbox</div>
+            <div style={{ fontSize:11, color:'#7C3AED99', marginTop:1 }}>IA blueprinting · CAS linker · Deadline tracker</div>
+          </div>
+          <span style={{ fontSize:16, color:'#5B21B6' }}>›</span>
+        </button>
+      )}
       <DailyChallengeCard stream={activeTrack} subjects={cfg.subjects} C={C} navigate={navigate} />
       <GoalCard rec={rec} days={days} studiedToday={studiedToday} C={C} />
       {/* Schedule-aware today card */}

@@ -28,6 +28,7 @@ import SubscriptionPage    from './pages/SubscriptionPage.jsx'
 import ResourcesPage      from './pages/ResourcesPage.jsx'
 import TodayPage           from './pages/TodayPage.jsx'
 import LearnHubPage        from './pages/LearnHubPage.jsx'
+import IBSandboxPage       from './pages/IBSandboxPage.jsx'
 import SwitchTrackPage     from './pages/SwitchTrackPage.jsx'
 import PrivacyPage         from './pages/PrivacyPage.jsx'
 import TermsPage           from './pages/TermsPage.jsx'
@@ -127,6 +128,9 @@ export default function App() {
         {/* Merged Learn Hub — replaces Practice + My Learning in nav */}
         <Route path="/:stream/learn-hub" element={
           <LearnHubPage user={user} profile={profile} isDark={isDark} />
+        } />
+        <Route path="/ib/sandbox" element={
+          <IBSandboxPage user={user} profile={profile} isDark={isDark} />
         } />
         <Route path="/:stream/flashcards/:subject" element={
           <FlashcardsPage profile={profile} isDark={isDark} />
