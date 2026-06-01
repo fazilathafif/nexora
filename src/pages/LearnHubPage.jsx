@@ -1063,18 +1063,6 @@ export default function LearnHubPage({ user, profile, isDark }) {
           </div>
         </div>
       )}
-      {/* IB Sandbox entry point */}
-      {activeTrack === 'ib' && import.meta.env.VITE_IB_SANDBOX_ENABLED === 'true' && (
-        <button onClick={() => navigate('/ib/sandbox')}
-          style={{ width:'100%', display:'flex', alignItems:'center', gap:10, background:'rgba(91,33,182,0.08)', border:'1.5px solid rgba(91,33,182,0.25)', borderRadius:12, padding:'11px 14px', cursor:'pointer', marginBottom:12, fontFamily:'Inter,sans-serif', textAlign:'left', WebkitTapHighlightColor:'transparent' }}>
-          <span style={{ fontSize:18, flexShrink:0 }}>🧪</span>
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:13, fontWeight:700, color:'#5B21B6' }}>IB Survival Sandbox</div>
-            <div style={{ fontSize:11, color:'#7C3AED99', marginTop:1 }}>IA blueprinting · CAS linker · Deadline tracker</div>
-          </div>
-          <span style={{ fontSize:16, color:'#5B21B6' }}>›</span>
-        </button>
-      )}
       <DailyChallengeCard stream={activeTrack} subjects={cfg.subjects} C={C} navigate={navigate} />
       <GoalCard rec={rec} days={days} studiedToday={studiedToday} C={C} />
       {/* Schedule-aware today card */}
@@ -1357,6 +1345,18 @@ export default function LearnHubPage({ user, profile, isDark }) {
 
   const planPanel = (
     <div>
+      {/* IB Survival Sandbox — first item in Study Plan for IB users */}
+      {activeTrack === 'ib' && import.meta.env.VITE_IB_SANDBOX_ENABLED === 'true' && (
+        <button onClick={() => navigate('/ib/sandbox')}
+          style={{ width:'100%', display:'flex', alignItems:'center', gap:12, background:'linear-gradient(135deg,rgba(91,33,182,0.10),rgba(91,33,182,0.06))', border:'1.5px solid rgba(91,33,182,0.3)', borderRadius:14, padding:'14px 16px', cursor:'pointer', marginBottom:14, fontFamily:'Inter,sans-serif', textAlign:'left', WebkitTapHighlightColor:'transparent' }}>
+          <div style={{ width:40, height:40, borderRadius:11, background:'#5B21B6', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>🧪</div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:14, fontWeight:800, color:'#5B21B6', letterSpacing:'-0.2px' }}>IB Survival Sandbox</div>
+            <div style={{ fontSize:11, color:'#7C3AED', marginTop:2, opacity:0.8 }}>IA blueprinting · CAS linker · Deadline tracker</div>
+          </div>
+          <span style={{ fontSize:18, color:'#5B21B6' }}>›</span>
+        </button>
+      )}
       {examDatesCard}
 
       {/* Readiness ring */}
