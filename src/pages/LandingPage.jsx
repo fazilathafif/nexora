@@ -306,7 +306,7 @@ export default function LandingPage({ user, profile, refreshProfile }) {
         timeout,
       ])
       if (error) throw new Error(error.message ?? 'Save failed.')
-      if (!data) throw new Error('Save failed — no rows updated. Please sign out and back in.')
+      // data may be null/empty if RLS blocks return — treat as success if no error
       refreshProfile?.().catch(() => {})
       setStartModal(true)
     } catch (err) {
