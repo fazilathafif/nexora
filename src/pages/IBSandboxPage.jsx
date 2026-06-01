@@ -319,6 +319,8 @@ function CASLinker({ userId, C }) {
   const [form, setForm]     = useState({ pillar:'creativity', activity_name:'', hours_logged:0, learning_outcome:'', uni_prompt_hook:'' })
   const [saving, setSaving] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [editId, setEditId] = useState(null)
+  const [editForm, setEditForm] = useState({})
 
   async function load() {
     if (!userId) return
@@ -339,7 +341,19 @@ function CASLinker({ userId, C }) {
 
   async function del(id) {
     await supabase.from('sb_cas_linker').delete().eq('id', id)
+    setEditId(null)
     await load()
+  }
+
+  async function saveEdit(id) {
+    await supabase.from('sb_cas_linker').update({ ...editForm, updated_at: new Date().toISOString() }).eq('id', id)
+    setEditId(null)
+    await load()
+  }
+
+  function startEdit(item) {
+    setEditId(item.id)
+    setEditForm({ activity_name: item.activity_name, hours_logged: item.hours_logged, learning_outcome: item.learning_outcome ?? '', uni_prompt_hook: item.uni_prompt_hook ?? '', pillar: item.pillar })
   }
 
   function fillFromSuggestion(s) {
@@ -435,16 +449,51 @@ function CASLinker({ userId, C }) {
 
       {items.map(item => {
         const m = PILLAR_META[item.pillar] ?? PILLAR_META.creativity
+        const isEditing = editId === item.id
         return (
-          <div key={item.id} style={{ background:'white', border:`1.5px solid ${m.color}30`, borderRadius:12, padding:'12px 14px', marginBottom:8, display:'flex', alignItems:'flex-start', gap:10 }}>
-            <span style={{ fontSize:18, flexShrink:0 }}>{m.emoji}</span>
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontSize:13, fontWeight:700, color:C.navy }}>{item.activity_name}</div>
-              <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>{item.hours_logged}h · {item.pillar}</div>
-              {item.uni_prompt_hook && <div style={{ fontSize:11, color:m.color, marginTop:4, fontStyle:'italic' }}>"{item.uni_prompt_hook}"</div>}
-              {item.learning_outcome && <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>LO: {item.learning_outcome}</div>}
+          <div key={item.id} style={{ background:'white', border:`1.5px solid ${isEditing ? m.color+'60' : m.color+'30'}`, borderRadius:12, marginBottom:8, overflow:'hidden' }}>
+            {/* Display row */}
+            <div style={{ padding:'12px 14px', display:'flex', alignItems:'flex-start', gap:10 }}>
+              <span style={{ fontSize:18, flexShrink:0 }}>{m.emoji}</span>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:13, fontWeight:700, color:C.navy }}>{item.activity_name}</div>
+                <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>{item.hours_logged}h · {item.pillar}</div>
+                {item.uni_prompt_hook && <div style={{ fontSize:11, color:m.color, marginTop:4, fontStyle:'italic' }}>"{item.uni_prompt_hook}"</div>}
+                {item.learning_outcome && <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>LO: {item.learning_outcome}</div>}
+              </div>
+              <div style={{ display:'flex', gap:4, flexShrink:0 }}>
+                <button onClick={() => isEditing ? setEditId(null) : startEdit(item)}
+                  style={{ background: isEditing ? m.color+'15' : 'transparent', border:`1px solid ${isEditing ? m.color+'40' : '#E2E8F0'}`, borderRadius:7, padding:'4px 8px', fontSize:11, fontWeight:700, color: isEditing ? m.color : '#64748B', cursor:'pointer', fontFamily:'Inter,sans-serif' }}>
+                  {isEditing ? 'Cancel' : '✏️'}
+                </button>
+                <button onClick={() => del(item.id)}
+                  style={{ background:'transparent', border:'1px solid #FEE2E2', borderRadius:7, padding:'4px 8px', fontSize:11, fontWeight:700, color:'#EF4444', cursor:'pointer', fontFamily:'Inter,sans-serif' }}>
+                  🗑
+                </button>
+              </div>
             </div>
-            <button onClick={() => del(item.id)} style={{ background:'none', border:'none', color:C.muted, fontSize:16, cursor:'pointer' }}>×</button>
+            {/* Inline edit form */}
+            {isEditing && (
+              <div style={{ padding:'0 14px 14px', borderTop:'1px solid #F1F5F9' }}>
+                <input value={editForm.activity_name} onChange={e => setEditForm(f => ({ ...f, activity_name:e.target.value }))}
+                  placeholder="Activity name" style={{ width:'100%', padding:'8px 10px', borderRadius:8, border:`1.5px solid ${C.border}`, fontSize:12, color:C.navy, background:C.bg, marginTop:10, marginBottom:6, fontFamily:'Inter,sans-serif', outline:'none', boxSizing:'border-box' }} />
+                <div style={{ display:'flex', gap:6, marginBottom:6 }}>
+                  <input type="number" min={0} step={0.5} value={editForm.hours_logged} onChange={e => setEditForm(f => ({ ...f, hours_logged: parseFloat(e.target.value)||0 }))}
+                    style={{ width:72, padding:'8px 10px', borderRadius:8, border:`1.5px solid ${C.border}`, fontSize:12, color:C.navy, background:C.bg, fontFamily:'Inter,sans-serif', outline:'none' }} />
+                  <select value={editForm.uni_prompt_hook} onChange={e => setEditForm(f => ({ ...f, uni_prompt_hook:e.target.value }))}
+                    style={{ flex:1, padding:'8px 10px', borderRadius:8, border:`1.5px solid ${C.border}`, fontSize:12, color:C.navy, background:C.bg, fontFamily:'Inter,sans-serif', outline:'none' }}>
+                    <option value="">University prompt…</option>
+                    {UNI_PROMPTS.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+                <input value={editForm.learning_outcome} onChange={e => setEditForm(f => ({ ...f, learning_outcome:e.target.value }))}
+                  placeholder="IB Learning Outcome (optional)" style={{ width:'100%', padding:'8px 10px', borderRadius:8, border:`1.5px solid ${C.border}`, fontSize:12, color:C.navy, background:C.bg, marginBottom:8, fontFamily:'Inter,sans-serif', outline:'none', boxSizing:'border-box' }} />
+                <button onClick={() => saveEdit(item.id)}
+                  style={{ width:'100%', padding:'9px', background:m.color, color:'white', border:'none', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>
+                  Save changes
+                </button>
+              </div>
+            )}
           </div>
         )
       })}
@@ -455,9 +504,11 @@ function CASLinker({ userId, C }) {
 // ── Deadline Calendar Tab ─────────────────────────────────────────────────────
 
 function DeadlineCalendar({ userId, C, onStressChange }) {
-  const [items, setItems] = useState([])
-  const [form, setForm] = useState({ title:'', deadline_date:'', assessment_type:'ia_draft', stress_weight:3, subject_id:'', notes:'' })
+  const [items, setItems]   = useState([])
+  const [form, setForm]     = useState({ title:'', deadline_date:'', assessment_type:'ia_draft', stress_weight:3, subject_id:'', notes:'' })
   const [saving, setSaving] = useState(false)
+  const [editId, setEditId] = useState(null)
+  const [editForm, setEditForm] = useState({})
 
   async function load() {
     if (!userId) return
@@ -485,6 +536,23 @@ function DeadlineCalendar({ userId, C, onStressChange }) {
   async function toggle(id, completed) {
     await supabase.from('sb_assessment_deadline').update({ completed: !completed, updated_at: new Date().toISOString() }).eq('id', id)
     await load()
+  }
+
+  async function delDeadline(id) {
+    await supabase.from('sb_assessment_deadline').delete().eq('id', id)
+    setEditId(null)
+    await load()
+  }
+
+  async function saveEditDeadline(id) {
+    await supabase.from('sb_assessment_deadline').update({ ...editForm, updated_at: new Date().toISOString() }).eq('id', id)
+    setEditId(null)
+    await load()
+  }
+
+  function startEditDeadline(item) {
+    setEditId(item.id)
+    setEditForm({ title: item.title, deadline_date: item.deadline_date, assessment_type: item.assessment_type, stress_weight: item.stress_weight, notes: item.notes ?? '' })
   }
 
   const STRESS_COLORS = { 1:'#10B981', 2:'#84CC16', 3:'#F59E0B', 4:'#EF4444', 5:'#991B1B' }
@@ -521,22 +589,67 @@ function DeadlineCalendar({ userId, C, onStressChange }) {
       </div>
 
       {items.map(item => {
-        const daysLeft = Math.ceil((new Date(item.deadline_date) - new Date()) / 86400000)
-        const urgent   = daysLeft <= 7 && !item.completed
+        const daysLeft  = Math.ceil((new Date(item.deadline_date) - new Date()) / 86400000)
+        const urgent    = daysLeft <= 7 && !item.completed
+        const isEditing = editId === item.id
         return (
-          <div key={item.id} style={{ background: item.completed ? '#F0FDF4' : 'white', border:`1.5px solid ${urgent ? STRESS_COLORS[item.stress_weight] : item.completed ? '#10B98130' : C.border}`, borderRadius:12, padding:'12px 14px', marginBottom:8, display:'flex', alignItems:'center', gap:10 }}>
-            <button onClick={() => toggle(item.id, item.completed)}
-              style={{ width:22, height:22, borderRadius:6, flexShrink:0, background: item.completed ? '#10B981' : 'white', border:`2px solid ${item.completed ? '#10B981' : '#CBD5E1'}`, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', border:'none' }}>
-              {item.completed && <span style={{ fontSize:12, color:'white', fontWeight:900 }}>✓</span>}
-            </button>
-            <div style={{ flex:1 }}>
-              <div style={{ fontSize:13, fontWeight:700, color: item.completed ? '#065F46' : C.navy, textDecoration: item.completed ? 'line-through' : 'none' }}>{item.title}</div>
-              <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>
-                {new Date(item.deadline_date).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' })}
-                {!item.completed && ` · ${daysLeft > 0 ? `${daysLeft}d left` : 'Due today!'}`}
+          <div key={item.id} style={{ background: item.completed ? '#F0FDF4' : 'white', border:`1.5px solid ${isEditing ? C.primary+'60' : urgent ? STRESS_COLORS[item.stress_weight] : item.completed ? '#10B98130' : C.border}`, borderRadius:12, marginBottom:8, overflow:'hidden' }}>
+            {/* Display row */}
+            <div style={{ padding:'12px 14px', display:'flex', alignItems:'center', gap:10 }}>
+              <button onClick={() => toggle(item.id, item.completed)}
+                style={{ width:22, height:22, borderRadius:6, flexShrink:0, background: item.completed ? '#10B981' : 'white', border:`2px solid ${item.completed ? '#10B981' : '#CBD5E1'}`, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+                {item.completed && <span style={{ fontSize:12, color:'white', fontWeight:900 }}>✓</span>}
+              </button>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:13, fontWeight:700, color: item.completed ? '#065F46' : C.navy, textDecoration: item.completed ? 'line-through' : 'none' }}>{item.title}</div>
+                <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>
+                  {new Date(item.deadline_date).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' })}
+                  {!item.completed && ` · ${daysLeft > 0 ? `${daysLeft}d left` : 'Due today!'}`}
+                  {` · Stress ${item.stress_weight}/5`}
+                </div>
+              </div>
+              <div style={{ display:'flex', gap:4, flexShrink:0, alignItems:'center' }}>
+                <div style={{ width:8, height:8, borderRadius:4, background: STRESS_COLORS[item.stress_weight] }} />
+                <button onClick={() => isEditing ? setEditId(null) : startEditDeadline(item)}
+                  style={{ background: isEditing ? `${C.primary}15` : 'transparent', border:`1px solid ${isEditing ? C.primary+'40' : '#E2E8F0'}`, borderRadius:7, padding:'3px 7px', fontSize:11, fontWeight:700, color: isEditing ? C.primary : '#64748B', cursor:'pointer', fontFamily:'Inter,sans-serif' }}>
+                  {isEditing ? 'Cancel' : '✏️'}
+                </button>
+                <button onClick={() => delDeadline(item.id)}
+                  style={{ background:'transparent', border:'1px solid #FEE2E2', borderRadius:7, padding:'3px 7px', fontSize:11, color:'#EF4444', cursor:'pointer', fontFamily:'Inter,sans-serif' }}>
+                  🗑
+                </button>
               </div>
             </div>
-            <div style={{ width:10, height:10, borderRadius:5, background: STRESS_COLORS[item.stress_weight], flexShrink:0 }} title={`Stress: ${item.stress_weight}/5`} />
+            {/* Inline edit */}
+            {isEditing && (
+              <div style={{ padding:'0 14px 14px', borderTop:'1px solid #F1F5F9' }}>
+                <input value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title:e.target.value }))}
+                  placeholder="Title" style={{ width:'100%', padding:'8px 10px', borderRadius:8, border:`1.5px solid ${C.border}`, fontSize:12, color:C.navy, background:C.bg, marginTop:10, marginBottom:6, fontFamily:'Inter,sans-serif', outline:'none', boxSizing:'border-box' }} />
+                <div style={{ display:'flex', gap:6, marginBottom:6 }}>
+                  <input type="date" value={editForm.deadline_date} onChange={e => setEditForm(f => ({ ...f, deadline_date:e.target.value }))}
+                    style={{ flex:1, padding:'8px 10px', borderRadius:8, border:`1.5px solid ${C.border}`, fontSize:12, color:C.navy, background:C.bg, fontFamily:'Inter,sans-serif', outline:'none' }} />
+                  <select value={editForm.assessment_type} onChange={e => setEditForm(f => ({ ...f, assessment_type:e.target.value }))}
+                    style={{ flex:1, padding:'8px 10px', borderRadius:8, border:`1.5px solid ${C.border}`, fontSize:12, color:C.navy, background:C.bg, fontFamily:'Inter,sans-serif', outline:'none' }}>
+                    {ASSESSMENT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  </select>
+                </div>
+                <div style={{ marginBottom:8 }}>
+                  <div style={{ fontSize:10, color:C.muted, marginBottom:4 }}>Stress Weight: {editForm.stress_weight}/5</div>
+                  <div style={{ display:'flex', gap:4 }}>
+                    {[1,2,3,4,5].map(n => (
+                      <button key={n} onClick={() => setEditForm(f => ({ ...f, stress_weight:n }))}
+                        style={{ flex:1, padding:'6px 0', borderRadius:6, border:'none', background: editForm.stress_weight >= n ? STRESS_COLORS[n] : '#F1F5F9', color: editForm.stress_weight >= n ? 'white' : '#94A3B8', cursor:'pointer', fontWeight:700, fontSize:11 }}>
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button onClick={() => saveEditDeadline(item.id)}
+                  style={{ width:'100%', padding:'9px', background:C.primary, color:'white', border:'none', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>
+                  Save changes
+                </button>
+              </div>
+            )}
           </div>
         )
       })}
