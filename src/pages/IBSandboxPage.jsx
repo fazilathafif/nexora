@@ -360,7 +360,7 @@ function CASLinker({ userId, C }) {
             const m = PILLAR_META[p]
             return (
               <button key={p} onClick={() => { setForm(f => ({ ...f, pillar:p, activity_name:'', hours_logged:0, learning_outcome:'', uni_prompt_hook:'' })); setShowSuggestions(false) }}
-                style={{ flex:1, padding:'8px 0', background: form.pillar === p ? m.color : 'transparent', border:`1.5px solid ${m.color}40`, borderRadius:8, fontSize:11, fontWeight:700, color: form.pillar === p ? 'white' : m.color, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>
+                style={{ flex:1, padding:'10px 4px', background: form.pillar === p ? m.color : 'transparent', border:`1.5px solid ${m.color}40`, borderRadius:8, fontSize:13, fontWeight:700, color: form.pillar === p ? 'white' : m.color, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>
                 {m.emoji} {p.charAt(0).toUpperCase() + p.slice(1)}
               </button>
             )
