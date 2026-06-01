@@ -41,6 +41,116 @@ const ASSESSMENT_TYPES = [
   { value:'other',          label:'Other' },
 ]
 
+// ── Help Guide ────────────────────────────────────────────────────────────────
+
+const GUIDE = {
+  ia: {
+    title: 'IA Blueprinting',
+    intro: 'The IA Blueprinting tab helps you plan, track milestones, and practise for each Internal Assessment. Each IB subject has one IA worth 20–30% of your final grade.',
+    steps: [
+      { step:1, heading:'Add your IA subject', detail:'Select the IB subject you are writing an IA for from the dropdown.', example:'Select "Biology" for a Biology IA.' },
+      { step:2, heading:'Choose a syllabus topic', detail:'Pick the specific topic your IA investigates. This links your IA to Nexora\'s question bank so you can practise relevant exam questions.', example:'For Biology, choose "Enzymes" if your IA investigates enzyme activity.' },
+      { step:3, heading:'Enter your title and research question', detail:'Add a working title and research question. This helps you track multiple IAs clearly.', example:'Title: "Effect of Temperature on Catalase Activity"\nRQ: "How does temperature (10°C–60°C) affect the rate of H₂O₂ decomposition by catalase?"' },
+      { step:4, heading:'Set your submission deadline', detail:'Add the internal deadline your teacher has set. This feeds into the Deadline Calendar and stress index.', example:'e.g. 15 November 2026' },
+      { step:5, heading:'Track your 8 milestones', detail:'Tap each milestone to mark it complete as you progress through your IA.', example:'Tick "Choose research question" then "Complete data collection" once done.' },
+      { step:6, heading:'Practice exam questions for your topic', detail:'Tap "Practice [topic] questions →" to launch a filtered quiz — only questions relevant to your IA topic appear.', example:'Tap "Practice Enzymes questions →" to get exam-style MCQs on enzyme kinetics.' },
+    ],
+  },
+  cas: {
+    title: 'CAS Linker',
+    intro: 'CAS (Creativity, Activity, Service) is a core IB requirement. The CAS Linker records your hours AND connects activities to university application prompts — turning IB experience into application evidence.',
+    steps: [
+      { step:1, heading:'Choose your pillar', detail:'Select Creativity (🎨), Activity (⚽), or Service (🤝) depending on the nature of the activity.', example:'Orchestra → Creativity · Football team → Activity · Food bank → Service' },
+      { step:2, heading:'Name the activity', detail:'Be specific — you will use this wording in applications later.', example:'"Jazz Band — saxophone, weekly rehearsals" not just "Music"' },
+      { step:3, heading:'Log your hours', detail:'Enter approximate hours. IB requires 150 hours total across all three pillars.', example:'1 hour/week × 30 weeks = 30 hours for Jazz Band' },
+      { step:4, heading:'Link to a university prompt', detail:'Select the application prompt this activity best answers. Makes writing personal statements much easier.', example:'Jazz Band → "Describe a creative project you are proud of"\nFood bank → "How have you contributed to your community?"' },
+      { step:5, heading:'Add an IB Learning Outcome (optional)', detail:'Map the activity to one of the seven IB CAS Learning Outcomes if required by your school.', example:'"LO2: Undertaken new challenges" for learning a new piece of music' },
+    ],
+  },
+  deadlines: {
+    title: 'Deadline Calendar',
+    intro: 'Tracks all IB coursework milestones in one place and automatically adjusts your daily study target when you are under pressure.',
+    steps: [
+      { step:1, heading:'Add a deadline', detail:'Enter the title, date, and type of assessment. Be specific so you can tell deadlines apart.', example:'Title: "Biology IA First Draft" · Date: 01 Oct 2026 · Type: IA Draft' },
+      { step:2, heading:'Set a stress weight (1–5)', detail:'Rate how stressful this deadline feels. The sum of all weights due in the next 7 days is your Stress Index (S).', example:'Biology IA Final → 5 (critical) · ToK Presentation draft → 2 (manageable)' },
+      { step:3, heading:'Watch the Stress Index', detail:'If S exceeds 8, De-stress Mode activates — your daily quiz target is halved so you can focus on coursework.', example:'IA Final (5) + EE Draft (4) = S 9 → De-stress Mode on, daily sessions drop from 2 → 1' },
+      { step:4, heading:'Mark deadlines complete', detail:'Tap the checkbox when you have submitted. Completed items are removed from the stress calculation immediately.', example:'Submit your IA draft → tick it off → stress index drops.' },
+    ],
+  },
+}
+
+function SandboxHelpGuide({ tab, C }) {
+  const [open, setOpen]       = useState(false)
+  const [section, setSection] = useState(null)
+  const guide = GUIDE[tab]
+  if (!guide) return null
+
+  return (
+    <div style={{ marginBottom:16 }}>
+      <button
+        onClick={() => { setOpen(o => !o); setSection(null) }}
+        style={{
+          width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
+          background: open ? '#EFF6FF' : 'white', border:`1.5px solid ${open ? '#BFDBFE' : '#E2E8F0'}`,
+          borderRadius: open ? '12px 12px 0 0' : 12,
+          padding:'11px 14px', cursor:'pointer', fontFamily:'Inter,sans-serif',
+          WebkitTapHighlightColor:'transparent', transition:'all 0.15s',
+        }}
+      >
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <span style={{ fontSize:15 }}>❓</span>
+          <span style={{ fontSize:12, fontWeight:700, color: open ? '#1D4ED8' : '#64748B' }}>
+            How to use {guide.title}
+          </span>
+        </div>
+        <span style={{ fontSize:12, color:'#94A3B8', transform: open ? 'rotate(180deg)' : 'none', transition:'transform 0.2s', display:'inline-block' }}>▾</span>
+      </button>
+
+      {open && (
+        <div style={{ background:'#F8FAFC', border:'1.5px solid #E2E8F0', borderTop:'none', borderRadius:'0 0 12px 12px', padding:'14px' }}>
+          <div style={{ fontSize:12, color:'#475569', lineHeight:1.65, marginBottom:12, padding:'10px 12px', background:'#EFF6FF', border:'1px solid #BFDBFE', borderRadius:9 }}>
+            {guide.intro}
+          </div>
+          {section === null ? (
+            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+              {guide.steps.map((s, i) => (
+                <button key={i} onClick={() => setSection(i)}
+                  style={{ display:'flex', alignItems:'center', gap:10, background:'white', border:'1px solid #E2E8F0', borderRadius:10, padding:'10px 12px', cursor:'pointer', fontFamily:'Inter,sans-serif', textAlign:'left', WebkitTapHighlightColor:'transparent' }}>
+                  <div style={{ width:22, height:22, borderRadius:'50%', flexShrink:0, background:'#0056D2', color:'white', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:900 }}>{s.step}</div>
+                  <span style={{ fontSize:12, fontWeight:700, color:'#1E293B', flex:1 }}>{s.heading}</span>
+                  <span style={{ fontSize:12, color:'#94A3B8' }}>›</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div>
+              <button onClick={() => setSection(null)}
+                style={{ background:'none', border:'none', color:'#64748B', fontSize:12, fontWeight:700, cursor:'pointer', padding:'0 0 10px', fontFamily:'Inter,sans-serif', display:'block' }}>
+                ← All steps
+              </button>
+              <div style={{ background:'white', border:'1px solid #E2E8F0', borderRadius:10, padding:'14px' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                  <div style={{ width:24, height:24, borderRadius:'50%', background:'#0056D2', color:'white', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:900, flexShrink:0 }}>{guide.steps[section].step}</div>
+                  <div style={{ fontSize:13, fontWeight:800, color:'#1E293B' }}>{guide.steps[section].heading}</div>
+                </div>
+                <div style={{ fontSize:12, color:'#475569', lineHeight:1.65, marginBottom:10 }}>{guide.steps[section].detail}</div>
+                <div style={{ background:'#F0FDF4', border:'1px solid #BBF7D0', borderRadius:8, padding:'10px 12px' }}>
+                  <div style={{ fontSize:9, fontWeight:800, color:'#059669', letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:4 }}>Example</div>
+                  <div style={{ fontSize:12, color:'#065F46', lineHeight:1.65, whiteSpace:'pre-line' }}>{guide.steps[section].example}</div>
+                </div>
+                <div style={{ display:'flex', gap:8, marginTop:10 }}>
+                  {section > 0 && <button onClick={() => setSection(s => s - 1)} style={{ flex:1, padding:'8px', background:'transparent', border:'1.5px solid #E2E8F0', borderRadius:8, fontSize:12, fontWeight:700, color:'#64748B', cursor:'pointer', fontFamily:'Inter,sans-serif' }}>← Prev</button>}
+                  {section < guide.steps.length - 1 && <button onClick={() => setSection(s => s + 1)} style={{ flex:1, padding:'8px', background:'#0056D2', border:'none', borderRadius:8, fontSize:12, fontWeight:700, color:'white', cursor:'pointer', fontFamily:'Inter,sans-serif' }}>Next →</button>}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── IA Blueprinting Tab ───────────────────────────────────────────────────────
 
 function IABlueprinting({ userId, navigate, C }) {
@@ -475,9 +585,9 @@ export default function IBSandboxPage({ user, profile, isDark }) {
       </div>
 
       {/* Tab content */}
-      {tab === 'ia'        && <IABlueprinting   userId={user?.id} navigate={navigate} C={C} />}
-      {tab === 'cas'       && <CASLinker         userId={user?.id} C={C} />}
-      {tab === 'deadlines' && <DeadlineCalendar  userId={user?.id} C={C} onStressChange={setStressIndex} />}
+      {tab === 'ia'        && <><SandboxHelpGuide tab="ia"        C={C} /><IABlueprinting   userId={user?.id} navigate={navigate} C={C} /></>}
+      {tab === 'cas'       && <><SandboxHelpGuide tab="cas"       C={C} /><CASLinker         userId={user?.id} C={C} /></>}
+      {tab === 'deadlines' && <><SandboxHelpGuide tab="deadlines" C={C} /><DeadlineCalendar  userId={user?.id} C={C} onStressChange={setStressIndex} /></>}
     </Shell>
   )
 }
