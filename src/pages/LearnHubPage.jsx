@@ -831,9 +831,16 @@ export default function LearnHubPage({ user, profile, isDark }) {
   const enrolledStreams = profile?.streams?.length ? profile.streams : profile?.stream ? [profile.stream] : [stream]
 
   // Active track — can be switched independently of URL
-  const [activeTrack, setActiveTrack] = useState(() =>
-    enrolledStreams.includes(stream) ? stream : (enrolledStreams[0] ?? stream)
-  )
+  const [activeTrack, setActiveTrackState] = useState(() => {
+    const saved = sessionStorage.getItem('nx_learnhub_track')
+    if (saved && enrolledStreams.includes(saved)) return saved
+    return enrolledStreams.includes(stream) ? stream : (enrolledStreams[0] ?? stream)
+  })
+
+  function setActiveTrack(t) {
+    setActiveTrackState(t)
+    sessionStorage.setItem('nx_learnhub_track', t)
+  }
 
   const C   = getColors(activeTrack, null, isDark)
   const cfg = STREAM_CONFIG[activeTrack]
@@ -1345,7 +1352,13 @@ export default function LearnHubPage({ user, profile, isDark }) {
 
       {/* Date-aware week calendar — all weeks, collapsible */}
       {!loading && examDate && days > 0 && (() => {
-        const weeks = getWeekCalendar(topics, examDate)
+        // When no quiz data yet, use subjects as fallback topics (treat all as needing work)
+        const calendarTopics = topics.length > 0
+          ? topics
+          : cfg.subjects.filter(s => !s.deprecated).map(s => ({
+              topic: s.label, subjectId: s.id, emoji: s.emoji, pct: 0, total: 0,
+            }))
+        const weeks = getWeekCalendar(calendarTopics, examDate)
         return (
           <div style={{ marginBottom:12 }}>
             <SH label={`Study Calendar — ${days} days to exam`} C={C} />
