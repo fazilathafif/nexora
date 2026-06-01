@@ -289,10 +289,35 @@ const UNI_PROMPTS = [
   'How do you balance academic and extracurricular commitments?',
 ]
 
+const CAS_SUGGESTIONS = {
+  creativity: [
+    { activity_name:'Art / Photography project', hours_logged:20, learning_outcome:'LO2: Undertaken new challenges', uni_prompt_hook:'Describe a creative project you are proud of' },
+    { activity_name:'Music practice & performance', hours_logged:30, learning_outcome:'LO1: Identified own strengths and areas for growth', uni_prompt_hook:'How do you balance academic and extracurricular commitments?' },
+    { activity_name:'Creative writing / School magazine', hours_logged:15, learning_outcome:'LO2: Undertaken new challenges', uni_prompt_hook:'Describe a creative project you are proud of' },
+    { activity_name:'Drama / Theatre production', hours_logged:25, learning_outcome:'LO5: Demonstrated the skills and recognised the benefits of working collaboratively', uni_prompt_hook:'Tell us about a leadership experience' },
+    { activity_name:'Graphic design / Digital media', hours_logged:18, learning_outcome:'LO2: Undertaken new challenges', uni_prompt_hook:'Describe a creative project you are proud of' },
+  ],
+  activity: [
+    { activity_name:'School sports team (football / rugby / netball)', hours_logged:35, learning_outcome:'LO3: Demonstrated how to initiate and plan a CAS experience', uni_prompt_hook:'How do you balance academic and extracurricular commitments?' },
+    { activity_name:'Running / Athletics training', hours_logged:30, learning_outcome:'LO6: Demonstrated engagement with issues of global significance', uni_prompt_hook:'Describe a challenge you overcame' },
+    { activity_name:'Swimming / Water polo', hours_logged:25, learning_outcome:'LO1: Identified own strengths and areas for growth', uni_prompt_hook:'Describe a challenge you overcame' },
+    { activity_name:'Yoga / Martial arts / Dance', hours_logged:20, learning_outcome:'LO2: Undertaken new challenges', uni_prompt_hook:'How do you balance academic and extracurricular commitments?' },
+    { activity_name:'Hiking / Outdoor expedition', hours_logged:15, learning_outcome:'LO4: Showed perseverance and commitment in activities', uni_prompt_hook:'Describe a challenge you overcame' },
+  ],
+  service: [
+    { activity_name:'Tutoring younger students', hours_logged:25, learning_outcome:'LO5: Demonstrated the skills and recognised the benefits of working collaboratively', uni_prompt_hook:'How have you contributed to your community?' },
+    { activity_name:'Volunteering at local food bank / charity', hours_logged:20, learning_outcome:'LO7: Recognised and considered the ethics of choices and actions', uni_prompt_hook:'How have you contributed to your community?' },
+    { activity_name:'Environmental clean-up / tree planting', hours_logged:12, learning_outcome:'LO6: Demonstrated engagement with issues of global significance', uni_prompt_hook:'How have you contributed to your community?' },
+    { activity_name:'Community fundraising campaign', hours_logged:15, learning_outcome:'LO3: Demonstrated how to initiate and plan a CAS experience', uni_prompt_hook:'Tell us about a leadership experience' },
+    { activity_name:'Mentoring / peer support programme', hours_logged:18, learning_outcome:'LO5: Demonstrated the skills and recognised the benefits of working collaboratively', uni_prompt_hook:'Tell us about a leadership experience' },
+  ],
+}
+
 function CASLinker({ userId, C }) {
-  const [items, setItems] = useState([])
-  const [form, setForm] = useState({ pillar:'creativity', activity_name:'', hours_logged:0, learning_outcome:'', uni_prompt_hook:'' })
+  const [items, setItems]   = useState([])
+  const [form, setForm]     = useState({ pillar:'creativity', activity_name:'', hours_logged:0, learning_outcome:'', uni_prompt_hook:'' })
   const [saving, setSaving] = useState(false)
+  const [showSuggestions, setShowSuggestions] = useState(false)
 
   async function load() {
     if (!userId) return
@@ -316,23 +341,77 @@ function CASLinker({ userId, C }) {
     await load()
   }
 
+  function fillFromSuggestion(s) {
+    setForm(f => ({ ...f, ...s }))
+    setShowSuggestions(false)
+  }
+
   const PILLAR_META = { creativity:{ emoji:'🎨', color:'#7C3AED' }, activity:{ emoji:'⚽', color:'#0056D2' }, service:{ emoji:'🤝', color:'#059669' } }
+  const suggestions = CAS_SUGGESTIONS[form.pillar] ?? []
 
   return (
     <div>
       <div style={{ background:'white', border:`1px solid ${C.border}`, borderRadius:14, padding:'16px', marginBottom:16 }}>
         <div style={{ fontSize:12, fontWeight:800, color:C.muted, letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:12 }}>Link CAS to University Applications</div>
-        <div style={{ display:'flex', gap:6, marginBottom:8 }}>
+
+        {/* Pillar selector */}
+        <div style={{ display:'flex', gap:6, marginBottom:10 }}>
           {['creativity','activity','service'].map(p => {
             const m = PILLAR_META[p]
             return (
-              <button key={p} onClick={() => setForm(f => ({ ...f, pillar:p }))}
+              <button key={p} onClick={() => { setForm(f => ({ ...f, pillar:p, activity_name:'', hours_logged:0, learning_outcome:'', uni_prompt_hook:'' })); setShowSuggestions(false) }}
                 style={{ flex:1, padding:'8px 0', background: form.pillar === p ? m.color : 'transparent', border:`1.5px solid ${m.color}40`, borderRadius:8, fontSize:11, fontWeight:700, color: form.pillar === p ? 'white' : m.color, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>
-                {m.emoji} {p}
+                {m.emoji} {p.charAt(0).toUpperCase() + p.slice(1)}
               </button>
             )
           })}
         </div>
+
+        {/* Suggestions toggle */}
+        <button
+          onClick={() => setShowSuggestions(s => !s)}
+          style={{
+            width:'100%', display:'flex', alignItems:'center', gap:8,
+            background: showSuggestions ? `${PILLAR_META[form.pillar].color}10` : '#F8FAFC',
+            border:`1.5px solid ${showSuggestions ? PILLAR_META[form.pillar].color + '40' : '#E2E8F0'}`,
+            borderRadius: showSuggestions ? '9px 9px 0 0' : 9,
+            padding:'9px 12px', cursor:'pointer', fontFamily:'Inter,sans-serif',
+            marginBottom: showSuggestions ? 0 : 8,
+            WebkitTapHighlightColor:'transparent',
+          }}
+        >
+          <span style={{ fontSize:14 }}>💡</span>
+          <span style={{ fontSize:12, fontWeight:700, color: PILLAR_META[form.pillar].color, flex:1, textAlign:'left' }}>
+            Suggested {form.pillar} activities — tap to auto-fill
+          </span>
+          <span style={{ fontSize:12, color:'#94A3B8', transform: showSuggestions ? 'rotate(180deg)' : 'none', transition:'transform 0.2s', display:'inline-block' }}>▾</span>
+        </button>
+
+        {/* Suggestions list */}
+        {showSuggestions && (
+          <div style={{ border:`1.5px solid ${PILLAR_META[form.pillar].color}30`, borderTop:'none', borderRadius:'0 0 9px 9px', marginBottom:8, overflow:'hidden' }}>
+            {suggestions.map((s, i) => (
+              <button key={i} onClick={() => fillFromSuggestion(s)}
+                style={{
+                  width:'100%', display:'flex', alignItems:'center', gap:10,
+                  background:'white', border:'none',
+                  borderBottom: i < suggestions.length - 1 ? `1px solid #F1F5F9` : 'none',
+                  padding:'10px 12px', cursor:'pointer', textAlign:'left',
+                  fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = `${PILLAR_META[form.pillar].color}08`}
+                onMouseLeave={e => e.currentTarget.style.background = 'white'}
+              >
+                <span style={{ fontSize:16, flexShrink:0 }}>{PILLAR_META[form.pillar].emoji}</span>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:12, fontWeight:700, color:'#1E293B' }}>{s.activity_name}</div>
+                  <div style={{ fontSize:10, color:'#94A3B8', marginTop:1 }}>{s.hours_logged}h suggested · {s.learning_outcome.split(':')[0]}</div>
+                </div>
+                <span style={{ fontSize:11, color: PILLAR_META[form.pillar].color, fontWeight:700, flexShrink:0 }}>Use →</span>
+              </button>
+            ))}
+          </div>
+        )}
         <input placeholder="Activity name…" value={form.activity_name} onChange={e => setForm(p => ({ ...p, activity_name:e.target.value }))}
           style={{ width:'100%', padding:'9px 12px', borderRadius:9, border:`1.5px solid ${C.border}`, fontSize:13, color:C.navy, background:C.bg, marginBottom:8, fontFamily:'Inter,sans-serif', outline:'none', boxSizing:'border-box' }} />
         <div style={{ display:'flex', gap:8, marginBottom:8 }}>
