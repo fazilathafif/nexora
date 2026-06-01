@@ -95,7 +95,7 @@ export default function CASTracker({ userId, C }) {
       ...data,
       [key]: {
         ...data[key],
-        activities: [...data[key].activities, { id: Date.now(), text }],
+        activities: [...data[key].activities, { id: Date.now(), name: text }],
       },
     }
     update(next)
@@ -308,7 +308,7 @@ export default function CASTracker({ userId, C }) {
                           }}
                         >
                           <span style={{ fontSize: 13, color: C.navy, fontWeight: 500, flex: 1, lineHeight: 1.4 }}>
-                            {a.text}
+                            {a.name ?? a.text}
                           </span>
                           <button
                             onClick={() => deleteActivity(key, a.id)}
