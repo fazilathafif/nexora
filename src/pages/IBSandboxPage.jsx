@@ -7,10 +7,11 @@
  */
 
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Shell, getColors } from './HomePage.jsx'
 import { getEffectivePlan } from '../lib/subscription.js'
 import { getQuestions, STREAM_CONFIG } from '../data/questions.js'
+import IAChecklist from '../components/IAChecklist.jsx'
 import { supabase } from '../lib/supabase.js'
 
 const FEATURE_FLAG = import.meta.env.VITE_IB_SANDBOX_ENABLED === 'true'
@@ -626,13 +627,15 @@ export default function IBSandboxPage({ user, profile, isDark }) {
     )
   }
 
-  const [tab, setTab]           = useState('ia')
+  const [searchParams] = useSearchParams()
+  const [tab, setTab] = useState(() => { const p = searchParams.get('tab'); return ['ia','cas','deadlines','checklist'].includes(p) ? p : 'ia' })
   const [stressIndex, setStressIndex] = useState(0)
 
   const TABS = [
     { id:'ia',       label:'IA Blueprinting', icon:'📋' },
     { id:'cas',      label:'CAS Linker',       icon:'🌱' },
     { id:'deadlines',label:'Deadlines',         icon:'📅' },
+    { id:'checklist',label:'IA Checklist',      icon:'✅' },
   ]
 
   return (
@@ -667,6 +670,14 @@ export default function IBSandboxPage({ user, profile, isDark }) {
       {tab === 'ia'        && <><SandboxHelpGuide tab="ia"        C={C} /><IABlueprinting   userId={user?.id} navigate={navigate} C={C} /></>}
       {tab === 'cas'       && <><SandboxHelpGuide tab="cas"       C={C} /><CASLinker         userId={user?.id} C={C} /></>}
       {tab === 'deadlines' && <><SandboxHelpGuide tab="deadlines" C={C} /><DeadlineCalendar  userId={user?.id} C={C} onStressChange={setStressIndex} /></>}
+      {tab === 'checklist' && (
+        <div>
+          <div style={{ fontSize:12, color:C.muted, lineHeight:1.6, marginBottom:12, padding:'10px 12px', background:'#EFF6FF', border:'1px solid #BFDBFE', borderRadius:9 }}>
+            Track your Internal Assessment milestones for each IB subject. Tap a milestone to mark it complete.
+          </div>
+          <IAChecklist userId={user?.id} C={C} />
+        </div>
+      )}
     </Shell>
   )
 }
