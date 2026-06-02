@@ -29,6 +29,8 @@ import ResourcesPage      from './pages/ResourcesPage.jsx'
 import TodayPage           from './pages/TodayPage.jsx'
 import LearnHubPage        from './pages/LearnHubPage.jsx'
 import IBSandboxPage       from './pages/IBSandboxPage.jsx'
+import GroupDashboardPage  from './pages/GroupDashboardPage.jsx'
+import JoinPage            from './pages/JoinPage.jsx'
 import SwitchTrackPage     from './pages/SwitchTrackPage.jsx'
 import PrivacyPage         from './pages/PrivacyPage.jsx'
 import TermsPage           from './pages/TermsPage.jsx'
@@ -155,6 +157,14 @@ export default function App() {
         } />
         <Route path="/:stream/resources" element={
           <ResourcesPage user={user} profile={profile} isDark={isDark} />
+        } />
+
+        {/* Group / Invite routes */}
+        <Route path="/group/dashboard" element={
+          <GroupDashboardPage user={user} profile={profile} isDark={isDark} />
+        } />
+        <Route path="/join/:token" element={
+          <JoinPage user={user} />
         } />
 
         {/* Catch-all */}
