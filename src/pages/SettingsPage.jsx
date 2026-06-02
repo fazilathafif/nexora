@@ -476,26 +476,26 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
   )
 
   // ── Account section ──────────────────────────────────────────────────────────
+  // ── Group section — always visible, outside any collapsible ─────────────────
+  const groupSection = user?.id ? (
+    <div style={{ marginBottom:20 }}>
+      <div style={{ fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:8, paddingLeft:2 }}>
+        {['teacher','parent','admin'].includes(profile?.role) ? 'Group Management' : 'Group & Family Plans'}
+      </div>
+      <div style={{ background:C.card, borderRadius:16, border:`1px solid ${C.border}`, overflow:'hidden', boxShadow:'0 1px 6px rgba(0,0,0,0.04)' }}>
+        <SettingsRow
+          C={C}
+          icon="🏫"
+          label={['teacher','parent','admin'].includes(profile?.role) ? 'Group Dashboard' : 'Join or Create a Group'}
+          sublabel={['teacher','parent','admin'].includes(profile?.role) ? 'Manage members, progress & billing' : 'Family, class or tutor group plan'}
+          onClick={() => navigate('/group/dashboard')}
+        />
+      </div>
+    </div>
+  ) : null
+
   const accountSection = (
     <>
-      {/* Group Dashboard — teachers and parents */}
-      {['teacher','parent','admin'].includes(profile?.role) && (
-        <div style={{ marginBottom:20 }}>
-          <div style={{ fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:8, paddingLeft:2 }}>Group Management</div>
-          <div style={{ background:C.card, borderRadius:16, border:`1px solid ${C.border}`, overflow:'hidden', boxShadow:'0 1px 6px rgba(0,0,0,0.04)' }}>
-            <SettingsRow C={C} icon="🏫" label="Group Dashboard" sublabel="Manage members, progress & billing" onClick={() => navigate('/group/dashboard')} />
-          </div>
-        </div>
-      )}
-      {/* Join a Group — all signed-in users without a group */}
-      {!profile?.group_id && user?.id && (
-        <div style={{ marginBottom:20 }}>
-          <div style={{ fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:8, paddingLeft:2 }}>Group & Family Plans</div>
-          <div style={{ background:C.card, borderRadius:16, border:`1px solid ${C.border}`, overflow:'hidden', boxShadow:'0 1px 6px rgba(0,0,0,0.04)' }}>
-            <SettingsRow C={C} icon="🏫" label="Join or Create a Group" sublabel="Family, class or tutor group plan" onClick={() => navigate('/group/dashboard')} />
-          </div>
-        </div>
-      )}
       <CollapsibleSection title="Account" icon="👤" C={C}>
         {/* Email — mandatory */}
         <div style={{ padding:'12px 16px 0' }}>
@@ -651,6 +651,7 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
             {ibSections}
             {igcseSection}
             {preferencesSection}
+            {groupSection}
             {accountSection}
             {appInfo}
           </div>
@@ -678,6 +679,7 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
         {ibSections}
         {igcseSection}
         {preferencesSection}
+        {groupSection}
         {accountSection}
         {appInfo}
       </Shell>
@@ -702,6 +704,7 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
       {ibSections}
       {igcseSection}
       {preferencesSection}
+      {groupSection}
       {accountSection}
       {appInfo}
     </Shell>
