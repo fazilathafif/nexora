@@ -430,7 +430,7 @@ export async function setExamDate(userId, stream, date) {
 
 export async function adminGetAllUsers() {
   if (!isSupabaseConfigured) return { data: [], error: null }
-  return supabase.rpc('admin_get_users')
+  return supabase.rpc('admin_get_users', { p_search: null, p_plan: null, p_limit: 100, p_offset: 0 })
 }
 
 export async function adminUpdateProfile(userId, updates) {
