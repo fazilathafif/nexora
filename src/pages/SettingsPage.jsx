@@ -478,7 +478,7 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
   // ── Account section ──────────────────────────────────────────────────────────
   const accountSection = (
     <>
-      {/* Group Dashboard — visible to teachers and parents */}
+      {/* Group Dashboard — teachers and parents */}
       {['teacher','parent','admin'].includes(profile?.role) && (
         <div style={{ marginBottom:20 }}>
           <div style={{ fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:8, paddingLeft:2 }}>Group Management</div>
@@ -487,10 +487,12 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
           </div>
         </div>
       )}
-      {!profile?.group_id && !['teacher','parent','admin'].includes(profile?.role) && (
+      {/* Join a Group — all signed-in users without a group */}
+      {!profile?.group_id && user?.id && (
         <div style={{ marginBottom:20 }}>
+          <div style={{ fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:8, paddingLeft:2 }}>Group & Family Plans</div>
           <div style={{ background:C.card, borderRadius:16, border:`1px solid ${C.border}`, overflow:'hidden', boxShadow:'0 1px 6px rgba(0,0,0,0.04)' }}>
-            <SettingsRow C={C} icon="🏫" label="Join a Group" sublabel="Enter a class or family join code" onClick={() => navigate('/group/dashboard')} />
+            <SettingsRow C={C} icon="🏫" label="Join or Create a Group" sublabel="Family, class or tutor group plan" onClick={() => navigate('/group/dashboard')} />
           </div>
         </div>
       )}
