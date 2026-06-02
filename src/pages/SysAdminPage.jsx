@@ -5,6 +5,115 @@ import { adminGetAllUsers, adminUpdateProfile, adminDeleteProfile } from '../lib
 import { PLANS, getEffectivePlan, trialDaysLeft } from '../lib/subscription.js'
 
 const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL
+const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL ?? ''
+const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY ?? ''
+
+// ── Welcome Email Button ──────────────────────────────────────────────────────
+
+function WelcomeEmailBtn({ user, C }) {
+  const [status,    setStatus]    = useState('idle') // idle | sending | sent | error
+  const [showMenu,  setShowMenu]  = useState(false)
+  const [custom,    setCustom]    = useState('')
+  const [showCustom, setShowCustom] = useState(false)
+
+  async function send(template, customMsg) {
+    if (!user?.email) return
+    setStatus('sending'); setShowMenu(false); setShowCustom(false)
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/send-welcome`, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` },
+        body: JSON.stringify({ to_email: user.email, to_name: user.display_name, template, custom_message: customMsg }),
+      })
+      setStatus(res.ok ? 'sent' : 'error')
+      if (res.ok) setTimeout(() => setStatus('idle'), 3000)
+    } catch { setStatus('error'); setTimeout(() => setStatus('idle'), 3000) }
+  }
+
+  if (!user?.email) return null
+
+  return (
+    <div style={{ position:'relative', flexShrink:0 }}>
+      <button
+        onClick={() => { if (status === 'idle') setShowMenu(m => !m) }}
+        title="Send welcome email"
+        style={{
+          width:32, height:32, borderRadius:8, border:`1px solid ${C.border}`,
+          background: status==='sent' ? '#ECFDF5' : status==='error' ? '#FEF2F2' : status==='sending' ? '#F1F5F9' : 'white',
+          color: status==='sent' ? '#10B981' : status==='error' ? '#EF4444' : C.muted,
+          display:'flex', alignItems:'center', justifyContent:'center',
+          cursor: status==='idle' ? 'pointer' : 'default',
+          fontSize:15, transition:'all 0.15s',
+        }}
+      >
+        {status==='sending' ? '⏳' : status==='sent' ? '✓' : status==='error' ? '✕' : '✉️'}
+      </button>
+
+      {showMenu && (
+        <>
+          <div onClick={() => setShowMenu(false)} style={{ position:'fixed', inset:0, zIndex:50 }} />
+          <div style={{
+            position:'absolute', top:'calc(100% + 6px)', right:0,
+            background:'white', border:`1.5px solid ${C.border}`,
+            borderRadius:12, boxShadow:'0 8px 24px rgba(0,0,0,0.12)',
+            zIndex:51, minWidth:220, overflow:'hidden', fontFamily:'Inter,sans-serif',
+          }}>
+            <div style={{ padding:'10px 14px 6px', fontSize:11, fontWeight:800, color:C.muted, letterSpacing:'0.06em', textTransform:'uppercase' }}>
+              Send to {user.display_name ?? user.email}
+            </div>
+            {[
+              { id:'new_user',      icon:'🎓', label:'Warm Welcome',      desc:'First-time welcome + getting started tips' },
+              { id:'encouragement', icon:'⚡', label:'Encouragement',     desc:'Keep going — motivational nudge' },
+            ].map(t => (
+              <button key={t.id} onClick={() => send(t.id, undefined)}
+                style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'10px 14px', background:'white', border:'none', borderTop:`1px solid ${C.border}`, cursor:'pointer', fontFamily:'Inter,sans-serif', textAlign:'left' }}
+                onMouseEnter={e => e.currentTarget.style.background = `${C.primary}08`}
+                onMouseLeave={e => e.currentTarget.style.background = 'white'}
+              >
+                <span style={{ fontSize:16, flexShrink:0 }}>{t.icon}</span>
+                <div>
+                  <div style={{ fontSize:12, fontWeight:700, color:C.navy }}>{t.label}</div>
+                  <div style={{ fontSize:10, color:C.muted }}>{t.desc}</div>
+                </div>
+              </button>
+            ))}
+            <button onClick={() => { setShowCustom(s => !s); setShowMenu(false) }}
+              style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'10px 14px', background:'white', border:'none', borderTop:`1px solid ${C.border}`, cursor:'pointer', fontFamily:'Inter,sans-serif', textAlign:'left' }}
+              onMouseEnter={e => e.currentTarget.style.background = `${C.primary}08`}
+              onMouseLeave={e => e.currentTarget.style.background = 'white'}
+            >
+              <span style={{ fontSize:16 }}>✏️</span>
+              <div>
+                <div style={{ fontSize:12, fontWeight:700, color:C.navy }}>Custom message</div>
+                <div style={{ fontSize:10, color:C.muted }}>Write your own email body</div>
+              </div>
+            </button>
+          </div>
+        </>
+      )}
+
+      {showCustom && (
+        <>
+          <div onClick={() => setShowCustom(false)} style={{ position:'fixed', inset:0, zIndex:50 }} />
+          <div style={{
+            position:'absolute', top:'calc(100% + 6px)', right:0,
+            background:'white', border:`1.5px solid ${C.border}`,
+            borderRadius:12, boxShadow:'0 8px 24px rgba(0,0,0,0.12)',
+            zIndex:51, width:280, padding:'14px', fontFamily:'Inter,sans-serif',
+          }}>
+            <div style={{ fontSize:12, fontWeight:700, color:C.navy, marginBottom:8 }}>Custom message to {user.display_name ?? 'user'}</div>
+            <textarea value={custom} onChange={e => setCustom(e.target.value)} rows={4} placeholder="Type your message…"
+              style={{ width:'100%', padding:'8px 10px', borderRadius:8, border:`1.5px solid ${C.border}`, fontSize:12, color:C.navy, background:'#F8FAFC', resize:'vertical', fontFamily:'Inter,sans-serif', outline:'none', boxSizing:'border-box' }} />
+            <button onClick={() => send('new_user', custom)} disabled={custom.trim().length < 10}
+              style={{ marginTop:8, width:'100%', padding:'9px', background: custom.trim().length >= 10 ? C.primary : '#D1D5DB', color:'white', border:'none', borderRadius:8, fontSize:12, fontWeight:700, cursor: custom.trim().length >= 10 ? 'pointer' : 'default', fontFamily:'Inter,sans-serif' }}>
+              Send →
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
 
 const ALL_STREAMS = [
   { id:'gcse',   label:'GCSE'    },
@@ -598,17 +707,19 @@ export default function SysAdminPage({ user }) {
                   : u.plan === 'trial' ? 'Expired' : null
                 const planColor = planMeta.badgeColor ?? C.muted
                 return (
-                  <div key={u.id} onClick={() => setEditUser(u)}
-                    style={{ background:C.card, border:`1.5px solid ${C.border}`, borderRadius:14, padding:'14px 16px', display:'flex', alignItems:'center', gap:12, cursor:'pointer', transition:'border-color 0.15s' }}
+                  <div key={u.id}
+                    style={{ background:C.card, border:`1.5px solid ${C.border}`, borderRadius:14, padding:'14px 16px', display:'flex', alignItems:'center', gap:12, transition:'border-color 0.15s' }}
                     onMouseEnter={e => e.currentTarget.style.borderColor = C.primary}
                     onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
                   >
-                    <Avatar name={u.display_name} email={u.email} />
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontWeight:800, color:C.navy, fontSize:14, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                        {u.display_name ?? 'Student'}
+                    <div onClick={() => setEditUser(u)} style={{ display:'flex', alignItems:'center', gap:12, flex:1, minWidth:0, cursor:'pointer' }}>
+                      <Avatar name={u.display_name} email={u.email} />
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontWeight:800, color:C.navy, fontSize:14, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                          {u.display_name ?? 'Student'}
+                        </div>
+                        <div style={{ fontSize:12, color:C.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.email}</div>
                       </div>
-                      <div style={{ fontSize:12, color:C.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.email}</div>
                     </div>
                     <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:5, flexShrink:0 }}>
                       <span style={{ background:`${planColor}20`, color:planColor, border:`1px solid ${planColor}40`, borderRadius:20, padding:'2px 8px', fontSize:10, fontWeight:800 }}>
@@ -617,12 +728,9 @@ export default function SysAdminPage({ user }) {
                       {trialBadge && (
                         <span style={{ fontSize:10, color: days > 3 ? C.primary : C.warn, fontWeight:700 }}>{trialBadge}</span>
                       )}
-                      {u.trial_ends_at && u.plan === 'trial' && (
-                        <span style={{ fontSize:10, color:C.muted }}>
-                          {new Date(u.trial_ends_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'2-digit' })}
-                        </span>
-                      )}
                     </div>
+                    {/* Welcome email button */}
+                    <WelcomeEmailBtn user={u} C={C} />
                   </div>
                 )
               })}
