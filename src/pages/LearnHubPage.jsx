@@ -19,7 +19,6 @@ import { TRACK_COLORS, COURSERA_BLUE } from '../styles/courseraTokens.js'
 import IBPointsCalculator   from '../components/IBPointsCalculator.jsx'
 import IGCSEGradeToggle     from '../components/IGCSEGradeToggle.jsx'
 import IAChecklist          from '../components/IAChecklist.jsx'
-import CASTracker           from '../components/CASTracker.jsx'
 import { getEffectivePlan } from '../lib/subscription.js'
 import { getDayPlan, getWeekCalendar, groupTopicsBySubject } from '../lib/studySchedule.js'
 
@@ -1103,27 +1102,6 @@ export default function LearnHubPage({ user, profile, isDark }) {
         subjects={cfg.subjects} stream={activeTrack} C={C}
         cols={isDesktop ? 3 : isTablet ? 3 : 2}
       />
-      {activeTrack === 'ib' && (
-        <button
-          onClick={() => navigate(`/${activeTrack}/settings`)}
-          style={{
-            width:'100%', display:'flex', alignItems:'center', gap:10,
-            background:'#5B21B615', border:'1.5px solid #5B21B630',
-            borderRadius:14, padding:'12px 14px', marginBottom:12,
-            cursor:'pointer', fontFamily:'Inter,sans-serif', textAlign:'left',
-            WebkitTapHighlightColor:'transparent',
-          }}
-        >
-          <span style={{ fontSize:20 }}>🌱</span>
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:13, fontWeight:700, color:'#1E293B' }}>CAS Tracker</div>
-            <div style={{ fontSize:11, color:'#64748B', marginTop:1 }}>Log Creativity, Activity &amp; Service hours</div>
-          </div>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <path d="M9 18l6-6-6-6" stroke="#94A3B8" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
-      )}
     </div>
   )
 
