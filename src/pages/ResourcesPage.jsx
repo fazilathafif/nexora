@@ -494,19 +494,25 @@ export default function ResourcesPage({ user, profile, isDark, signOut }) {
             </div>
           )}
         </div>
-        <div style={{ flexShrink:0, fontSize:11, fontWeight:800, color:'rgba(255,255,255,0.9)', background:'rgba(255,255,255,0.18)', borderRadius:20, padding:'3px 10px', letterSpacing:'0.06em', textTransform:'uppercase' }}>
-          Resources
+        <div style={{ display:'flex', gap:6, alignItems:'center', flexShrink:0 }}>
+          <button onClick={() => navigate('/landing')} title="Manage tracks"
+            style={{ width:32, height:32, borderRadius:9, border:'1px solid rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.18)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', WebkitTapHighlightColor:'transparent' }}>
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="14" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="3" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="14" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/></svg>
+          </button>
+          {user?.email && (
+            <button onClick={() => { signOut?.(); navigate('/') }} title="Sign Out"
+              style={{ width:32, height:32, borderRadius:9, border:'1px solid rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.18)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', WebkitTapHighlightColor:'transparent' }}>
+              <svg width={15} height={15} viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/><polyline points="16 17 21 12 16 7" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/><line x1="21" y1="12" x2="9" y2="12" stroke="white" strokeWidth={2} strokeLinecap="round"/></svg>
+            </button>
+          )}
         </div>
-      </div>
-      <div style={{ fontSize:11, color:'rgba(255,255,255,0.65)', marginTop:8, fontWeight:500 }}>
-        Exam dates · textbooks & guides · {isUK ? 'university' : 'college'} guidance
       </div>
     </div>
   )
 
   if (!isMobile) {
     return (
-      <Shell C={C} isDark={isDark} heroContent={heroEl} contentMax={1100}>
+      <Shell C={C} isDark={isDark} heroContent={heroEl} contentMax={1100} noHomeBtn>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
           <div>
             {advisorPanel}
@@ -521,7 +527,7 @@ export default function ResourcesPage({ user, profile, isDark, signOut }) {
   }
 
   return (
-    <Shell C={C} isDark={isDark} heroContent={heroEl}>
+    <Shell C={C} isDark={isDark} heroContent={heroEl} noHomeBtn>
       {advisorPanel}
       {examDatesPanel}
       {booksPanel}

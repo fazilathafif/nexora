@@ -1042,7 +1042,7 @@ export default function LearnHubPage({ user, profile, isDark, signOut }) {
     /* Mobile / single-track hero */
     <div style={{ padding:'max(14px, env(safe-area-inset-top, 14px)) 16px 14px' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:8, minWidth:0 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8, minWidth:0, flex:1 }}>
           <div style={{ fontSize:16, fontWeight:900, color:'white', letterSpacing:'-0.3px' }}>
             {cfg?.label?.replace(' Track','').replace(' Prep','') ?? activeTrack.toUpperCase()}
           </div>
@@ -1053,12 +1053,16 @@ export default function LearnHubPage({ user, profile, isDark, signOut }) {
           )}
         </div>
         <div style={{ display:'flex', gap:6, alignItems:'center', flexShrink:0 }}>
-          {[{ icon:'🔥', val:streak },{ icon:'⚡', val:xp },{ icon:'🎓', val:level }].map(s => (
-            <div key={s.icon} style={{ display:'flex', alignItems:'center', gap:3, background:'rgba(255,255,255,0.18)', backdropFilter:'blur(6px)', border:'1px solid rgba(255,255,255,0.25)', borderRadius:20, padding:'3px 8px' }}>
-              <span style={{ fontSize:11 }}>{s.icon}</span>
-              <span style={{ fontSize:11, fontWeight:800, color:'white' }}>{s.val}</span>
-            </div>
-          ))}
+          <button onClick={() => navigate('/landing')} title="Manage tracks"
+            style={{ width:32, height:32, borderRadius:9, border:'1px solid rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.18)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', WebkitTapHighlightColor:'transparent' }}>
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="14" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="3" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="14" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/></svg>
+          </button>
+          {user?.email && (
+            <button onClick={() => { signOut?.(); navigate('/') }} title="Sign Out"
+              style={{ width:32, height:32, borderRadius:9, border:'1px solid rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.18)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', WebkitTapHighlightColor:'transparent' }}>
+              <svg width={15} height={15} viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/><polyline points="16 17 21 12 16 7" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/><line x1="21" y1="12" x2="9" y2="12" stroke="white" strokeWidth={2} strokeLinecap="round"/></svg>
+            </button>
+          )}
         </div>
       </div>
       {multiTrack && (
@@ -1487,7 +1491,7 @@ export default function LearnHubPage({ user, profile, isDark, signOut }) {
   // ── Desktop: 3-column ─────────────────────────────────────────────────────
   if (isDesktop) {
     return (
-      <Shell C={C} isDark={isDark} heroContent={heroEl} contentMax={1300}>
+      <Shell C={C} isDark={isDark} heroContent={heroEl} contentMax={1300} noHomeBtn>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:24, alignItems:'start', paddingTop:8 }}>
           <div>
             <div style={{ fontSize:14, fontWeight:800, color:C.navy, letterSpacing:'-0.2px', marginBottom:14, display:'flex', alignItems:'center', gap:7 }}>🎯 Today</div>
@@ -1508,7 +1512,7 @@ export default function LearnHubPage({ user, profile, isDark, signOut }) {
 
   // ── Mobile/Tablet: tabbed ──────────────────────────────────────────────────
   return (
-    <Shell C={C} isDark={isDark} heroContent={heroEl}>
+    <Shell C={C} isDark={isDark} heroContent={heroEl} noHomeBtn>
       <TabBar active={tab} onChange={t => { setTab(t); setSearchParams(t!=='today'?{tab:t}:{}) }} C={C} />
       {tab === 'today' ? todayPanel : tab === 'progress' ? progressPanel : planPanel}
     </Shell>

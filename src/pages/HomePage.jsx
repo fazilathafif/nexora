@@ -1523,7 +1523,7 @@ function HomeBtn({ C, navigate }) {
   )
 }
 
-export function Shell({ C, isDark, children, noNav, heroContent, contentMax }) {
+export function Shell({ C, isDark, children, noNav, heroContent, contentMax, noHomeBtn }) {
   const { isDesktop, isTablet } = useBreakpoint()
   const navigate = useNavigate()
   // heroH removed — hero sections size themselves via their own padding/content
@@ -1551,7 +1551,7 @@ export function Shell({ C, isDark, children, noNav, heroContent, contentMax }) {
               position:'relative', zIndex:1,
             }}>
               {heroContent}
-              <HomeBtn C={C} navigate={navigate} />
+              {!noHomeBtn && <HomeBtn C={C} navigate={navigate} />}
             </div>
           )}
           <div style={{ padding:'28px 40px 48px 40px', animation:'fadeUp 0.35s ease' }}>
@@ -1572,7 +1572,7 @@ export function Shell({ C, isDark, children, noNav, heroContent, contentMax }) {
           position:'relative', zIndex:1,
         }}>
           {heroContent}
-          <HomeBtn C={C} navigate={navigate} />
+          {!noHomeBtn && <HomeBtn C={C} navigate={navigate} />}
         </div>
       )}
 
