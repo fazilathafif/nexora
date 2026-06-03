@@ -323,14 +323,14 @@ export default function BottomNav() {
         alignItems: 'stretch',
         borderRadius: 20,
         overflow: 'hidden',
-        // Frosted glass
-        background: isDark ? 'rgba(36,37,40,0.86)' : 'rgba(255,255,255,0.86)',
-        backdropFilter: 'blur(28px) saturate(200%)',
-        WebkitBackdropFilter: 'blur(28px) saturate(200%)',
-        border: `1px solid ${isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.07)'}`,
+        // Frosted glass — Option A (subtle transparent frost)
+        background: isDark ? 'rgba(20,21,24,0.55)' : 'rgba(255,255,255,0.55)',
+        backdropFilter: 'blur(32px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(32px) saturate(180%)',
+        border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.4)'}`,
         boxShadow: isDark
-          ? '0 8px 32px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)'
-          : '0 8px 32px rgba(0,0,0,0.13), 0 2px 8px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)',
+          ? '0 8px 40px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06)'
+          : '0 8px 40px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8)',
       }}
     >
       {tabs.map(tab => (
