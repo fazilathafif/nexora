@@ -129,7 +129,7 @@ export default function App() {
         } />
         {/* Merged Learn Hub — replaces Practice + My Learning in nav */}
         <Route path="/:stream/learn-hub" element={
-          <LearnHubPage user={user} profile={profile} isDark={isDark} />
+          <LearnHubPage user={user} profile={profile} isDark={isDark} signOut={signOut} />
         } />
         <Route path="/ib/sandbox" element={
           <IBSandboxPage user={user} profile={profile} isDark={isDark} />
@@ -156,7 +156,7 @@ export default function App() {
           <SubscriptionPage user={user} profile={profile} isDark={isDark} />
         } />
         <Route path="/:stream/resources" element={
-          <ResourcesPage user={user} profile={profile} isDark={isDark} />
+          <ResourcesPage user={user} profile={profile} isDark={isDark} signOut={signOut} />
         } />
 
         {/* Group / Invite routes */}

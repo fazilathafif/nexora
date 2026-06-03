@@ -371,7 +371,54 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
     URL.revokeObjectURL(url)
   }
 
-  const heroEl = (
+  const heroEl = isDesktop ? (
+    /* Desktop hero — full width banner with identity + stats + actions */
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 24px 0', gap:16 }}>
+      {/* Left: avatar + name + email */}
+      <div style={{ display:'flex', alignItems:'center', gap:14, minWidth:0, flex:1 }}>
+        <div style={{
+          width:44, height:44, borderRadius:22, background:'rgba(255,255,255,0.92)',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          fontSize:18, fontWeight:900, color:C.primary, flexShrink:0, letterSpacing:'-0.02em',
+          boxShadow:'0 2px 12px rgba(0,0,0,0.15)',
+        }}>{initial}</div>
+        <div style={{ minWidth:0 }}>
+          <div style={{ fontSize:16, fontWeight:900, color:'white', letterSpacing:'-0.3px', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+            {profile?.display_name || (email ? email.split('@')[0] : 'Scholar')}
+          </div>
+          <div style={{ fontSize:11, color:'rgba(255,255,255,0.65)', marginTop:2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+            {email || 'Guest account'}
+          </div>
+        </div>
+        <div style={{ display:'flex', gap:6, alignItems:'center', marginLeft:4 }}>
+          {[
+            { icon:'🔥', val: profile?.streak ?? 0, label:'Streak' },
+            { icon:'⚡', val: profile?.xp ?? 0,     label:'XP' },
+            { icon:'🎓', val: level,                label:'Level' },
+          ].map(s => (
+            <div key={s.icon} style={{ display:'flex', alignItems:'center', gap:4, background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.22)', borderRadius:20, padding:'4px 10px' }}>
+              <span style={{ fontSize:12 }}>{s.icon}</span>
+              <span style={{ fontSize:12, fontWeight:800, color:'white' }}>{s.val}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Right: plan badge + action buttons */}
+      <div style={{ display:'flex', gap:8, alignItems:'center', flexShrink:0 }}>
+        {!isGuest && (
+          <div style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.18)', border:'1px solid rgba(255,255,255,0.28)', borderRadius:20, padding:'4px 12px' }}>
+            <span style={{ fontSize:11 }}>{effectivePlan === 'pro' ? '⭐' : effectivePlan === 'group' ? '👑' : '🔓'}</span>
+            <span style={{ fontSize:11, fontWeight:800, color:'white' }}>{planName}</span>
+            {trialDays > 0 && <span style={{ fontSize:10, color:'rgba(255,255,255,0.7)' }}>{trialDays}d left</span>}
+          </div>
+        )}
+        <button onClick={() => { signOut?.(); navigate('/') }} title="Sign Out"
+          style={{ width:30, height:30, borderRadius:9, border:'1px solid rgba(255,255,255,0.25)', background:'rgba(255,255,255,0.12)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}>
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/><polyline points="16 17 21 12 16 7" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/><line x1="21" y1="12" x2="9" y2="12" stroke="white" strokeWidth={2} strokeLinecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+  ) : (
     <div style={{ padding:'max(14px, env(safe-area-inset-top, 14px)) 16px 14px' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
         {/* Left: avatar + name */}
@@ -638,30 +685,266 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
   )
 
   if (isDesktop) {
-    return (
-      <Shell C={C} isDark={isDark} heroContent={heroEl} contentMax={1100}>
-        <div style={{display:'grid', gridTemplateColumns:'260px 1fr', gap:32, alignItems:'start'}}>
-          <div style={{position:'sticky', top:24, display:'flex', flexDirection:'column', gap:14}}>
-            <Card C={C}>
-              <div style={{fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:14}}>Quick Stats</div>
-              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10}}>
-                {statsData.map(s => <StatCard key={s.label} compact {...s} />)}
+    const isWide = typeof window !== 'undefined' && window.innerWidth >= 1280
+    const cols   = isWide ? '280px 1fr 300px' : '260px 1fr'
+
+    // ── Left rail: identity + track-specific + navigation ──────────────────────
+    const leftRail = (
+      <div style={{ position:'sticky', top:24, display:'flex', flexDirection:'column', gap:16 }}>
+
+        {/* Identity card */}
+        <div style={{ background:C.card, borderRadius:18, border:`1px solid ${C.border}`, padding:'20px', boxShadow:'0 2px 12px rgba(0,0,0,0.05)' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:16 }}>
+            <Avatar initial={initial} C={C} size={52} />
+            <div style={{ minWidth:0, flex:1 }}>
+              <div style={{ fontSize:16, fontWeight:900, color:C.navy, letterSpacing:'-0.3px', lineHeight:1.2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                {profile?.display_name || (email ? email.split('@')[0] : 'Scholar')}
               </div>
-            </Card>
-            {ibSections}
-            {igcseSection}
-            {preferencesSection}
-            {groupSection}
-            {accountSection}
-            {appInfo}
-          </div>
-          <div style={{display:'flex', flexDirection:'column', gap:24}}>
-            <div>
-              <SL C={C}>Achievements</SL>
-              {achievementsGrid(4)}
+              <div style={{ fontSize:11, color:C.muted, marginTop:2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                {email || 'Guest account'}
+              </div>
             </div>
           </div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+            {statsData.map(s => <StatCard key={s.label} compact {...s} />)}
+          </div>
         </div>
+
+        {/* Track-specific */}
+        {ibSections}
+        {igcseSection}
+
+        {/* Preferences */}
+        {preferencesSection}
+
+        {/* App info */}
+        <div style={{ textAlign:'center', padding:'4px 0 2px' }}>
+          <div style={{ fontSize:10, color:C.muted, fontWeight:600 }}>Nexora · v{APP_VERSION} · nexoralearn.app</div>
+        </div>
+      </div>
+    )
+
+    // ── Centre: achievements + notes ───────────────────────────────────────────
+    const centreCol = (
+      <div style={{ display:'flex', flexDirection:'column', gap:24 }}>
+
+        {/* Achievements */}
+        <div style={{ background:C.card, borderRadius:18, border:`1px solid ${C.border}`, padding:'22px 24px', boxShadow:'0 2px 12px rgba(0,0,0,0.05)' }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+            <div style={{ fontSize:13, fontWeight:800, color:C.navy, letterSpacing:'-0.2px' }}>Achievements</div>
+            <div style={{ fontSize:11, color:C.muted, fontWeight:600 }}>
+              {allAchievements.filter(a => a.unlocked).length} / {allAchievements.length} unlocked
+            </div>
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
+            {allAchievements.map(a => (
+              <div key={a.id} style={{
+                display:'flex', flexDirection:'column', alignItems:'center', gap:6,
+                padding:'14px 8px',
+                background: a.unlocked ? `linear-gradient(135deg,#7C3AED08,#6366F108)` : C.bg,
+                border:`1.5px solid ${a.unlocked ? '#7C3AED30' : C.border}`,
+                borderRadius:14,
+                boxShadow: a.unlocked ? '0 2px 12px rgba(124,58,237,0.1)' : 'none',
+                opacity: a.unlocked ? 1 : 0.42,
+                transition:'all 0.2s',
+              }}>
+                <div style={{
+                  width:44, height:44, borderRadius:12,
+                  background: a.unlocked ? 'linear-gradient(135deg,#7C3AED20,#6366F120)' : C.bg,
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  fontSize:22, filter: a.unlocked ? 'none' : 'grayscale(1)',
+                  boxShadow: a.unlocked ? '0 2px 8px rgba(124,58,237,0.18)' : 'none',
+                }}>
+                  {a.icon}
+                </div>
+                <div style={{ fontSize:11, fontWeight: a.unlocked ? 800 : 600, color: a.unlocked ? C.navy : '#94A3B8', textAlign:'center', letterSpacing:'-0.01em', lineHeight:1.2 }}>{a.label}</div>
+                <div style={{ fontSize:9, color:'#94A3B8', textAlign:'center', lineHeight:1.35 }}>{a.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Notes */}
+        <div style={{ background:C.card, borderRadius:18, border:`1px solid ${C.border}`, padding:'22px 24px', boxShadow:'0 2px 12px rgba(0,0,0,0.05)' }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+            <div style={{ fontSize:13, fontWeight:800, color:C.navy, letterSpacing:'-0.2px' }}>AI Notes</div>
+            {exportBar}
+          </div>
+          {notes.length === 0 ? notesEmpty : noteCardsGrid}
+        </div>
+      </div>
+    )
+
+    // ── Right rail: subscription + account + groups + legal ─────────────────────
+    const rightRail = (
+      <div style={{ position:'sticky', top:24, display:'flex', flexDirection:'column', gap:16 }}>
+
+        {/* Subscription feature card */}
+        {!isGuest && (
+          <div style={{
+            background: effectivePlan === 'free'
+              ? 'linear-gradient(135deg,#1E293B,#334155)'
+              : `linear-gradient(135deg,${C.primary},${C.primary}CC)`,
+            borderRadius:18, padding:'20px', boxShadow: effectivePlan === 'free' ? '0 4px 24px rgba(0,0,0,0.15)' : `0 4px 24px ${C.primary}35`,
+            color:'white',
+          }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
+              <div style={{ width:40, height:40, borderRadius:12, background:'rgba(255,255,255,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>
+                {effectivePlan === 'free' ? '🔓' : effectivePlan === 'pro' ? '⭐' : '👑'}
+              </div>
+              <div>
+                <div style={{ fontSize:14, fontWeight:900, color:'white', letterSpacing:'-0.2px' }}>{planName}</div>
+                <div style={{ fontSize:11, color:'rgba(255,255,255,0.7)', marginTop:1 }}>{planSublabel}</div>
+              </div>
+            </div>
+            {trialDays > 0 && (
+              <div style={{ background:'rgba(255,255,255,0.12)', borderRadius:10, padding:'8px 12px', marginBottom:12 }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
+                  <span style={{ fontSize:10, fontWeight:800, color:'rgba(255,255,255,0.8)', letterSpacing:'0.06em' }}>TRIAL PERIOD</span>
+                  <span style={{ fontSize:11, fontWeight:900, color:'white' }}>{trialDays}d left</span>
+                </div>
+                <div style={{ height:4, background:'rgba(255,255,255,0.2)', borderRadius:4, overflow:'hidden' }}>
+                  <div style={{ width:`${Math.min(100, ((14 - trialDays) / 14) * 100)}%`, height:'100%', background:'white', borderRadius:4, transition:'width 0.6s ease' }} />
+                </div>
+              </div>
+            )}
+            <button
+              onClick={() => navigate(`/${stream}/subscription`)}
+              style={{ width:'100%', background:'white', border:'none', borderRadius:10, padding:'9px', fontSize:12, fontWeight:800, color: C.primary, cursor:'pointer', fontFamily:'Inter,sans-serif' }}
+            >
+              {effectivePlan === 'free' || trialDays > 0 ? 'Upgrade to Pro →' : 'Manage Plan →'}
+            </button>
+          </div>
+        )}
+
+        {/* Account fields */}
+        <div style={{ background:C.card, borderRadius:18, border:`1px solid ${C.border}`, padding:'18px 20px', boxShadow:'0 2px 12px rgba(0,0,0,0.05)' }}>
+          <div style={{ fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:14 }}>Account</div>
+          <div style={{ marginBottom:12 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:C.muted, marginBottom:5, textTransform:'uppercase', letterSpacing:'0.06em' }}>
+              Email <span style={{ color:'#EF4444' }}>*</span>
+            </div>
+            <input
+              type="email" value={emailInput}
+              onChange={e => { setEmailInput(e.target.value); setEmailError(null) }}
+              placeholder="your@email.com"
+              style={{ width:'100%', padding:'8px 11px', borderRadius:10, border:`1.5px solid ${emailError ? '#EF4444' : C.border}`, fontSize:12, color:C.navy, background:C.bg, outline:'none', boxSizing:'border-box', fontFamily:'Inter,sans-serif' }}
+            />
+            {emailError && <div style={{ fontSize:11, color:'#EF4444', marginTop:4, fontWeight:600 }}>{emailError}</div>}
+          </div>
+          <div style={{ marginBottom:14 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:C.muted, marginBottom:5, textTransform:'uppercase', letterSpacing:'0.06em' }}>
+              Address <span style={{ fontSize:10, fontWeight:400, textTransform:'none', color:C.muted }}>(optional)</span>
+            </div>
+            <textarea
+              value={addressInput} onChange={e => setAddressInput(e.target.value)}
+              placeholder="Your address"
+              rows={2}
+              style={{ width:'100%', padding:'8px 11px', borderRadius:10, border:`1.5px solid ${C.border}`, fontSize:12, color:C.navy, background:C.bg, outline:'none', boxSizing:'border-box', fontFamily:'Inter,sans-serif', resize:'none' }}
+            />
+          </div>
+          <div style={{ display:'flex', gap:8 }}>
+            <button
+              onClick={saveAccount}
+              style={{ flex:1, background:accountSaved ? '#10B981' : C.primary, color:'white', border:'none', borderRadius:10, padding:'9px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'Inter,sans-serif', transition:'background 0.2s' }}
+            >
+              {accountSaved ? '✓ Saved' : 'Save changes'}
+            </button>
+            <button
+              onClick={() => { signOut?.(); navigate('/') }}
+              style={{ background:'#FEE2E2', border:'1px solid #FECACA', borderRadius:10, padding:'9px 14px', fontSize:12, fontWeight:700, color:'#DC2626', cursor:'pointer', fontFamily:'Inter,sans-serif' }}
+              title="Sign Out"
+            >
+              🚪
+            </button>
+          </div>
+        </div>
+
+        {/* Groups */}
+        {groupSection && (
+          <div style={{ background:C.card, borderRadius:18, border:`1px solid ${C.border}`, padding:'4px 0', boxShadow:'0 2px 12px rgba(0,0,0,0.05)' }}>
+            <div style={{ fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', padding:'12px 18px 6px' }}>
+              {['teacher','parent','admin'].includes(profile?.role) ? 'Group Management' : 'Group & Family Plans'}
+            </div>
+            <SettingsRow
+              C={C} icon="🏫"
+              label={['teacher','parent','admin'].includes(profile?.role) ? 'Group Dashboard' : 'Join or Create a Group'}
+              sublabel={['teacher','parent','admin'].includes(profile?.role) ? 'Manage members, progress & billing' : 'Family, class or tutor group plan'}
+              onClick={() => navigate('/group/dashboard')}
+            />
+          </div>
+        )}
+
+        {/* Contact Us */}
+        <div style={{ background:C.card, borderRadius:18, border:`1px solid ${C.border}`, boxShadow:'0 2px 12px rgba(0,0,0,0.05)', overflow:'hidden' }}>
+          <CollapsibleSection title="Contact Us" icon="✉️" C={C} defaultOpen={openContact}>
+            <div style={{ padding:'14px 16px' }}>
+              <ContactForm C={C} user={user} profile={profile} />
+            </div>
+          </CollapsibleSection>
+        </div>
+
+        {/* Legal + app info */}
+        <div style={{ background:C.card, borderRadius:18, border:`1px solid ${C.border}`, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,0.05)' }}>
+          <SettingsRow C={C} icon="🔒" label="Privacy Policy" sublabel="How we use your data" onClick={() => navigate('/privacy')} />
+          <Divider C={C} />
+          <SettingsRow C={C} icon="📄" label="Terms of Service" sublabel="Subscription terms" onClick={() => navigate('/terms')} />
+          <div style={{ textAlign:'center', padding:'10px 0 12px', borderTop:`1px solid ${C.border}` }}>
+            <div style={{ fontSize:10, color:C.muted, fontWeight:600 }}>Nexora · v{APP_VERSION}</div>
+          </div>
+        </div>
+      </div>
+    )
+
+    return (
+      <Shell C={C} isDark={isDark} heroContent={heroEl} contentMax={1200}>
+        <div style={{ display:'grid', gridTemplateColumns: cols, gap:28, alignItems:'start' }}>
+          {leftRail}
+          {centreCol}
+          {isWide && rightRail}
+        </div>
+        {/* On 1024–1279px: right rail drops below centre as full-width row */}
+        {!isWide && (
+          <div style={{ marginTop:28, display:'grid', gridTemplateColumns:'1fr 1fr', gap:28, alignItems:'start' }}>
+            <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+              {!isGuest && (
+                <div style={{
+                  background: effectivePlan === 'free'
+                    ? 'linear-gradient(135deg,#1E293B,#334155)'
+                    : `linear-gradient(135deg,${C.primary},${C.primary}CC)`,
+                  borderRadius:18, padding:'20px', color:'white',
+                  boxShadow: effectivePlan === 'free' ? '0 4px 24px rgba(0,0,0,0.15)' : `0 4px 24px ${C.primary}35`,
+                }}>
+                  <div style={{ fontSize:13, fontWeight:800, color:'white', marginBottom:10 }}>{planName}</div>
+                  <button onClick={() => navigate(`/${stream}/subscription`)} style={{ width:'100%', background:'white', border:'none', borderRadius:10, padding:'9px', fontSize:12, fontWeight:800, color:C.primary, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>
+                    {effectivePlan === 'free' || trialDays > 0 ? 'Upgrade to Pro →' : 'Manage Plan →'}
+                  </button>
+                </div>
+              )}
+              {groupSection}
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+              <div style={{ background:C.card, borderRadius:18, border:`1px solid ${C.border}`, padding:'18px 20px', boxShadow:'0 2px 12px rgba(0,0,0,0.05)' }}>
+                <div style={{ fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:14 }}>Account</div>
+                <div style={{ marginBottom:12 }}>
+                  <input type="email" value={emailInput} onChange={e => { setEmailInput(e.target.value); setEmailError(null) }} placeholder="your@email.com"
+                    style={{ width:'100%', padding:'8px 11px', borderRadius:10, border:`1.5px solid ${emailError ? '#EF4444' : C.border}`, fontSize:12, color:C.navy, background:C.bg, outline:'none', boxSizing:'border-box', fontFamily:'Inter,sans-serif' }} />
+                </div>
+                <div style={{ display:'flex', gap:8 }}>
+                  <button onClick={saveAccount} style={{ flex:1, background:accountSaved ? '#10B981' : C.primary, color:'white', border:'none', borderRadius:10, padding:'9px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'Inter,sans-serif', transition:'background 0.2s' }}>
+                    {accountSaved ? '✓ Saved' : 'Save'}
+                  </button>
+                  <button onClick={() => { signOut?.(); navigate('/') }} style={{ background:'#FEE2E2', border:'1px solid #FECACA', borderRadius:10, padding:'9px 14px', fontSize:12, fontWeight:700, color:'#DC2626', cursor:'pointer', fontFamily:'Inter,sans-serif' }}>🚪</button>
+                </div>
+              </div>
+              <div style={{ background:C.card, borderRadius:18, border:`1px solid ${C.border}`, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,0.05)' }}>
+                <SettingsRow C={C} icon="🔒" label="Privacy Policy" onClick={() => navigate('/privacy')} />
+                <Divider C={C} />
+                <SettingsRow C={C} icon="📄" label="Terms of Service" onClick={() => navigate('/terms')} />
+              </div>
+            </div>
+          </div>
+        )}
       </Shell>
     )
   }

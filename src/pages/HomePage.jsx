@@ -260,32 +260,125 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
 
   // ── Hero content (rendered inside the gradient band) ──────────────────────
   const { isDesktop } = useBreakpoint()
-  const heroEl = (
+
+  // Desktop hero: bookmark-tab bar for multi-track users
+  const heroEl = isDesktop && enrolledStreams.length > 1 && !sub.isFree ? (
+    <div style={{ display:'flex', flexDirection:'column' }}>
+      {/* Top row: stats + inline chips + actions */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 24px 0', gap:12 }}>
+        {/* Left: level + XP + streak + countdown chip + mission chip */}
+        <div style={{ display:'flex', alignItems:'center', gap:12, flexWrap:'wrap', flex:1, minWidth:0 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+            <span style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.8)' }}>Level {level}</span>
+            <div style={{ width:80, height:4, background:'rgba(255,255,255,0.2)', borderRadius:4, overflow:'hidden' }}>
+              <div style={{ width:`${pct}%`, height:'100%', background:'white', borderRadius:4, transition:'width 0.6s ease' }} />
+            </div>
+            <span style={{ fontSize:10, color:'rgba(255,255,255,0.55)' }}>{xp} XP</span>
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+            <span style={{ fontSize:14 }}>🔥</span>
+            <span style={{ fontWeight:900, color:'white', fontSize:13 }}>{streak}</span>
+          </div>
+          {days !== null && days > 0 && (
+            <button
+              onClick={() => setEditingDate(true)}
+              style={{ display:'flex', alignItems:'center', gap:4, background:'rgba(255,255,255,0.18)', border:'1px solid rgba(255,255,255,0.25)', borderRadius:20, padding:'3px 10px', fontSize:11, fontWeight:800, color:'rgba(255,255,255,0.95)', cursor:'pointer', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}
+              title="Edit exam date"
+            >
+              📅 <span>{days}d to exam</span>
+            </button>
+          )}
+          {days === null && (
+            <button
+              onClick={() => setEditingDate(true)}
+              style={{ display:'flex', alignItems:'center', gap:4, background:'rgba(255,255,255,0.12)', border:'1px dashed rgba(255,255,255,0.3)', borderRadius:20, padding:'3px 10px', fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.6)', cursor:'pointer', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}
+              title="Set exam date"
+            >
+              📅 <span>Set exam date</span>
+            </button>
+          )}
+          <div style={{ display:'flex', alignItems:'center', gap:4, background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:20, padding:'3px 10px' }}>
+            <span style={{ fontSize:11 }}>⚡</span>
+            <span style={{ fontSize:11, fontWeight:800, color:'rgba(255,255,255,0.95)' }}>Daily mission</span>
+          </div>
+        </div>
+        {/* Right: actions */}
+        <div style={{ display:'flex', gap:8, alignItems:'center', flexShrink:0 }}>
+          {isSupabaseConfigured && isAnon
+            ? <HeroIconBtn onClick={() => setShowAuth(true)} title="Sign In"><SignInIcon color="white" size={16} /></HeroIconBtn>
+            : isSupabaseConfigured && !isAnon
+              ? <HeroIconBtn onClick={() => { signOut?.(); navigate('/') }} title="Sign Out"><SignOutIcon color="white" size={16} /></HeroIconBtn>
+              : null
+          }
+          <HeroIconBtn onClick={() => navigate(`/${stream}/settings?contact=1`)} title="Contact Us"><MailIcon color="white" size={16} /></HeroIconBtn>
+          <HeroIconBtn onClick={() => navigate('/landing')} title="Manage tracks"><svg width={16} height={16} viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="14" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="3" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="14" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/></svg></HeroIconBtn>
+        </div>
+      </div>
+
+      {/* Bookmark tab bar */}
+      <div style={{ display:'flex', alignItems:'flex-end', gap:0, padding:'10px 20px 0', overflowX:'auto', scrollbarWidth:'none' }}>
+        {enrolledStreams.map(s => {
+          const sc     = STREAM_CONFIG[s]
+          const active = s === stream
+          const accent = TRACK_COLORS[s] ?? COURSERA_BLUE
+          const label  = sc?.label?.replace(' Track','').replace(' Prep','') ?? s.toUpperCase()
+          return (
+            <button
+              key={s}
+              onClick={() => !active && navigate(`/${s}`)}
+              style={{
+                display:'flex', alignItems:'center', gap:7,
+                padding:'8px 18px 10px',
+                marginRight:2,
+                background: active ? 'white' : 'rgba(255,255,255,0.12)',
+                border: active ? 'none' : '1px solid rgba(255,255,255,0.2)',
+                borderBottom: active ? 'none' : 'none',
+                borderRadius:'10px 10px 0 0',
+                cursor: active ? 'default' : 'pointer',
+                fontFamily:'Inter,sans-serif',
+                WebkitTapHighlightColor:'transparent',
+                transition:'all 0.15s',
+                position:'relative',
+              }}
+            >
+              {/* Coloured dot for the track */}
+              <div style={{ width:8, height:8, borderRadius:4, background: active ? accent : 'rgba(255,255,255,0.6)', flexShrink:0 }} />
+              <span style={{ fontSize:12, fontWeight: active ? 800 : 600, color: active ? accent : 'rgba(255,255,255,0.85)', whiteSpace:'nowrap', letterSpacing:'-0.1px' }}>
+                {label}
+              </span>
+              {active && <span style={{ fontSize:7, color: accent }}>●</span>}
+            </button>
+          )
+        })}
+        {/* Add track button */}
+        <button
+          onClick={() => navigate('/landing')}
+          title="Manage tracks"
+          style={{
+            display:'flex', alignItems:'center', justifyContent:'center',
+            width:32, height:32, marginLeft:4, marginBottom:2,
+            background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.2)',
+            borderRadius:8, cursor:'pointer', color:'rgba(255,255,255,0.7)',
+            fontSize:16, fontFamily:'Inter,sans-serif',
+            WebkitTapHighlightColor:'transparent',
+          }}
+        >
+          +
+        </button>
+      </div>
+    </div>
+  ) : (
+    /* ── Original hero for mobile + single-track desktop ── */
     <div style={{ padding:'max(18px, env(safe-area-inset-top, 18px)) 16px 0' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        {/* Left: track pills */}
         <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap', flex:1, minWidth:0 }}>
           {enrolledStreams.length > 1 && !sub.isFree ? (
             enrolledStreams.map(s => {
               const sc = STREAM_CONFIG[s]
               const active = s === stream
               return (
-                <button
-                  key={s}
-                  onClick={() => !active && navigate(`/${s}`)}
-                  style={{
-                    background: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.18)',
-                    border: `1px solid ${active ? 'transparent' : 'rgba(255,255,255,0.3)'}`,
-                    borderRadius:20, padding:'4px 11px',
-                    fontSize:10, fontWeight:800,
-                    color: active ? C.primary : 'white',
-                    cursor: active ? 'default' : 'pointer',
-                    fontFamily:'Inter,sans-serif',
-                    WebkitTapHighlightColor:'transparent',
-                    transition:'all 0.15s',
-                    letterSpacing:'0.04em',
-                  }}
-                >
+                <button key={s} onClick={() => !active && navigate(`/${s}`)}
+                  style={{ background: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.18)', border:`1px solid ${active ? 'transparent' : 'rgba(255,255,255,0.3)'}`, borderRadius:20, padding:'4px 11px', fontSize:10, fontWeight:800, color: active ? C.primary : 'white', cursor: active ? 'default' : 'pointer', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent', transition:'all 0.15s', letterSpacing:'0.04em' }}>
                   {sc?.label?.replace(' Track','').replace(' Prep','') ?? s.toUpperCase()}
                   {active && <span style={{ fontSize:7, marginLeft:3 }}>●</span>}
                 </button>
@@ -293,11 +386,7 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
             })
           ) : (
             <div>
-              {!isDesktop && (
-                <div style={{ fontSize:22, fontWeight:900, color:'white', letterSpacing:'-0.5px' }}>
-                  Nexora
-                </div>
-              )}
+              {!isDesktop && <div style={{ fontSize:22, fontWeight:900, color:'white', letterSpacing:'-0.5px' }}>Nexora</div>}
               <div style={{ display:'flex', alignItems:'center', gap:6, marginTop: isDesktop ? 0 : 4 }}>
                 <span style={{ background:'rgba(255,255,255,0.22)', color:'white', border:'1px solid rgba(255,255,255,0.3)', borderRadius:20, padding:'2px 10px', fontSize:10, fontWeight:800, letterSpacing:'0.07em' }}>
                   {cfg.label.replace(' Track','').toUpperCase()}
@@ -307,8 +396,6 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
             </div>
           )}
         </div>
-
-        {/* Right: streak + actions */}
         <div style={{ display:'flex', gap:8, alignItems:'center', flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:4 }}>
             <span style={{ fontSize:20 }}>🔥</span>
@@ -321,11 +408,9 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
               : null
           }
           <HeroIconBtn onClick={() => navigate(`/${stream}/settings?contact=1`)} title="Contact Us"><MailIcon color="white" size={18} /></HeroIconBtn>
-          <HeroIconBtn onClick={() => navigate('/landing')} title="Manage tracks"><SwitchIcon color="white" size={18} /></HeroIconBtn>
+          <HeroIconBtn onClick={() => navigate('/landing')} title="Manage tracks"><svg width={16} height={16} viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="14" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="3" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="14" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/></svg></HeroIconBtn>
         </div>
       </div>
-
-      {/* XP progress bar */}
       <div style={{ marginTop:14 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
           <span style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.75)' }}>Level {level} Scholar · {xp} XP</span>
@@ -568,89 +653,91 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
       )}
 
       {isDesktop ? (
-        /* ─────────── DESKTOP: 3-column layout ─────────── */
-        <div style={{ display:'grid', gridTemplateColumns:'240px 1fr 260px', gap:28, alignItems:'start' }}>
+        /* ─────────── DESKTOP: redesigned world-class layout ─────────── */
+        <div style={{ minHeight:'100vh' }}>
 
-          {/* LEFT RAIL */}
-          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-            <div style={{ fontSize:20, fontWeight:900, color:'#1E293B', letterSpacing:'-0.4px' }}>
-              {stream === 'alevel' ? 'Choose Your Exam' : 'Subjects'}
+          {/* Subject section header */}
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+              <div>
+                <div style={{ fontSize:28, fontWeight:900, color:C.navy, letterSpacing:'-0.6px', lineHeight:1.1, fontFamily:"'Playfair Display', Georgia, serif" }}>
+                  {stream === 'alevel' ? 'Choose Your Exam' : 'Your Subjects'}
+                </div>
+                <div style={{ fontSize:13, color:C.muted, marginTop:4 }}>
+                  {cfg.subjects.filter(s=>!s.deprecated).length} subjects · {stream === 'alevel' ? 'Admissions tests' : `${cfg.years}`}
+                </div>
+              </div>
+              <FormatInfoButton />
+            </div>
+            {/* Filter chips */}
+            <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+              {stream === 'gcse' && (
+                <>
+                  <button onClick={() => setEbaccOnly(e => !e)}
+                    style={{ display:'inline-flex', alignItems:'center', gap:5, background: ebaccOnly ? '#F59E0B' : 'white', border: ebaccOnly ? '1.5px solid #D97706' : '1.5px solid #E2E8F0', borderRadius:20, padding:'7px 16px', fontSize:12, fontWeight:700, color: ebaccOnly ? 'white' : '#64748B', cursor:'pointer', transition:'all 0.2s', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
+                    ⭐ EBacc{ebaccOnly ? ' ✕' : ''}
+                  </button>
+                  {ebaccOnly && cfg.subjects.filter(s => s.mfl).map(s => (
+                    <button key={s.id} onClick={() => { const next = ebaccLang === s.id ? null : s.id; setEbaccLang(next); saveEbaccLang(next ?? '') }}
+                      style={{ background: ebaccLang === s.id ? SUBJECT_COLORS[s.id]?.primary ?? C.primary : 'white', border:`1.5px solid ${ebaccLang === s.id ? SUBJECT_COLORS[s.id]?.primary ?? C.primary : '#E2E8F0'}`, borderRadius:20, padding:'7px 14px', fontSize:12, fontWeight:700, color: ebaccLang === s.id ? 'white' : '#64748B', cursor:'pointer' }}>
+                      {s.emoji} {s.label}
+                    </button>
+                  ))}
+                </>
+              )}
+              {stream === 'alevel' && (
+                <div style={{ padding:'8px 14px', background:`${C.primary}10`, border:`1px solid ${C.primary}25`, borderRadius:20, fontSize:11, color:C.primary, fontWeight:700 }}>
+                  🎓 Mirrors real admissions test style
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Main content grid: subjects (wide) + right sidebar (narrow, sticky) */}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 320px', gap:32, alignItems:'start' }}>
+
+            {/* LEFT — subject grid (full width, prominent) */}
+            <div>
+              {(stream === 'gcse' || stream === 'igcse' || stream === 'ib') ? (
+                <GcseSubjectGrid
+                  subjects={ebaccOnly ? allowedSubjects.filter(s => s.ebacc && (!s.mfl || s.id === ebaccLang)) : allowedSubjects}
+                  navigate={navigate} stream={stream} C={C}
+                />
+              ) : (
+                <FanDeck subjects={allowedSubjects} stream={stream} navigate={navigate} C={C} />
+              )}
+              {sub.isFree && visibleSubjects.length > subjectLimit && (
+                <FreePlanBanner C={C} stream={stream} navigate={navigate} locked={visibleSubjects.length - subjectLimit} />
+              )}
+              {stream === 'alevel' && <div style={{ marginTop:16 }}>{uniFinder}</div>}
             </div>
 
-            {stream === 'gcse' && (
-              <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-                <button
-                  onClick={() => setEbaccOnly(e => !e)}
-                  style={{
-                    display:'inline-flex', alignItems:'center', gap:5,
-                    background: ebaccOnly ? '#F59E0B' : '#F1F5F9',
-                    border: ebaccOnly ? '1.5px solid #D97706' : '1.5px solid #E2E8F0',
-                    borderRadius:20, padding:'6px 14px',
-                    fontSize:11, fontWeight:800, color: ebaccOnly ? '#FFFFFF' : '#64748B',
-                    cursor:'pointer', transition:'all 0.2s',
-                    WebkitTapHighlightColor:'transparent', width:'fit-content',
-                  }}
-                >
-                  ⭐ EBacc{ebaccOnly ? ' ✕' : ''}
-                </button>
-                {ebaccOnly && (
-                  <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-                    <span style={{ fontSize:11, fontWeight:700, color:'#64748B', alignSelf:'center', width:'100%' }}>Language:</span>
-                    {cfg.subjects.filter(s => s.mfl).map(s => (
-                      <button
-                        key={s.id}
-                        onClick={() => { const next = ebaccLang === s.id ? null : s.id; setEbaccLang(next); saveEbaccLang(next ?? '') }}
-                        style={{
-                          background: ebaccLang === s.id ? SUBJECT_COLORS[s.id]?.primary ?? '#0F766E' : '#F1F5F9',
-                          border: `1.5px solid ${ebaccLang === s.id ? SUBJECT_COLORS[s.id]?.primary ?? '#0F766E' : '#E2E8F0'}`,
-                          borderRadius:20, padding:'5px 12px', fontSize:11, fontWeight:800,
-                          color: ebaccLang === s.id ? '#FFFFFF' : '#64748B',
-                          cursor:'pointer', transition:'all 0.2s',
-                        }}
-                      >
-                        {s.emoji} {s.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+            {/* RIGHT — premium sidebar */}
+            <div style={{ position:'sticky', top:24, display:'flex', flexDirection:'column', gap:14 }}>
 
-            {stream === 'alevel' && (
-              <div style={{ padding:'12px 14px', background:C.primary+'18', border:`1px solid ${C.primary}30`, borderRadius:12, fontSize:12, color:C.primary, lineHeight:1.5 }}>
-                🎓 Questions mirror real UCAT, LNAT, TMUA, ESAT, MAT, PAT, TARA & STEP style and difficulty
-              </div>
-            )}
+              {/* SRS Review */}
+              {reviewWidget && (
+                <div style={{ background:'white', borderRadius:18, padding:'16px 18px', boxShadow:'0 2px 16px rgba(0,0,0,0.06)', border:'1px solid rgba(0,0,0,0.06)' }}>
+                  {reviewWidget}
+                </div>
+              )}
 
-            {uniFinder}
-          </div>
-
-          {/* MAIN — subject grid */}
-          <div>
-            {(stream === 'gcse' || stream === 'igcse' || stream === 'ib') ? (
-              <GcseSubjectGrid
-                subjects={ebaccOnly
-                  ? allowedSubjects.filter(s => s.ebacc && (!s.mfl || s.id === ebaccLang))
-                  : allowedSubjects}
-                navigate={navigate}
-                stream={stream}
-                C={C}
-              />
-            ) : (
-              <FanDeck subjects={allowedSubjects} stream={stream} navigate={navigate} C={C} />
-            )}
-            {sub.isFree && visibleSubjects.length > subjectLimit && (
-              <FreePlanBanner C={C} stream={stream} navigate={navigate} locked={visibleSubjects.length - subjectLimit} />
-            )}
-          </div>
-
-          {/* RIGHT RAIL — sticky widgets */}
-          <div style={{ position:'sticky', top:24, display:'flex', flexDirection:'column', gap:12 }}>
-            {countdownWidget}
-            {reviewWidget}
-            {missionWidget}
-            {focusWidget}
-            {leaderboardWidget}
+              {/* Focus + leaderboard — compact row */}
+              {(focusWidget || leaderboardWidget) && (
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                  {focusWidget && (
+                    <div style={{ background:'white', borderRadius:14, padding:'12px 14px', boxShadow:'0 2px 12px rgba(0,0,0,0.05)', border:'1px solid rgba(0,0,0,0.06)' }}>
+                      {focusWidget}
+                    </div>
+                  )}
+                  {leaderboardWidget && (
+                    <div style={{ background:'white', borderRadius:14, padding:'12px 14px', boxShadow:'0 2px 12px rgba(0,0,0,0.05)', border:'1px solid rgba(0,0,0,0.06)' }}>
+                      {leaderboardWidget}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -1090,6 +1177,119 @@ function MasteryBadge({ badge }) {
   )
 }
 
+// ── Desktop Subject Card — premium layout, desktop only ──────────────────────
+
+function DesktopSubjectCard({ subject, C, stream, onClick, onMock, onFlashcards, onLearn }) {
+  const SC = getColors('gcse', subject.id)
+  const accent = SC.primary
+  const [hovered, setHovered] = useState(false)
+  const [pressed, setPressed] = useState(false)
+  const questions = stream ? getQuestions(stream, subject.id) : []
+  const { pct, badge } = useMastery(questions)
+  const badgeLabel = badge==='gold'?'🥇':badge==='silver'?'🥈':badge==='bronze'?'🥉':null
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => { setHovered(false); setPressed(false) }}
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => setPressed(false)}
+      style={{
+        background:'white',
+        borderRadius:20,
+        border:`1.5px solid ${hovered ? accent+'50' : '#E8ECF0'}`,
+        boxShadow: hovered
+          ? `0 12px 40px ${accent}22, 0 2px 8px rgba(0,0,0,0.06)`
+          : '0 2px 12px rgba(0,0,0,0.05)',
+        transform: pressed ? 'scale(0.985)' : hovered ? 'translateY(-2px)' : 'none',
+        transition:'all 0.18s cubic-bezier(0.4,0,0.2,1)',
+        overflow:'hidden',
+        display:'flex', flexDirection:'column',
+        cursor:'pointer',
+      }}
+      onClick={onClick}
+    >
+      {/* Coloured top accent strip */}
+      <div style={{ height:4, background:`linear-gradient(90deg, ${accent}, ${accent}88)` }} />
+
+      {/* Card body */}
+      <div style={{ padding:'18px 18px 14px', flex:1, display:'flex', flexDirection:'column', gap:10 }}>
+        {/* Header row: emoji + title + badge */}
+        <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
+          <div style={{
+            width:48, height:48, borderRadius:14, flexShrink:0,
+            background:`linear-gradient(135deg, ${accent}20, ${accent}10)`,
+            border:`1.5px solid ${accent}20`,
+            display:'flex', alignItems:'center', justifyContent:'center', fontSize:24,
+          }}>
+            {subject.emoji}
+          </div>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+              <div style={{ fontSize:15, fontWeight:800, color:'#1E293B', letterSpacing:'-0.3px', lineHeight:1.2 }}>
+                {subject.label}
+              </div>
+              {badgeLabel && <span style={{ fontSize:14 }}>{badgeLabel}</span>}
+            </div>
+            {subject.desc && (
+              <div style={{ fontSize:11, color:'#94A3B8', marginTop:3, lineHeight:1.4 }}>{subject.desc}</div>
+            )}
+          </div>
+        </div>
+
+        {/* Mastery bar */}
+        <div>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:5 }}>
+            <span style={{ fontSize:10, fontWeight:700, color:'#94A3B8', textTransform:'uppercase', letterSpacing:'0.06em' }}>Mastery</span>
+            <span style={{ fontSize:11, fontWeight:800, color: pct>=75?'#10B981':pct>=50?'#F59E0B':pct>0?accent:'#CBD5E1' }}>
+              {pct > 0 ? `${pct}%` : 'Not started'}
+            </span>
+          </div>
+          <div style={{ height:5, borderRadius:999, background:'#F1F5F9', overflow:'hidden' }}>
+            <div style={{
+              height:'100%', borderRadius:999,
+              width:`${pct}%`,
+              background: pct>=75?'#10B981':pct>=50?'#F59E0B':accent,
+              transition:'width 0.6s ease',
+            }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Action bar — 3 buttons, stops click propagation */}
+      <div
+        style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', borderTop:`1px solid #F1F5F9` }}
+        onClick={e => e.stopPropagation()}
+      >
+        {[
+          { label:'Flashcards', icon:'🃏', action: onFlashcards },
+          { label:'Mock',       icon:'📋', action: onMock },
+          { label:'Learn',      icon:'🧠', action: onLearn },
+        ].map((btn, i) => (
+          <button
+            key={btn.label}
+            onClick={e => { e.stopPropagation(); btn.action?.() }}
+            style={{
+              padding:'11px 6px',
+              background:'transparent',
+              border:'none',
+              borderRight: i < 2 ? '1px solid #F1F5F9' : 'none',
+              display:'flex', flexDirection:'column', alignItems:'center', gap:3,
+              cursor:'pointer', fontFamily:'Inter,sans-serif',
+              transition:'background 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = `${accent}08`}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            <span style={{ fontSize:16 }}>{btn.icon}</span>
+            <span style={{ fontSize:10, fontWeight:700, color: accent }}>{btn.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function SubjectCard({ subject, C, dark, stream, onClick, onMock, onFlashcards, onLearn }) {
   const SC      = getColors(dark ? 'alevel' : 'gcse', subject.id)
   const [pressed, setPressed] = useState(false)
@@ -1238,7 +1438,7 @@ function GcseSubjectGrid({ subjects, navigate, stream, C }) {
   const [collapsed, setCollapsed] = useState({})
   const { isTablet, isDesktop } = useBreakpoint()
   const segments = buildSegments(subjects)
-  const cols = isDesktop ? 4 : isTablet ? 3 : 1
+  const cols = isDesktop ? 3 : isTablet ? 3 : 1
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
@@ -1263,32 +1463,25 @@ function GcseSubjectGrid({ subjects, navigate, stream, C }) {
               </button>
             )}
             {!isCollapsed && (
-              <div style={{ display:'grid', gridTemplateColumns:`repeat(${cols}, 1fr)`, gap:12 }}>
-                {seg.subjects.map(s => (
-                  <SubjectCard
-                    key={s.id}
-                    subject={s}
-                    C={C}
-                    dark={false}
-                    stream={stream}
-                    onClick={() => {
-                      const tier = stream === 'ib' ? (localStorage.getItem(`nx_ib_tier_${s.id}`) ?? 'sl') : null
-                      navigate(`/${stream}/quiz/${s.id}${tier ? `?tier=${tier}` : ''}`)
-                    }}
-                    onMock={() => {
-                      const tier = stream === 'ib' ? (localStorage.getItem(`nx_ib_tier_${s.id}`) ?? 'sl') : null
-                      navigate(`/${stream}/mock/${s.id}${tier ? `?tier=${tier}` : ''}`)
-                    }}
-                    onFlashcards={() => {
-                      const tier = stream === 'ib' ? (localStorage.getItem(`nx_ib_tier_${s.id}`) ?? 'sl') : null
-                      navigate(`/${stream}/flashcards/${s.id}${tier ? `?tier=${tier}` : ''}`)
-                    }}
-                    onLearn={() => {
-                      const tier = stream === 'ib' ? (localStorage.getItem(`nx_ib_tier_${s.id}`) ?? 'sl') : null
-                      navigate(`/${stream}/learn/${s.id}${tier ? `?tier=${tier}` : ''}`)
-                    }}
-                  />
-                ))}
+              <div style={{ display:'grid', gridTemplateColumns:`repeat(${cols}, 1fr)`, gap: isDesktop ? 16 : 12 }}>
+                {seg.subjects.map(s => {
+                  const tier = stream === 'ib' ? (localStorage.getItem(`nx_ib_tier_${s.id}`) ?? 'sl') : null
+                  const tierQ = tier ? `?tier=${tier}` : ''
+                  const CardComponent = isDesktop ? DesktopSubjectCard : SubjectCard
+                  return (
+                    <CardComponent
+                      key={s.id}
+                      subject={s}
+                      C={C}
+                      dark={false}
+                      stream={stream}
+                      onClick={() => navigate(`/${stream}/quiz/${s.id}${tierQ}`)}
+                      onMock={() => navigate(`/${stream}/mock/${s.id}${tierQ}`)}
+                      onFlashcards={() => navigate(`/${stream}/flashcards/${s.id}${tierQ}`)}
+                      onLearn={() => navigate(`/${stream}/learn/${s.id}${tierQ}`)}
+                    />
+                  )
+                })}
               </div>
             )}
           </div>
@@ -1302,6 +1495,8 @@ function GcseSubjectGrid({ subjects, navigate, stream, C }) {
 
 function HomeBtn({ C, navigate }) {
   const { pathname } = useLocation()
+  const { isDesktop } = useBreakpoint()
+  if (isDesktop) return null // desktop has sidebar nav + hero action buttons — no need
   const m = pathname.match(/^\/(gcse|alevel|sat|act|ap|psat|igcse|ib)$/)
   if (m) return null // already on home page — don't show
   const stream = pathname.match(/^\/(gcse|alevel|sat|act|ap|psat|igcse|ib)/)?.[1]
@@ -1347,8 +1542,9 @@ export function Shell({ C, isDark, children, noNav, heroContent, contentMax }) {
     return (
       <div style={{ minHeight:'100dvh', background:C.bg, fontFamily:'Inter,sans-serif', display:'flex' }}>
         <style>{css}</style>
-        <div style={{ width:SIDEBAR_W, flexShrink:0 }} />
-        <div style={{ flex:1, minHeight:'100dvh', overflowY:'auto' }}>
+        {/* Spacer matches fixed rail width */}
+        <div style={{ width:180, flexShrink:0 }} />
+        <div style={{ flex:1, minHeight:'100dvh', overflowY:'auto', minWidth:0 }}>
           {heroContent && (
             <div style={{
               background:`linear-gradient(135deg, ${C.trackAccent} 0%, ${C.trackAccent}CC 100%)`,
@@ -1358,7 +1554,7 @@ export function Shell({ C, isDark, children, noNav, heroContent, contentMax }) {
               <HomeBtn C={C} navigate={navigate} />
             </div>
           )}
-          <div style={{ maxWidth:contentMax ?? CONTENT_MAX, margin:'0 auto', padding:'24px 32px 40px', animation:'fadeUp 0.35s ease' }}>
+          <div style={{ padding:'28px 40px 48px 40px', animation:'fadeUp 0.35s ease' }}>
             {children}
           </div>
         </div>

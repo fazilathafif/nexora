@@ -821,7 +821,7 @@ function TabBar({ active, onChange, C }) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
-export default function LearnHubPage({ user, profile, isDark }) {
+export default function LearnHubPage({ user, profile, isDark, signOut }) {
   const { stream }             = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate               = useNavigate()
@@ -839,6 +839,7 @@ export default function LearnHubPage({ user, profile, isDark }) {
   function setActiveTrack(t) {
     setActiveTrackState(t)
     sessionStorage.setItem('nx_learnhub_track', t)
+    navigate(`/${t}/learn-hub`, { replace: true })
   }
 
   const C   = getColors(activeTrack, null, isDark)
@@ -976,68 +977,97 @@ export default function LearnHubPage({ user, profile, isDark }) {
   const firstName = profile?.display_name?.split(' ')[0] ?? 'Scholar'
 
   // ── Hero ────────────────────────────────────────────────────────────────────
-  const heroEl = (
+  const multiTrack = enrolledStreams.length > 1 && getEffectivePlan(profile) !== 'free'
+
+  const heroEl = isDesktop && multiTrack ? (
+    /* Desktop bookmark-tab hero */
+    <div style={{ display:'flex', flexDirection:'column' }}>
+      {/* Top strip: page label + stats + actions */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 24px 0' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <span style={{ fontSize:12, fontWeight:800, color:'rgba(255,255,255,0.7)', letterSpacing:'0.08em', textTransform:'uppercase' }}>Learn Hub</span>
+          {days !== null && days > 0 && (
+            <span style={{ fontSize:10, fontWeight:800, color:'rgba(255,255,255,0.9)', background:'rgba(255,255,255,0.18)', borderRadius:20, padding:'2px 8px' }}>
+              {days}d to exam
+            </span>
+          )}
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+            {[{ icon:'🔥', val:streak },{ icon:'⚡', val:xp },{ icon:'🎓', val:level }].map(s => (
+              <div key={s.icon} style={{ display:'flex', alignItems:'center', gap:3, background:'rgba(255,255,255,0.15)', borderRadius:20, padding:'3px 8px' }}>
+                <span style={{ fontSize:11 }}>{s.icon}</span>
+                <span style={{ fontSize:11, fontWeight:800, color:'white' }}>{s.val}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+            {user?.email && (
+              <button onClick={() => { signOut?.(); navigate('/') }} title="Sign Out"
+                style={{ width:36, height:36, borderRadius:10, border:'1px solid rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.18)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:12, fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}>
+                <svg width={16} height={16} viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/><polyline points="16 17 21 12 16 7" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/><line x1="21" y1="12" x2="9" y2="12" stroke="white" strokeWidth={2} strokeLinecap="round"/></svg>
+              </button>
+            )}
+            <button onClick={() => navigate(`/${activeTrack}/settings?contact=1`)} title="Contact Us"
+              style={{ width:36, height:36, borderRadius:10, border:'1px solid rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.18)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}>
+              <svg width={16} height={16} viewBox="0 0 24 24" fill="none"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/><polyline points="22,6 12,13 2,6" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+            <button onClick={() => navigate('/landing')} title="Manage tracks"
+              style={{ width:36, height:36, borderRadius:10, border:'1px solid rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.18)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}>
+              <svg width={16} height={16} viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="14" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="3" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="14" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      {/* Bookmark tabs */}
+      <div style={{ display:'flex', alignItems:'flex-end', gap:0, padding:'8px 20px 0', overflowX:'auto', scrollbarWidth:'none' }}>
+        {enrolledStreams.map(s => {
+          const sc     = STREAM_CONFIG[s]
+          const active = s === activeTrack
+          const accent = TRACK_COLORS[s] ?? COURSERA_BLUE
+          return (
+            <button key={s} onClick={() => setActiveTrack(s)}
+              style={{ display:'flex', alignItems:'center', gap:7, padding:'8px 18px 10px', marginRight:2, background: active ? 'white' : 'rgba(255,255,255,0.12)', border: active ? 'none' : '1px solid rgba(255,255,255,0.2)', borderRadius:'10px 10px 0 0', cursor: active ? 'default' : 'pointer', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent', transition:'all 0.15s' }}>
+              <div style={{ width:8, height:8, borderRadius:4, background: active ? accent : 'rgba(255,255,255,0.6)', flexShrink:0 }} />
+              <span style={{ fontSize:12, fontWeight: active ? 800 : 600, color: active ? accent : 'rgba(255,255,255,0.85)', whiteSpace:'nowrap' }}>
+                {sc?.label?.replace(' Track','').replace(' Prep','') ?? s.toUpperCase()}
+              </span>
+              {active && <span style={{ fontSize:7, color:accent }}>●</span>}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  ) : (
+    /* Mobile / single-track hero */
     <div style={{ padding:'max(14px, env(safe-area-inset-top, 14px)) 16px 14px' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
-        {/* Left: track label */}
         <div style={{ display:'flex', alignItems:'center', gap:8, minWidth:0 }}>
           <div style={{ fontSize:16, fontWeight:900, color:'white', letterSpacing:'-0.3px' }}>
             {cfg?.label?.replace(' Track','').replace(' Prep','') ?? activeTrack.toUpperCase()}
           </div>
           {days !== null && days > 0 && (
-            <span style={{
-              fontSize:10, fontWeight:800, color:'rgba(255,255,255,0.9)',
-              background:'rgba(255,255,255,0.18)', borderRadius:20, padding:'2px 8px',
-              whiteSpace:'nowrap',
-            }}>
+            <span style={{ fontSize:10, fontWeight:800, color:'rgba(255,255,255,0.9)', background:'rgba(255,255,255,0.18)', borderRadius:20, padding:'2px 8px', whiteSpace:'nowrap' }}>
               {days}d
             </span>
           )}
         </div>
-
-        {/* Right: stat pills */}
         <div style={{ display:'flex', gap:6, alignItems:'center', flexShrink:0 }}>
-          {[
-            { icon:'🔥', val:streak },
-            { icon:'⚡', val:xp    },
-            { icon:'🎓', val:level },
-          ].map(s => (
-            <div key={s.icon} style={{
-              display:'flex', alignItems:'center', gap:3,
-              background:'rgba(255,255,255,0.18)', backdropFilter:'blur(6px)',
-              border:'1px solid rgba(255,255,255,0.25)',
-              borderRadius:20, padding:'3px 8px',
-            }}>
+          {[{ icon:'🔥', val:streak },{ icon:'⚡', val:xp },{ icon:'🎓', val:level }].map(s => (
+            <div key={s.icon} style={{ display:'flex', alignItems:'center', gap:3, background:'rgba(255,255,255,0.18)', backdropFilter:'blur(6px)', border:'1px solid rgba(255,255,255,0.25)', borderRadius:20, padding:'3px 8px' }}>
               <span style={{ fontSize:11 }}>{s.icon}</span>
               <span style={{ fontSize:11, fontWeight:800, color:'white' }}>{s.val}</span>
             </div>
           ))}
         </div>
       </div>
-
-      {/* Track switcher — only for paid users with 2+ tracks */}
-      {enrolledStreams.length > 1 && getEffectivePlan(profile) !== 'free' && (
+      {multiTrack && (
         <div style={{ display:'flex', gap:5, marginTop:10, flexWrap:'wrap' }}>
           {enrolledStreams.map(s => {
-            const sc     = STREAM_CONFIG[s]
-            const accent = TRACK_COLORS[s] ?? COURSERA_BLUE
-            const active = s === activeTrack
+            const sc = STREAM_CONFIG[s]; const accent = TRACK_COLORS[s] ?? COURSERA_BLUE; const active = s === activeTrack
             return (
-              <button
-                key={s}
-                onClick={() => setActiveTrack(s)}
-                style={{
-                  display:'flex', alignItems:'center', gap:4,
-                  background: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.18)',
-                  border: `1px solid ${active ? 'transparent' : 'rgba(255,255,255,0.3)'}`,
-                  borderRadius:20, padding:'4px 10px',
-                  fontSize:10, fontWeight:800,
-                  color: active ? accent : 'white',
-                  cursor:'pointer', fontFamily:'Inter,sans-serif',
-                  WebkitTapHighlightColor:'transparent',
-                  transition:'all 0.15s',
-                }}
-              >
+              <button key={s} onClick={() => setActiveTrack(s)}
+                style={{ display:'flex', alignItems:'center', gap:4, background: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.18)', border:`1px solid ${active ? 'transparent' : 'rgba(255,255,255,0.3)'}`, borderRadius:20, padding:'4px 10px', fontSize:10, fontWeight:800, color: active ? accent : 'white', cursor:'pointer', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent', transition:'all 0.15s' }}>
                 {sc?.label?.replace(' Track','').replace(' Prep','') ?? s.toUpperCase()}
                 {active && <span style={{ fontSize:7, marginLeft:1 }}>●</span>}
               </button>

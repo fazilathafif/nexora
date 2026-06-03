@@ -116,16 +116,21 @@ function ExamDateRow({ session, isNext, C }) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
-export default function ResourcesPage({ user, profile, isDark }) {
+export default function ResourcesPage({ user, profile, isDark, signOut }) {
   const { stream } = useParams()
   const navigate   = useNavigate()
-  const { isMobile } = useBreakpoint()
+  const { isMobile, isDesktop } = useBreakpoint()
 
   // Track selector — defaults to current stream URL param, can be switched
   const enrolledStreams = profile?.streams?.length ? profile.streams : profile?.stream ? [profile.stream] : [stream]
-  const [activeTrack, setActiveTrack] = useState(() => {
+  const [activeTrack, setActiveTrackState] = useState(() => {
     return enrolledStreams.includes(stream) ? stream : (enrolledStreams[0] ?? stream)
   })
+
+  function setActiveTrack(t) {
+    setActiveTrackState(t)
+    navigate(`/${t}/resources`, { replace: true })
+  }
 
   const C   = getColors(activeTrack, null, isDark)
   const cfg = STREAM_CONFIG[activeTrack]
@@ -226,7 +231,7 @@ export default function ResourcesPage({ user, profile, isDark }) {
 
   // ── Exam Dates panel ──────────────────────────────────────────────────────
   const examDatesPanel = (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 18, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: 20 }}>
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 18, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: 20, minHeight: 220 }}>
       <div style={{ padding: '16px 18px 12px', borderBottom: `1px solid ${C.border}` }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <div>
@@ -281,7 +286,7 @@ export default function ResourcesPage({ user, profile, isDark }) {
 
   // ── Books panel ───────────────────────────────────────────────────────────
   const booksPanel = (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 18, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: 20 }}>
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 18, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: 20, minHeight: 200 }}>
       <div style={{ padding: '16px 18px 12px', borderBottom: `1px solid ${C.border}` }}>
         <div style={{ fontSize: 15, fontWeight: 800, color: C.navy }}>📚 Textbooks & Guides</div>
         <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>Curated for {cfg?.label ?? activeTrack.toUpperCase()}</div>
@@ -322,7 +327,7 @@ export default function ResourcesPage({ user, profile, isDark }) {
   // ── AI advisor panel ──────────────────────────────────────────────────────
   const isUK = ['gcse','alevel'].includes(activeTrack)
   const advisorPanel = (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 18, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: 20 }}>
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 18, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: 20, minHeight: 440 }}>
       <div style={{ padding: '16px 18px 14px', borderBottom: `1px solid ${C.border}` }}>
         <div style={{ fontSize: 15, fontWeight: 800, color: C.navy }}>🎓 AI {isUK ? 'University' : 'College'} Advisor</div>
         <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
@@ -421,54 +426,79 @@ export default function ResourcesPage({ user, profile, isDark }) {
   )
 
 
+  const multiTrack = enrolledStreams.length > 1 && getEffectivePlan(profile) !== 'free'
+
   // ── Hero (consistent with HomePage + LearnHub) ────────────────────────────
-  const heroEl = (
+  const heroEl = isDesktop && multiTrack ? (
+    /* Desktop bookmark-tab hero */
+    <div style={{ display:'flex', flexDirection:'column' }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 24px 0' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <span style={{ fontSize:12, fontWeight:800, color:'rgba(255,255,255,0.7)', letterSpacing:'0.08em', textTransform:'uppercase' }}>Resources</span>
+          <span style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>Exam dates · textbooks · {isUK ? 'university' : 'college'} guidance</span>
+        </div>
+        <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+          {user?.email && (
+            <button onClick={() => { signOut?.(); navigate('/') }} title="Sign Out"
+              style={{ width:36, height:36, borderRadius:10, border:'1px solid rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.18)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}>
+              <svg width={16} height={16} viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/><polyline points="16 17 21 12 16 7" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/><line x1="21" y1="12" x2="9" y2="12" stroke="white" strokeWidth={2} strokeLinecap="round"/></svg>
+            </button>
+          )}
+          <button onClick={() => navigate(`/${activeTrack}/settings?contact=1`)} title="Contact Us"
+            style={{ width:36, height:36, borderRadius:10, border:'1px solid rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.18)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}>
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="none"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/><polyline points="22,6 12,13 2,6" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+          <button onClick={() => navigate('/landing')} title="Manage tracks"
+            style={{ width:36, height:36, borderRadius:10, border:'1px solid rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.18)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}>
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="14" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="3" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="14" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/></svg>
+          </button>
+        </div>
+      </div>
+      <div style={{ display:'flex', alignItems:'flex-end', gap:0, padding:'8px 20px 0', overflowX:'auto', scrollbarWidth:'none' }}>
+        {enrolledStreams.map(s => {
+          const sc     = STREAM_CONFIG[s]
+          const active = s === activeTrack
+          const accent = TRACK_COLORS[s] ?? COURSERA_BLUE
+          return (
+            <button key={s} onClick={() => setActiveTrack(s)}
+              style={{ display:'flex', alignItems:'center', gap:7, padding:'8px 18px 10px', marginRight:2, background: active ? 'white' : 'rgba(255,255,255,0.12)', border: active ? 'none' : '1px solid rgba(255,255,255,0.2)', borderRadius:'10px 10px 0 0', cursor: active ? 'default' : 'pointer', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent', transition:'all 0.15s' }}>
+              <div style={{ width:8, height:8, borderRadius:4, background: active ? accent : 'rgba(255,255,255,0.6)', flexShrink:0 }} />
+              <span style={{ fontSize:12, fontWeight: active ? 800 : 600, color: active ? accent : 'rgba(255,255,255,0.85)', whiteSpace:'nowrap' }}>
+                {sc?.label?.replace(' Track','').replace(' Prep','') ?? s.toUpperCase()}
+              </span>
+              {active && <span style={{ fontSize:7, color:accent }}>●</span>}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  ) : (
+    /* Mobile / single-track hero */
     <div style={{ padding: 'max(14px, env(safe-area-inset-top, 14px)) 16px 14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-        {/* Left: track pills or single label */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0, flexWrap: 'wrap' }}>
-          {enrolledStreams.length > 1 && getEffectivePlan(profile) !== 'free' ? (
+          {multiTrack ? (
             enrolledStreams.map(s => {
-              const sc     = STREAM_CONFIG[s]
-              const accent = TRACK_COLORS[s] ?? COURSERA_BLUE
-              const active = s === activeTrack
+              const sc = STREAM_CONFIG[s]; const accent = TRACK_COLORS[s] ?? COURSERA_BLUE; const active = s === activeTrack
               return (
-                <button
-                  key={s}
-                  onClick={() => setActiveTrack(s)}
-                  style={{
-                    background: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.18)',
-                    border: `1px solid ${active ? 'transparent' : 'rgba(255,255,255,0.3)'}`,
-                    borderRadius: 20, padding: '4px 11px',
-                    fontSize: 10, fontWeight: 800,
-                    color: active ? accent : 'white',
-                    cursor: 'pointer', fontFamily: 'Inter,sans-serif',
-                    WebkitTapHighlightColor: 'transparent',
-                    transition: 'all 0.15s', letterSpacing: '0.04em',
-                  }}
-                >
+                <button key={s} onClick={() => setActiveTrack(s)}
+                  style={{ background: active ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.18)', border:`1px solid ${active ? 'transparent' : 'rgba(255,255,255,0.3)'}`, borderRadius:20, padding:'4px 11px', fontSize:10, fontWeight:800, color: active ? accent : 'white', cursor:'pointer', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent', transition:'all 0.15s', letterSpacing:'0.04em' }}>
                   {sc?.label?.replace(' Track','').replace(' Prep','') ?? s.toUpperCase()}
-                  {active && <span style={{ fontSize: 7, marginLeft: 3 }}>●</span>}
+                  {active && <span style={{ fontSize:7, marginLeft:3 }}>●</span>}
                 </button>
               )
             })
           ) : (
-            <div style={{ fontSize: 16, fontWeight: 900, color: 'white', letterSpacing: '-0.3px' }}>
+            <div style={{ fontSize:16, fontWeight:900, color:'white', letterSpacing:'-0.3px' }}>
               {cfg?.label?.replace(' Track','').replace(' Prep','') ?? activeTrack.toUpperCase()}
             </div>
           )}
         </div>
-        {/* Right: page title pill */}
-        <div style={{
-          flexShrink: 0, fontSize: 11, fontWeight: 800, color: 'rgba(255,255,255,0.9)',
-          background: 'rgba(255,255,255,0.18)', borderRadius: 20, padding: '3px 10px',
-          letterSpacing: '0.06em', textTransform: 'uppercase',
-        }}>
+        <div style={{ flexShrink:0, fontSize:11, fontWeight:800, color:'rgba(255,255,255,0.9)', background:'rgba(255,255,255,0.18)', borderRadius:20, padding:'3px 10px', letterSpacing:'0.06em', textTransform:'uppercase' }}>
           Resources
         </div>
       </div>
-      {/* Subtitle */}
-      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 8, fontWeight: 500 }}>
+      <div style={{ fontSize:11, color:'rgba(255,255,255,0.65)', marginTop:8, fontWeight:500 }}>
         Exam dates · textbooks & guides · {isUK ? 'university' : 'college'} guidance
       </div>
     </div>
@@ -477,8 +507,8 @@ export default function ResourcesPage({ user, profile, isDark }) {
   if (!isMobile) {
     return (
       <Shell C={C} isDark={isDark} heroContent={heroEl} contentMax={1100}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.1fr', gap: 24, alignItems: 'start' }}>
-          <div style={{ position: 'sticky', top: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
+          <div>
             {advisorPanel}
           </div>
           <div>

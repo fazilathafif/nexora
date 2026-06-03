@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { STREAM_CONFIG } from '../data/questions.js'
 import { getColors } from '../pages/HomePage.jsx'
@@ -6,7 +6,7 @@ import { NAV_HEIGHT } from '../styles/tokens.js'
 import { SIDEBAR_W } from '../styles/breakpoints.js'
 import { useBreakpoint } from '../hooks/useBreakpoint.js'
 import { useTheme } from '../hooks/useTheme.js'
-import { COURSERA_BLUE } from '../styles/courseraTokens.js'
+import { COURSERA_BLUE, TRACK_COLORS } from '../styles/courseraTokens.js'
 
 function useStream() {
   const { pathname } = useLocation()
@@ -258,54 +258,9 @@ export default function BottomNav() {
     { id:'me',        label:'Profile',   Icon:MeIcon,        action:() => navigate(`/${stream}/settings`) },
   ]
 
-  // ── Desktop sidebar ─────────────────────────────────────────────────────────
+  // ── Desktop — collapsible icon rail ────────────────────────────────────────
   if (isDesktop) {
-    return (
-      <nav style={{
-        position:'fixed', top:0, left:0, bottom:0,
-        width:SIDEBAR_W, zIndex:100,
-        display:'flex', flexDirection:'column',
-        background: isDark ? 'rgba(28,29,31,0.88)' : 'rgba(255,255,255,0.88)',
-        backdropFilter: 'blur(24px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-        borderRight: `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'}`,
-        paddingTop:'env(safe-area-inset-top, 0px)',
-        boxShadow: isDark
-          ? '2px 0 20px rgba(0,0,0,0.4)'
-          : '2px 0 20px rgba(0,0,0,0.06)',
-      }}>
-        {/* Logo */}
-        <div style={{ padding:'28px 20px 24px', borderBottom:`1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'}` }}>
-          <div style={{ fontSize:20, fontWeight:900, color:COURSERA_BLUE, letterSpacing:'-0.5px' }}>
-            Nexora
-          </div>
-          <div style={{ fontSize:10, color:C.muted, marginTop:3, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase' }}>
-            {STREAM_CONFIG[stream]?.label?.replace(' Track','').replace(' Prep','') ?? stream.toUpperCase()}
-          </div>
-        </div>
-
-        {/* Nav items */}
-        <div style={{ flex:1, padding:'12px 10px', display:'flex', flexDirection:'column', gap:2 }}>
-          {tabs.map(tab => {
-            const active = activeTab === tab.id
-            return (
-              <DesktopNavItem
-                key={tab.id}
-                tab={tab}
-                active={active}
-                isDark={isDark}
-                C={C}
-              />
-            )
-          })}
-        </div>
-
-        {/* Footer */}
-        <div style={{ padding:'16px 20px', borderTop:`1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'}`, fontSize:10, color:C.muted, fontWeight:600, letterSpacing:'0.04em' }}>
-          nexoralearn.app
-        </div>
-      </nav>
-    )
+    return <DesktopRail tabs={tabs} activeTab={activeTab} isDark={isDark} C={C} stream={stream} />
   }
 
   // ── Mobile floating bar ─────────────────────────────────────────────────────
@@ -346,68 +301,174 @@ export default function BottomNav() {
   )
 }
 
-// ── Desktop sidebar item with spring hover ────────────────────────────────────
-function DesktopNavItem({ tab, active, isDark, C }) {
+// ── Desktop Rail — collapsible icon rail (64px → 240px on hover) ─────────────
+
+const RAIL_W = 180  // Fixed width — no hover expansion, clean and predictable
+
+function DesktopRail({ tabs, activeTab, isDark, C, stream }) {
+  const bg        = isDark ? 'rgba(18,19,22,0.92)' : 'rgba(255,255,255,0.92)'
+  const borderCol = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)'
+  const trackLabel = STREAM_CONFIG[stream]?.label?.replace(' Track','').replace(' Prep','') ?? stream?.toUpperCase()
+
+  return (
+    <nav
+      aria-label="Main navigation"
+      style={{
+        position:'fixed', top:0, left:0, bottom:0,
+        width: RAIL_W,
+        zIndex:100,
+        display:'flex', flexDirection:'column',
+        background: bg,
+        backdropFilter:'blur(28px) saturate(180%)',
+        WebkitBackdropFilter:'blur(28px) saturate(180%)',
+        borderRight:`1px solid ${borderCol}`,
+        boxShadow: isDark ? '2px 0 24px rgba(0,0,0,0.4)' : '2px 0 16px rgba(0,0,0,0.06)',
+        paddingTop:'env(safe-area-inset-top,0px)',
+        overflow:'hidden',
+      }}
+    >
+      {/* Logo */}
+      <div style={{
+        height:64, display:'flex', alignItems:'center',
+        padding:'0 18px',
+        borderBottom:`1px solid ${borderCol}`,
+        flexShrink:0,
+      }}>
+        <div style={{ width:30, height:30, borderRadius:8, background:`${COURSERA_BLUE}15`, display:'flex', alignItems:'center', justifyContent:'center', marginRight:10, flexShrink:0 }}>
+          <span style={{ fontSize:13, fontWeight:900, color:COURSERA_BLUE }}>N</span>
+        </div>
+        <div>
+          <div style={{ fontSize:15, fontWeight:900, color:COURSERA_BLUE, letterSpacing:'-0.4px', whiteSpace:'nowrap' }}>Nexora</div>
+          <div style={{ fontSize:9, color:C.muted, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', marginTop:1, whiteSpace:'nowrap' }}>
+            {trackLabel}
+          </div>
+        </div>
+      </div>
+
+      {/* Nav items — compact, not stretched */}
+      <div style={{ padding:'8px 10px', display:'flex', flexDirection:'column', gap:1 }}>
+        {tabs.map(tab => {
+          const active = activeTab === tab.id
+          const trackAccent = C.primary ?? COURSERA_BLUE
+          return (
+            <RailItem
+              key={tab.id}
+              tab={tab}
+              active={active}
+              expanded={true}
+              isDark={isDark}
+              C={C}
+              accent={trackAccent}
+            />
+          )
+        })}
+      </div>
+
+      {/* Divider */}
+      <div style={{ height:1, background:borderCol, margin:'4px 12px' }} />
+
+      {/* Active track info card */}
+      <div style={{ margin:'8px 10px', padding:'12px 14px', background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', borderRadius:12, border:`1px solid ${borderCol}` }}>
+        <div style={{ fontSize:10, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:6 }}>Active Track</div>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <div style={{
+            width:28, height:28, borderRadius:8, flexShrink:0,
+            background:`${TRACK_COLORS[stream] ?? COURSERA_BLUE}20`,
+            border:`1.5px solid ${TRACK_COLORS[stream] ?? COURSERA_BLUE}40`,
+            display:'flex', alignItems:'center', justifyContent:'center',
+          }}>
+            <div style={{ width:10, height:10, borderRadius:5, background: TRACK_COLORS[stream] ?? COURSERA_BLUE }} />
+          </div>
+          <div style={{ minWidth:0 }}>
+            <div style={{ fontSize:12, fontWeight:800, color:C.navy, lineHeight:1.2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:108 }}>
+              {STREAM_CONFIG[stream]?.label?.replace(' Track','').replace(' Prep','') ?? stream?.toUpperCase()}
+            </div>
+            <div style={{ fontSize:10, color:C.muted, marginTop:1, whiteSpace:'nowrap' }}>{STREAM_CONFIG[stream]?.years ?? ''}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Spacer pushes footer down */}
+      <div style={{ flex:1 }} />
+
+      {/* Footer */}
+      <div style={{
+        padding:'12px 18px 16px',
+        borderTop:`1px solid ${borderCol}`, flexShrink:0,
+        display:'flex', flexDirection:'column', gap:4,
+      }}>
+        <div style={{ fontSize:10, color:C.muted, fontWeight:600, letterSpacing:'0.04em' }}>nexoralearn.app</div>
+        <div style={{ fontSize:9, color:C.muted, opacity:0.6 }}>v1.0.0-beta</div>
+      </div>
+    </nav>
+  )
+}
+
+function RailItem({ tab, active, expanded, isDark, C, accent }) {
   const [hovered, setHovered] = useState(false)
   const [pressed, setPressed] = useState(false)
 
-  const scale = pressed ? 0.96 : hovered && !active ? 1.02 : 1
-  const tx    = hovered && !active ? 2 : 0
-
   return (
     <button
-      key={tab.id}
       onClick={tab.action}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => { setHovered(false); setPressed(false) }}
       onMouseDown={() => setPressed(true)}
       onMouseUp={() => setPressed(false)}
+      title={!expanded ? tab.label : undefined}
       style={{
-        display:'flex', alignItems:'center', gap:12,
-        padding:'10px 12px',
-        borderRadius:10,
-        border:'none',
+        display:'flex', alignItems:'center',
+        gap: expanded ? 12 : 0,
+        padding: expanded ? '8px 12px' : '8px 0',
+        justifyContent: expanded ? 'flex-start' : 'center',
+        borderRadius:10, border:'none',
         background: active
-          ? `${COURSERA_BLUE}14`
-          : hovered ? (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)') : 'transparent',
-        cursor:'pointer',
-        fontFamily:'Inter,sans-serif',
+          ? `${accent}14`
+          : hovered ? (isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)') : 'transparent',
+        cursor:'pointer', fontFamily:'Inter,sans-serif',
         WebkitTapHighlightColor:'transparent',
-        transform: `scale(${scale}) translateX(${tx}px)`,
-        transition: pressed
-          ? `transform 0.1s ${EASE}, background 0.15s ${EASE}`
-          : `transform 0.32s ${SPRING}, background 0.18s ${EASE}`,
-        position:'relative',
+        transform: pressed ? 'scale(0.95)' : 'scale(1)',
+        transition:`transform 0.12s ease, background 0.15s ease, padding 0.22s cubic-bezier(0.4,0,0.2,1), gap 0.22s cubic-bezier(0.4,0,0.2,1)`,
+        position:'relative', overflow:'hidden', width:'100%',
       }}
     >
-      {/* Active left bar */}
+      {/* Active indicator bar */}
       {active && (
         <div style={{
-          position:'absolute', left:0, top:'18%', bottom:'18%',
+          position:'absolute', left:0, top:'20%', bottom:'20%',
           width:3, borderRadius:'0 3px 3px 0',
-          background:COURSERA_BLUE,
-          boxShadow:`0 0 6px ${COURSERA_BLUE}80`,
-          transition:`opacity 0.2s ${EASE}`,
+          background: accent,
+          boxShadow:`0 0 8px ${accent}70`,
         }} />
       )}
 
-      {/* Icon container */}
+      {/* Icon */}
       <div style={{
-        width:32, height:32, borderRadius:8, flexShrink:0,
+        width:36, height:36, borderRadius:9, flexShrink:0,
         display:'flex', alignItems:'center', justifyContent:'center',
-        background: active ? `${COURSERA_BLUE}18` : 'transparent',
-        transition:`background 0.2s ${EASE}`,
+        background: active ? `${accent}18` : hovered ? `${accent}10` : 'transparent',
+        transition:'background 0.15s ease',
       }}>
-        <tab.Icon color={active ? COURSERA_BLUE : C.muted} size={18} />
+        <tab.Icon color={active ? accent : C.muted} size={20} />
       </div>
 
-      <span style={{
-        fontSize:13, fontWeight: active ? 700 : 500,
-        color: active ? COURSERA_BLUE : C.muted,
-        transition:`color 0.2s ${EASE}`,
-      }}>
-        {tab.label}
-      </span>
+      {/* Label — only when expanded */}
+      {expanded && (
+        <span style={{
+          fontSize:13, fontWeight: active ? 700 : 500,
+          color: active ? accent : C.muted,
+          whiteSpace:'nowrap', overflow:'hidden',
+          opacity: expanded ? 1 : 0,
+          transition:'opacity 0.15s ease',
+        }}>
+          {tab.label}
+        </span>
+      )}
     </button>
   )
+}
+
+// ── Legacy DesktopNavItem (kept for reference, no longer used) ─────────────────
+function DesktopNavItem({ tab, active, isDark, C }) {
+  return <RailItem tab={tab} active={active} expanded={true} isDark={isDark} C={C} accent={COURSERA_BLUE} />
 }
