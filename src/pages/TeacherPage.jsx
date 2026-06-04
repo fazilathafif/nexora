@@ -128,7 +128,7 @@ export default function TeacherPage() {
             <div style={{marginTop:20,padding:'16px 20px',background:C.primary+'15',border:`1.5px solid ${C.primary}30`,borderRadius:14,textAlign:'center'}}>
               <div style={{fontSize:14,fontWeight:800,color:C.navy,marginBottom:6}}>Want Nexora for your whole school?</div>
               <div style={{fontSize:12,color:C.muted}}>School licences from £200/year · Full class management · GDPR compliant · UK curriculum aligned</div>
-              <a href="mailto:schools@nexorauk.com" style={{display:'inline-block',marginTop:12,background:C.primary,color:'white',borderRadius:12,padding:'10px 24px',fontSize:14,fontWeight:700}}>
+              <a href="mailto:info@nexoralearn.app" style={{display:'inline-block',marginTop:12,background:C.primary,color:'white',borderRadius:12,padding:'10px 24px',fontSize:14,fontWeight:700}}>
                 Get in touch →
               </a>
             </div>

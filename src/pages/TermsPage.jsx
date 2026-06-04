@@ -25,7 +25,7 @@ const SECTIONS = [
     items: [
       { label: 'Cancellation', detail: 'You may cancel your subscription at any time via your account settings. Cancellation takes effect at the end of the current paid billing period — you retain Premium access until that date.' },
       { label: 'Monthly subscriptions', detail: 'No refunds are issued for partial monthly billing periods.' },
-      { label: 'Annual subscriptions', detail: 'If you cancel an annual subscription within 14 days of purchase, you may request a refund by emailing support@nexoralearn.app. Refunds are at our discretion after this window.' },
+      { label: 'Annual subscriptions', detail: 'If you cancel an annual subscription within 14 days of purchase, you may request a refund by emailing info@nexoralearn.app. Refunds are at our discretion after this window.' },
       { label: 'Free tier', detail: 'No charge applies to free-tier accounts. You may delete your account at any time.' },
     ],
   },
@@ -52,7 +52,7 @@ const SECTIONS = [
   },
   {
     title: '10. Contact',
-    body: 'General support and billing: support@nexoralearn.app\nData protection and privacy: privacy@nexoralearn.app',
+    body: 'General support and billing: info@nexoralearn.app\nData protection and privacy: info@nexoralearn.app',
   },
 ]
 
@@ -115,7 +115,7 @@ export default function TermsPage() {
         ))}
 
         <div style={{ borderTop:'1px solid #E2E8F0', paddingTop:20, textAlign:'center' }}>
-          <div style={{ fontSize:12, color:'#94A3B8' }}>nexoralearn.app · support@nexoralearn.app</div>
+          <div style={{ fontSize:12, color:'#94A3B8' }}>nexoralearn.app · info@nexoralearn.app</div>
         </div>
       </div>
     </div>

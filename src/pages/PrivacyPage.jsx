@@ -5,7 +5,7 @@ const LAST_UPDATED = 'May 2026'
 const SECTIONS = [
   {
     title: '1. Who We Are',
-    body: `Nexora ("we", "us", "our") provides online exam preparation tools for UK GCSE and university entrance examinations, operated at nexoralearn.app. For all data protection queries, contact us at privacy@nexoralearn.app.`,
+    body: `Nexora ("we", "us", "our") provides online exam preparation tools for UK GCSE and university entrance examinations, operated at nexoralearn.app. For all data protection queries, contact us at info@nexoralearn.app.`,
   },
   {
     title: '2. What Data We Collect',
@@ -38,7 +38,7 @@ const SECTIONS = [
     items: [
       { label: 'Contract performance', detail: 'Processing your account data and billing information to deliver the service you have subscribed to.' },
       { label: 'Legitimate interests', detail: 'Service security, fraud prevention, and aggregate analytics.' },
-      { label: 'Consent', detail: 'Any optional marketing communications. You may withdraw consent at any time by emailing privacy@nexoralearn.app.' },
+      { label: 'Consent', detail: 'Any optional marketing communications. You may withdraw consent at any time by emailing info@nexoralearn.app.' },
     ],
   },
   {
@@ -51,7 +51,7 @@ const SECTIONS = [
   },
   {
     title: '7. Your Rights Under UK GDPR',
-    body: 'You have the right to access, correct, delete, or export your personal data, and to restrict or object to certain processing. To exercise any of these rights, email privacy@nexoralearn.app — we will respond within 30 days. You also have the right to lodge a complaint with the Information Commissioner\'s Office (ICO) at ico.org.uk.',
+    body: 'You have the right to access, correct, delete, or export your personal data, and to restrict or object to certain processing. To exercise any of these rights, email info@nexoralearn.app — we will respond within 30 days. You also have the right to lodge a complaint with the Information Commissioner\'s Office (ICO) at ico.org.uk.',
   },
   {
     title: '8. Cookies',
@@ -63,7 +63,7 @@ const SECTIONS = [
   },
   {
     title: '10. Contact',
-    body: 'Data protection queries: privacy@nexoralearn.app\nGeneral support: support@nexoralearn.app',
+    body: 'Data protection queries: info@nexoralearn.app\nGeneral support: info@nexoralearn.app',
   },
 ]
 
@@ -119,7 +119,7 @@ export default function PrivacyPage() {
         ))}
 
         <div style={{ borderTop:'1px solid #E2E8F0', paddingTop:20, textAlign:'center' }}>
-          <div style={{ fontSize:12, color:'#94A3B8' }}>nexoralearn.app · privacy@nexoralearn.app</div>
+          <div style={{ fontSize:12, color:'#94A3B8' }}>nexoralearn.app · info@nexoralearn.app</div>
         </div>
       </div>
     </div>

@@ -180,8 +180,8 @@ export default function ContactForm({ C, user, profile, onClose }) {
           padding: '8px 12px', marginBottom: 12, lineHeight: 1.5,
         }}>
           {error === 'missing-env'
-            ? 'Configuration error — contact us at customerrelations.nexora@gmail.com'
-            : `Error (${error}) — please email customerrelations.nexora@gmail.com directly`
+            ? 'Configuration error — contact us at info@nexoralearn.app'
+            : `Error (${error}) — please email info@nexoralearn.app directly`
           }
         </div>
       )}
