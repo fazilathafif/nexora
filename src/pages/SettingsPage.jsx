@@ -421,7 +421,7 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
   ) : (
     <div style={{ padding:'max(14px, env(safe-area-inset-top, 14px)) 16px 14px' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
-        {/* Left: avatar + name */}
+        {/* Left: avatar + name + email */}
         <div style={{ display:'flex', alignItems:'center', gap:10, minWidth:0, flex:1 }}>
           <Avatar initial={initial} C={C} size={36} />
           <div style={{ minWidth:0 }}>
@@ -433,31 +433,18 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
             </div>
           </div>
         </div>
-        {/* Right: stat pills */}
+        {/* Right: manage tracks + logout */}
         <div style={{ display:'flex', gap:6, alignItems:'center', flexShrink:0 }}>
-          {[
-            { icon:'🔥', val: profile?.streak ?? 0 },
-            { icon:'⚡', val: profile?.xp ?? 0     },
-            { icon:'🎓', val: level                 },
-          ].map(s => (
-            <div key={s.icon} style={{
-              display:'flex', alignItems:'center', gap:3,
-              background:'rgba(255,255,255,0.18)', backdropFilter:'blur(6px)',
-              border:'1px solid rgba(255,255,255,0.25)',
-              borderRadius:20, padding:'3px 8px',
-            }}>
-              <span style={{ fontSize:11 }}>{s.icon}</span>
-              <span style={{ fontSize:11, fontWeight:800, color:'white' }}>{s.val}</span>
-            </div>
-          ))}
-          {/* Profile label pill */}
-          <div style={{
-            fontSize:10, fontWeight:800, color:'rgba(255,255,255,0.9)',
-            background:'rgba(255,255,255,0.18)', borderRadius:20, padding:'3px 10px',
-            letterSpacing:'0.06em', textTransform:'uppercase',
-          }}>
-            Profile
-          </div>
+          <button onClick={() => navigate('/landing')} title="Manage tracks"
+            style={{ width:32, height:32, borderRadius:9, border:'1px solid rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.18)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', WebkitTapHighlightColor:'transparent' }}>
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="14" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="3" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="14" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/></svg>
+          </button>
+          {!isGuest && (
+            <button onClick={() => { signOut?.(); navigate('/') }} title="Sign Out"
+              style={{ width:32, height:32, borderRadius:9, border:'1px solid rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.18)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', WebkitTapHighlightColor:'transparent' }}>
+              <svg width={15} height={15} viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/><polyline points="16 17 21 12 16 7" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/><line x1="21" y1="12" x2="9" y2="12" stroke="white" strokeWidth={2} strokeLinecap="round"/></svg>
+            </button>
+          )}
         </div>
       </div>
     </div>
