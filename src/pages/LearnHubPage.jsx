@@ -1415,18 +1415,6 @@ export default function LearnHubPage({ user, profile, isDark, signOut }) {
         </button>
       )}
 
-      {activeTrack === 'ib' && import.meta.env.VITE_IB_SANDBOX_ENABLED === 'true' && (
-        <button onClick={() => navigate('/ib/sandbox?tab=ia')}
-          style={{ width:'100%', display:'flex', alignItems:'center', gap:10, background:'rgba(91,33,182,0.06)', border:'1px solid rgba(91,33,182,0.2)', borderRadius:12, padding:'12px 14px', cursor:'pointer', marginTop:12, fontFamily:'Inter,sans-serif', textAlign:'left', WebkitTapHighlightColor:'transparent' }}>
-          <span style={{ fontSize:18, flexShrink:0 }}>📋</span>
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:13, fontWeight:700, color:'#5B21B6' }}>IA Checklist</div>
-            <div style={{ fontSize:11, color:'#7C3AED', opacity:0.8, marginTop:1 }}>Track milestones in the IB Survival Sandbox</div>
-          </div>
-          <span style={{ fontSize:16, color:'#5B21B6' }}>›</span>
-        </button>
-      )}
-
       {/* IB Projected Score — IB track only */}
       {activeTrack === 'ib' && (
         <div style={{ marginTop:16 }}>
