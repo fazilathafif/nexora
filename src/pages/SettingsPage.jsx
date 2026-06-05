@@ -668,6 +668,13 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
     <div style={{textAlign:'center', padding:'8px 0 4px'}}>
       <div style={{fontSize:11, color:'#CBD5E1', fontWeight:600}}>Nexora · v{APP_VERSION}</div>
       <div style={{fontSize:10, color:'#E2E8F0', marginTop:1}}>nexoralearn.app</div>
+      <div style={{marginTop:8, display:'flex', alignItems:'center', justifyContent:'center', gap:6}}>
+        <span style={{fontSize:10, color:'#CBD5E1', fontWeight:600}}>Follow us</span>
+        <a href="https://www.facebook.com/profile.php?id=61590581013106" target="_blank" rel="noopener noreferrer"
+          style={{display:'flex', alignItems:'center', justifyContent:'center', width:28, height:28, borderRadius:8, background:'#1877F220', border:'1px solid #1877F240', textDecoration:'none'}}>
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="#1877F2"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+        </a>
+      </div>
     </div>
   )
 
@@ -877,7 +884,14 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
           <Divider C={C} />
           <SettingsRow C={C} icon="📄" label="Terms of Service" sublabel="Subscription terms" onClick={() => navigate('/terms')} />
           <div style={{ textAlign:'center', padding:'10px 0 12px', borderTop:`1px solid ${C.border}` }}>
-            <div style={{ fontSize:10, color:C.muted, fontWeight:600 }}>Nexora · v{APP_VERSION}</div>
+            <div style={{ fontSize:10, color:C.muted, fontWeight:600, marginBottom:6 }}>Nexora · v{APP_VERSION}</div>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+              <span style={{ fontSize:10, color:C.muted, fontWeight:600 }}>Follow us</span>
+              <a href="https://www.facebook.com/profile.php?id=61590581013106" target="_blank" rel="noopener noreferrer"
+                style={{ display:'flex', alignItems:'center', justifyContent:'center', width:26, height:26, borderRadius:7, background:'#1877F215', border:`1px solid #1877F230`, textDecoration:'none' }}>
+                <svg width={13} height={13} viewBox="0 0 24 24" fill="#1877F2"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+              </a>
+            </div>
           </div>
         </div>
       </div>
