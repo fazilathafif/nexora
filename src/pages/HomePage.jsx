@@ -1526,7 +1526,17 @@ function HomeBtn({ C, navigate }) {
 export function Shell({ C, isDark, children, noNav, heroContent, contentMax, noHomeBtn }) {
   const { isDesktop, isTablet } = useBreakpoint()
   const navigate = useNavigate()
-  // heroH removed — hero sections size themselves via their own padding/content
+  const heroRef  = useRef(null)
+  const [heroH, setHeroH] = useState(0)
+
+  useEffect(() => {
+    if (isDesktop || !heroRef.current) return
+    const obs = new ResizeObserver(entries => {
+      setHeroH(entries[0]?.contentRect.height ?? 0)
+    })
+    obs.observe(heroRef.current)
+    return () => obs.disconnect()
+  }, [isDesktop, heroContent])
 
   const css = `
     *{box-sizing:border-box}button{font-family:inherit}
@@ -1567,10 +1577,13 @@ export function Shell({ C, isDark, children, noNav, heroContent, contentMax, noH
       <style>{css}</style>
 
       {heroContent && (
-        <div style={{
-          background:`linear-gradient(135deg, ${C.trackAccent} 0%, ${C.trackAccent}CC 100%)`,
-          position:'relative', zIndex:1,
-        }}>
+        <div
+          ref={heroRef}
+          style={{
+            background:`linear-gradient(135deg, ${C.trackAccent} 0%, ${C.trackAccent}CC 100%)`,
+            position:'fixed', top:0, left:0, right:0, zIndex:50,
+          }}
+        >
           {heroContent}
           {!noHomeBtn && <HomeBtn C={C} navigate={navigate} />}
         </div>
@@ -1579,7 +1592,8 @@ export function Shell({ C, isDark, children, noNav, heroContent, contentMax, noH
       <div style={{
         position:'relative', zIndex:1,
         ...(isTablet ? { maxWidth:720, margin:'0 auto' } : {}),
-        padding:`16px ${isTablet ? 24 : 16}px calc(${noNav ? 24 : NAV_HEIGHT + 24}px + env(safe-area-inset-bottom, 0px))`,
+        paddingTop: heroH ? heroH + 16 : 16,
+        padding:`${heroH ? heroH + 16 : 16}px ${isTablet ? 24 : 16}px calc(${noNav ? 24 : NAV_HEIGHT + 24}px + env(safe-area-inset-bottom, 0px))`,
         animation:'fadeUp 0.35s ease',
       }}>
         {children}
