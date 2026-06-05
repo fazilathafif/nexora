@@ -674,6 +674,10 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
           style={{display:'flex', alignItems:'center', justifyContent:'center', width:28, height:28, borderRadius:8, background:'#1877F220', border:'1px solid #1877F240', textDecoration:'none'}}>
           <svg width={14} height={14} viewBox="0 0 24 24" fill="#1877F2"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
         </a>
+        <a href="https://www.instagram.com/nexoralearn" target="_blank" rel="noopener noreferrer"
+          style={{display:'flex', alignItems:'center', justifyContent:'center', width:28, height:28, borderRadius:8, background:'#E114741A', border:'1px solid #E1147430', textDecoration:'none'}}>
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#E11474" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </a>
       </div>
     </div>
   )
@@ -890,6 +894,10 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
               <a href="https://www.facebook.com/profile.php?id=61590581013106" target="_blank" rel="noopener noreferrer"
                 style={{ display:'flex', alignItems:'center', justifyContent:'center', width:26, height:26, borderRadius:7, background:'#1877F215', border:`1px solid #1877F230`, textDecoration:'none' }}>
                 <svg width={13} height={13} viewBox="0 0 24 24" fill="#1877F2"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+              </a>
+              <a href="https://www.instagram.com/nexoralearn" target="_blank" rel="noopener noreferrer"
+                style={{ display:'flex', alignItems:'center', justifyContent:'center', width:26, height:26, borderRadius:7, background:'#E114741A', border:`1px solid #E1147430`, textDecoration:'none' }}>
+                <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="#E11474" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
               </a>
             </div>
           </div>
