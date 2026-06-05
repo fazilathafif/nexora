@@ -960,7 +960,7 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
 
   if (isTablet) {
     return (
-      <Shell C={C} isDark={isDark} heroContent={heroEl}>
+      <Shell C={C} isDark={isDark} heroContent={heroEl} noHomeBtn>
         <div style={{display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:24}}>
           {statsData.map(s => <StatCard key={s.label} {...s} />)}
         </div>
