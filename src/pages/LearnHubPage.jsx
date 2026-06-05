@@ -1204,67 +1204,9 @@ export default function LearnHubPage({ user, profile, isDark, signOut }) {
       </div>
 
       {/* AI Notes — filtered to active track */}
-      <div style={{ marginTop:4 }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-          <div style={{ fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase' }}>
-            My AI Notes · {trackNotes.length}/{NOTES_MAX}
-          </div>
-          {trackNotes.length > 0 && (
-            <button
-              onClick={() => { navigator.clipboard.writeText(exportNotesText(trackNotes)).then(() => { setNotesCopyDone(true); setTimeout(() => setNotesCopyDone(false), 2000) }) }}
-              style={{ background: notesCopyDone ? '#DCFCE7' : 'transparent', border:`1px solid ${notesCopyDone ? '#16A34A40' : '#7C3AED30'}`, borderRadius:8, padding:'4px 10px', fontSize:11, fontWeight:700, color: notesCopyDone ? '#16A34A' : '#7C3AED', cursor:'pointer', fontFamily:'Inter,sans-serif' }}
-            >
-              {notesCopyDone ? '✓ Copied' : '📋 Copy All'}
-            </button>
-          )}
-        </div>
-        {trackNotes.length === 0 ? (
-          <Card C={C} style={{ textAlign:'center', padding:'24px' }}>
-            <div style={{ fontSize:28, marginBottom:8 }}>📝</div>
-            <div style={{ fontSize:13, fontWeight:700, color:C.navy, marginBottom:4 }}>No notes for this track yet</div>
-            <div style={{ fontSize:11, color:C.muted, lineHeight:1.6 }}>After the AI tutor explains a question, tap <strong style={{ color:'#7C3AED' }}>✦ Save</strong> to add it here.</div>
-          </Card>
-        ) : (
-          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-            {trackNotes.map(note => {
-              const savedDate = new Date(note.savedAt).toLocaleDateString('en-GB', {day:'numeric', month:'short'})
-              const expanded  = expandedNote === note.id
-              return (
-                <div key={note.id} style={{ background:'white', border:`1px solid ${C.border}`, borderLeft:'3px solid #7C3AED', borderRadius:14, overflow:'hidden' }}>
-                  <div style={{ padding:'12px 14px 10px', display:'flex', alignItems:'flex-start', gap:8 }}>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:6, alignItems:'center' }}>
-                        <span style={{ background:'#7C3AED12', border:'1px solid #7C3AED25', borderRadius:20, padding:'2px 8px', fontSize:9, fontWeight:700, color:'#7C3AED' }}>{note.topic || note.subject || 'Note'}</span>
-                        <span style={{ marginLeft:'auto', fontSize:10, color:'#94A3B8', fontWeight:600 }}>{savedDate}</span>
-                      </div>
-                      <p style={{ fontSize:12, fontWeight:600, color:C.navy, margin:0, lineHeight:1.55, ...(!expanded ? { display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' } : {}) }}>
-                        {note.question}
-                      </p>
-                    </div>
-                    <button onClick={() => { deleteNote(note.id); setAllNotes(getNotes()) }} style={{ background:'none', border:'none', cursor:'pointer', color:'#CBD5E1', fontSize:18, padding:'0 2px', flexShrink:0, lineHeight:1 }}>×</button>
-                  </div>
-                  <button onClick={() => setExpandedNote(p => p === note.id ? null : note.id)} style={{ width:'100%', background:C.bg, border:'none', borderTop:`1px solid ${C.border}`, padding:'7px 14px', display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', fontSize:11, fontWeight:700, color:'#7C3AED', fontFamily:'Inter,sans-serif' }}>
-                    <span>{expanded ? 'Hide explanation' : 'Show AI explanation'}</span>
-                    <span style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition:'transform 0.2s', display:'inline-block' }}>▾</span>
-                  </button>
-                  {expanded && (
-                    <div style={{ padding:'12px 14px 14px', borderTop:`1px solid ${C.border}`, background:C.bg, fontSize:12, color:C.muted, lineHeight:1.75 }}>
-                      {note.explanation}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
+      {/* Moved to Study Plan panel */}
 
-      {activeTrack === 'ib' && (
-        <div style={{ marginTop:4 }}>
-          <div style={{ fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:10 }}>IB Points Calculator</div>
-          <IBPointsCalculator topicStats={topics} C={C} />
-        </div>
-      )}
+      {/* IBPointsCalculator — moved to Study Plan panel */}
     </div>
   )
 
@@ -1484,6 +1426,70 @@ export default function LearnHubPage({ user, profile, isDark, signOut }) {
           <span style={{ fontSize:16, color:'#5B21B6' }}>›</span>
         </button>
       )}
+
+      {/* IB Projected Score — IB track only */}
+      {activeTrack === 'ib' && (
+        <div style={{ marginTop:16 }}>
+          <div style={{ fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:10 }}>Projected IB Score</div>
+          <IBPointsCalculator topicStats={topics} C={C} />
+        </div>
+      )}
+
+      {/* AI Notes — all tracks */}
+      <div style={{ marginTop:16 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+          <div style={{ fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.08em', textTransform:'uppercase' }}>
+            My AI Notes · {trackNotes.length}/{NOTES_MAX}
+          </div>
+          {trackNotes.length > 0 && (
+            <button
+              onClick={() => { navigator.clipboard.writeText(exportNotesText(trackNotes)).then(() => { setNotesCopyDone(true); setTimeout(() => setNotesCopyDone(false), 2000) }) }}
+              style={{ background: notesCopyDone ? '#DCFCE7' : 'transparent', border:`1px solid ${notesCopyDone ? '#16A34A40' : '#7C3AED30'}`, borderRadius:8, padding:'4px 10px', fontSize:11, fontWeight:700, color: notesCopyDone ? '#16A34A' : '#7C3AED', cursor:'pointer', fontFamily:'Inter,sans-serif' }}
+            >
+              {notesCopyDone ? '✓ Copied' : '📋 Copy All'}
+            </button>
+          )}
+        </div>
+        {trackNotes.length === 0 ? (
+          <Card C={C} style={{ textAlign:'center', padding:'24px' }}>
+            <div style={{ fontSize:28, marginBottom:8 }}>📝</div>
+            <div style={{ fontSize:13, fontWeight:700, color:C.navy, marginBottom:4 }}>No notes for this track yet</div>
+            <div style={{ fontSize:11, color:C.muted, lineHeight:1.6 }}>After the AI tutor explains a question, tap <strong style={{ color:'#7C3AED' }}>✦ Save</strong> to add it here.</div>
+          </Card>
+        ) : (
+          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+            {trackNotes.map(note => {
+              const savedDate = new Date(note.savedAt).toLocaleDateString('en-GB', {day:'numeric', month:'short'})
+              const expanded  = expandedNote === note.id
+              return (
+                <div key={note.id} style={{ background:'white', border:`1px solid ${C.border}`, borderLeft:'3px solid #7C3AED', borderRadius:14, overflow:'hidden' }}>
+                  <div style={{ padding:'12px 14px 10px', display:'flex', alignItems:'flex-start', gap:8 }}>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:6, alignItems:'center' }}>
+                        <span style={{ background:'#7C3AED12', border:'1px solid #7C3AED25', borderRadius:20, padding:'2px 8px', fontSize:9, fontWeight:700, color:'#7C3AED' }}>{note.topic || note.subject || 'Note'}</span>
+                        <span style={{ marginLeft:'auto', fontSize:10, color:'#94A3B8', fontWeight:600 }}>{savedDate}</span>
+                      </div>
+                      <p style={{ fontSize:12, fontWeight:600, color:C.navy, margin:0, lineHeight:1.55, ...(!expanded ? { display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' } : {}) }}>
+                        {note.question}
+                      </p>
+                    </div>
+                    <button onClick={() => { deleteNote(note.id); setAllNotes(getNotes()) }} style={{ background:'none', border:'none', cursor:'pointer', color:'#CBD5E1', fontSize:18, padding:'0 2px', flexShrink:0, lineHeight:1 }}>×</button>
+                  </div>
+                  <button onClick={() => setExpandedNote(p => p === note.id ? null : note.id)} style={{ width:'100%', background:C.bg, border:'none', borderTop:`1px solid ${C.border}`, padding:'7px 14px', display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', fontSize:11, fontWeight:700, color:'#7C3AED', fontFamily:'Inter,sans-serif' }}>
+                    <span>{expanded ? 'Hide explanation' : 'Show AI explanation'}</span>
+                    <span style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition:'transform 0.2s', display:'inline-block' }}>▾</span>
+                  </button>
+                  {expanded && (
+                    <div style={{ padding:'12px 14px 14px', borderTop:`1px solid ${C.border}`, background:C.bg, fontSize:12, color:C.muted, lineHeight:1.75 }}>
+                      {note.explanation}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 
