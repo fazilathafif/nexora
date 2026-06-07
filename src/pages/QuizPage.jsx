@@ -588,14 +588,14 @@ export default function QuizPage({ user, profile, refreshProfile, isDark }) {
           </div>
           <div>
             <style>{`
-              .ai-md h1{font-size:15px;font-weight:900;margin:0 0 6px;color:#1E293B}
-              .ai-md h2{font-size:13px;font-weight:800;margin:14px 0 4px;color:#7C3AED}
-              .ai-md h3{font-size:12px;font-weight:700;margin:10px 0 3px;color:#A855F7}
-              .ai-md p{margin:0 0 10px}
+              .ai-md h1{font-size:15px;font-weight:900;margin:0 0 6px;color:${dark?'#F1F5F9':'#1E293B'}}
+              .ai-md h2{font-size:13px;font-weight:800;margin:14px 0 4px;color:#A78BFA}
+              .ai-md h3{font-size:12px;font-weight:700;margin:10px 0 3px;color:#C4B5FD}
+              .ai-md p{margin:0 0 10px;color:${dark?'#CBD5E1':'#334155'}}
               .ai-md ul,.ai-md ol{margin:4px 0 10px;padding-left:20px}
-              .ai-md li{margin-bottom:4px}
-              .ai-md strong{font-weight:800}
-              .ai-md code{background:#F3E8FF;padding:1px 5px;border-radius:4px;font-size:12px}
+              .ai-md li{margin-bottom:4px;color:${dark?'#CBD5E1':'#334155'}}
+              .ai-md strong{font-weight:800;color:${dark?'#F1F5F9':'#1E293B'}}
+              .ai-md code{background:${dark?'#3B1F6A':'#F3E8FF'};color:${dark?'#E9D5FF':'#6B21A8'};padding:1px 5px;border-radius:4px;font-size:12px}
             `}</style>
             <div className="ai-md" style={{fontSize:13,color:C.navy,lineHeight:1.85}}><ReactMarkdown>{aiText}</ReactMarkdown></div>
           </div>
@@ -620,7 +620,7 @@ export default function QuizPage({ user, profile, refreshProfile, isDark }) {
                 <span style={{fontSize:10,fontWeight:800,color:'#7C3AED',letterSpacing:'0.1em'}}>🔍 DEEPER DIVE</span>
                 <CopyButton text={aiElaboration} />
               </div>
-              <div className="ai-md"><ReactMarkdown>{aiElaboration}</ReactMarkdown></div>
+              <div className="ai-md" style={{color:C.navy}}><ReactMarkdown>{aiElaboration}</ReactMarkdown></div>
             </div>
           )}
         </div>
@@ -702,7 +702,7 @@ export default function QuizPage({ user, profile, refreshProfile, isDark }) {
                     <span style={{fontSize:10,fontWeight:800,color:'#7C3AED',letterSpacing:'0.1em'}}>🔍 DEEPER DIVE</span>
                     <CopyButton text={aiElaboration} />
                   </div>
-                  <div className="ai-md"><ReactMarkdown>{aiElaboration}</ReactMarkdown></div>
+                  <div className="ai-md" style={{color:C.navy}}><ReactMarkdown>{aiElaboration}</ReactMarkdown></div>
                 </div>
               )}
             </div>
