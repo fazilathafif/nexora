@@ -312,6 +312,9 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
   const { isMobile, isTablet, isDesktop } = useBreakpoint()
   const { mode, setMode } = useTheme()
 
+  // Refresh profile on mount so certificates and other DB changes are picked up
+  useEffect(() => { refreshProfile?.() }, [])
+
   const [notes,        setNotes]        = useState(() => getNotes())
   const [expandedNote, setExpandedNote] = useState(null)
   const [copyAllDone,  setCopyAllDone]  = useState(false)
