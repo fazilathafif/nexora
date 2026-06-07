@@ -657,7 +657,7 @@ export default function QuizPage({ user, profile, refreshProfile, isDark }) {
         <div
           ref={aiPanelRef}
           style={{
-            background:'#FAFAFA', border:'1.5px solid #7C3AED20',
+            background: C.card, border:`1.5px solid #7C3AED20`,
             borderRadius:16, padding:'16px', marginBottom:12,
             boxShadow:'0 2px 16px rgba(124,58,237,0.08)',
           }}
@@ -889,7 +889,7 @@ export default function QuizPage({ user, profile, refreshProfile, isDark }) {
                 className="animate-slide-up"
                 style={{
                   position:'fixed', bottom:NAV_HEIGHT, left:0, right:0, zIndex:160,
-                  background: '#FFFFFF',
+                  background: C.card,
                   borderRadius:'20px 20px 0 0',
                   maxHeight:'62dvh',
                   overflowY:'auto',
