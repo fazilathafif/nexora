@@ -37,16 +37,11 @@ const Certificate = forwardRef(function Certificate({ cert, profile }, ref) {
       {/* Main content */}
       <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'32px 64px', position:'relative', zIndex:1 }}>
 
-        {/* Logo — clean stacked lockup */}
-        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, marginBottom:24 }}>
-          <div style={{ width:44, height:44, borderRadius:12, background:`${accent}15`, border:`2px solid ${accent}30`, display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <span style={{ fontSize:20, fontWeight:900, color:accent, letterSpacing:'-0.5px' }}>N</span>
-          </div>
-          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-            <span style={{ fontSize:15, fontWeight:900, color:accent, letterSpacing:'0.12em', textTransform:'uppercase' }}>Nexora</span>
-            <span style={{ width:1, height:12, background:`${accent}40` }} />
-            <span style={{ fontSize:10, fontWeight:700, color:`${accent}90`, letterSpacing:'0.2em', textTransform:'uppercase' }}>Learn</span>
-          </div>
+        {/* Logo — single clean horizontal lockup */}
+        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:24 }}>
+          <span style={{ fontSize:15, fontWeight:900, color:accent, letterSpacing:'0.14em', textTransform:'uppercase' }}>Nexora</span>
+          <span style={{ width:1, height:14, background:`${accent}50`, display:'inline-block' }} />
+          <span style={{ fontSize:11, fontWeight:600, color:`${accent}90`, letterSpacing:'0.2em', textTransform:'uppercase' }}>Learn</span>
         </div>
 
         {/* Certificate heading */}
