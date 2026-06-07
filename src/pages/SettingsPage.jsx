@@ -532,37 +532,131 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
     </div>
   )
 
+  // Certificates — state for info tooltip and share sheet
+  const [certInfo,  setCertInfo]  = useState(null) // def.id of open info tooltip
+  const [certShare, setCertShare] = useState(null) // cert object for share sheet
+  const [copyDone,  setCopyDone]  = useState(false)
+
+  function handleShareCert(def, certId) {
+    const url = `https://nexoralearn.app/cert/${certId}`
+    setCertShare({ def, certId, url })
+  }
+
+  function copyShareUrl(url) {
+    navigator.clipboard.writeText(url).then(() => {
+      setCopyDone(true); setTimeout(() => setCopyDone(false), 2000)
+    })
+  }
+
+  const SHARE_OPTIONS = (url, title) => [
+    {
+      label: 'Copy link', icon: '🔗',
+      action: () => copyShareUrl(url),
+    },
+    {
+      label: 'Email', icon: '✉️',
+      action: () => window.open(`mailto:?subject=My Nexora Certificate&body=Check out my certificate: ${url}`),
+    },
+    {
+      label: 'LinkedIn', icon: '💼',
+      action: () => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`),
+    },
+    {
+      label: 'WhatsApp', icon: '💬',
+      action: () => window.open(`https://wa.me/?text=${encodeURIComponent(title + ' ' + url)}`),
+    },
+    {
+      label: 'Facebook', icon: '👤',
+      action: () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`),
+    },
+    {
+      label: 'Instagram', icon: '📸',
+      action: () => { copyShareUrl(url); alert('Link copied — paste into your Instagram bio or story!') },
+    },
+  ]
+
   const certSection = (
-    <div style={{marginBottom:22}}>
-      <SL C={C}>Certificates</SL>
-      <div style={{display:'flex', flexDirection:'column', gap:8}}>
+    <CollapsibleSection title="Certificates" icon="🏅" C={C} defaultOpen={false}>
+      <div style={{ padding:'10px 14px 14px', display:'flex', flexDirection:'column', gap:8 }}>
         {allCertDefs.map(def => {
           const earned = !!earnedCerts[def.id]
           const certId = earned ? makeCertId(user?.id ?? 'guest', def.id, earnedCerts[def.id]) : null
           const cert   = { id:def.id, title:def.title, subtitle:def.subtitle, stream, certId, earnedAt:earnedCerts[def.id] }
+          const showInfo = certInfo === def.id
           return (
-            <div key={def.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 12px', background: earned ? `${C.primary}06` : C.bg, border:`1.5px solid ${earned ? C.primary+'25' : C.border}`, borderRadius:12, opacity: earned ? 1 : 0.45 }}>
-              <span style={{ fontSize:18, filter: earned ? 'none' : 'grayscale(1)' }}>{def.icon}</span>
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:12, fontWeight:800, color:C.navy }}>{def.title}</div>
-                <div style={{ fontSize:10, color:C.muted }}>{def.subtitle}</div>
+            <div key={def.id}>
+              <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', background: earned ? `${C.primary}06` : C.bg, border:`1.5px solid ${earned ? C.primary+'25' : C.border}`, borderRadius:12, opacity: earned ? 1 : 0.5, position:'relative' }}>
+                <span style={{ fontSize:18, filter: earned ? 'none' : 'grayscale(1)', flexShrink:0 }}>{def.icon}</span>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:12, fontWeight:800, color:C.navy }}>{def.title}</div>
+                  <div style={{ fontSize:10, color:C.muted }}>{def.subtitle}</div>
+                  {earned && certId && (
+                    <div style={{ fontSize:9, color:C.muted, marginTop:2 }}>ID: {certId}</div>
+                  )}
+                </div>
+                {/* ⓘ info button */}
+                <button
+                  onClick={() => setCertInfo(showInfo ? null : def.id)}
+                  style={{ width:20, height:20, borderRadius:10, border:`1px solid ${C.border}`, background: showInfo ? C.primary : 'transparent', color: showInfo ? 'white' : C.muted, fontSize:10, fontWeight:800, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}
+                  title="How to earn this certificate"
+                >ⓘ</button>
+                {/* Actions for earned certs */}
+                {earned && (
+                  <>
+                    <button onClick={() => handleShareCert(def, certId)}
+                      style={{ flexShrink:0, background:'transparent', color:C.primary, border:`1.5px solid ${C.primary}40`, borderRadius:8, padding:'5px 10px', fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>
+                      Share
+                    </button>
+                    <button onClick={() => handleDownloadCert(def)} disabled={downloading === def.id}
+                      style={{ flexShrink:0, background: downloading===def.id ? C.border : C.primary, color:'white', border:'none', borderRadius:8, padding:'5px 10px', fontSize:11, fontWeight:700, cursor: downloading===def.id ? 'default' : 'pointer', fontFamily:'Inter,sans-serif' }}>
+                      {downloading===def.id ? '…' : '⬇'}
+                    </button>
+                    <div style={{ position:'fixed', left:'-9999px', top:'-9999px', zIndex:-1 }}>
+                      <Certificate ref={el => { certRefs.current[def.id] = el }} cert={cert} profile={profile} />
+                    </div>
+                  </>
+                )}
               </div>
-              {earned && (
-                <>
-                  <button onClick={() => handleDownloadCert(def)} disabled={downloading === def.id}
-                    style={{ flexShrink:0, background: downloading===def.id ? C.border : C.primary, color:'white', border:'none', borderRadius:8, padding:'6px 12px', fontSize:11, fontWeight:700, cursor: downloading===def.id ? 'default' : 'pointer', fontFamily:'Inter,sans-serif' }}>
-                    {downloading===def.id ? '…' : '⬇'}
-                  </button>
-                  <div style={{ position:'fixed', left:'-9999px', top:'-9999px', zIndex:-1 }}>
-                    <Certificate ref={el => { certRefs.current[def.id] = el }} cert={cert} profile={profile} />
-                  </div>
-                </>
+              {/* Info panel */}
+              {showInfo && (
+                <div style={{ background:`${C.primary}08`, border:`1px solid ${C.primary}20`, borderTop:'none', borderRadius:'0 0 10px 10px', padding:'10px 14px', fontSize:11, color:C.navy, lineHeight:1.6 }}>
+                  <strong style={{ color:C.primary }}>How to earn: </strong>{def.requires ?? def.subtitle}
+                  {earned && earnedCerts[def.id] && (
+                    <div style={{ marginTop:4, color:C.muted }}>
+                      ✅ Earned on {new Date(earnedCerts[def.id]).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           )
         })}
       </div>
-    </div>
+
+      {/* Share sheet */}
+      {certShare && (
+        <>
+          <div onClick={() => { setCertShare(null); setCopyDone(false) }} style={{ position:'fixed', inset:0, zIndex:200, background:'rgba(0,0,0,0.5)' }} />
+          <div className="animate-slide-up" style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:210, background:C.card, borderRadius:'20px 20px 0 0', padding:'20px 20px calc(32px + env(safe-area-inset-bottom, 0px))', boxShadow:'0 -8px 40px rgba(0,0,0,0.18)' }}>
+            <div style={{ width:36, height:4, borderRadius:2, background:C.border, margin:'0 auto 16px' }} />
+            <div style={{ fontSize:14, fontWeight:800, color:C.navy, marginBottom:4 }}>Share Certificate</div>
+            <div style={{ fontSize:11, color:C.muted, marginBottom:16 }}>{certShare.def.title} · {certShare.certId}</div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:12 }}>
+              {SHARE_OPTIONS(certShare.url, `I earned the "${certShare.def.title}" certificate on Nexora!`).map(opt => (
+                <button key={opt.label} onClick={() => { opt.action(); if(opt.label !== 'Copy link') setCertShare(null) }}
+                  style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, padding:'12px 8px', background:C.bg, border:`1px solid ${C.border}`, borderRadius:12, cursor:'pointer', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}>
+                  <span style={{ fontSize:22 }}>{opt.label === 'Copy link' && copyDone ? '✅' : opt.icon}</span>
+                  <span style={{ fontSize:10, fontWeight:700, color:C.navy }}>{opt.label === 'Copy link' && copyDone ? 'Copied!' : opt.label}</span>
+                </button>
+              ))}
+            </div>
+            <div style={{ background:C.bg, borderRadius:10, padding:'8px 12px', fontSize:11, color:C.muted, wordBreak:'break-all', marginBottom:8 }}>
+              {certShare.url}
+            </div>
+          </div>
+        </>
+      )}
+    </CollapsibleSection>
   )
 
   // ── Account section ──────────────────────────────────────────────────────────
@@ -831,33 +925,48 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
               const earned  = !!earnedCerts[def.id]
               const certId  = earned ? makeCertId(user?.id ?? 'guest', def.id, earnedCerts[def.id]) : null
               const cert    = { id: def.id, title: def.title, subtitle: def.subtitle, stream, certId, earnedAt: earnedCerts[def.id] }
+              const showInfo = certInfo === def.id
               return (
-                <div key={def.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'12px 14px', background: earned ? `${C.primary}06` : C.bg, border:`1.5px solid ${earned ? C.primary+'25' : C.border}`, borderRadius:14, opacity: earned ? 1 : 0.45 }}>
-                  <div style={{ width:40, height:40, borderRadius:11, background: earned ? `${C.primary}15` : C.bg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0, filter: earned ? 'none' : 'grayscale(1)' }}>
-                    {def.icon}
-                  </div>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:13, fontWeight:800, color:C.navy }}>{def.title}</div>
-                    <div style={{ fontSize:11, color:C.muted, marginTop:1 }}>{def.subtitle}</div>
-                    {earned && certId && (
-                      <div style={{ fontSize:9, color:C.muted, marginTop:3, fontWeight:600 }}>
-                        ID: {certId} · Earned {new Date(earnedCerts[def.id]).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}
-                      </div>
+                <div key={def.id}>
+                  <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background: earned ? `${C.primary}06` : C.bg, border:`1.5px solid ${earned ? C.primary+'25' : C.border}`, borderRadius: showInfo ? '14px 14px 0 0' : 14, opacity: earned ? 1 : 0.5 }}>
+                    <div style={{ width:40, height:40, borderRadius:11, background: earned ? `${C.primary}15` : C.bg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0, filter: earned ? 'none' : 'grayscale(1)' }}>
+                      {def.icon}
+                    </div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:13, fontWeight:800, color:C.navy }}>{def.title}</div>
+                      <div style={{ fontSize:11, color:C.muted, marginTop:1 }}>{def.subtitle}</div>
+                      {earned && certId && (
+                        <div style={{ fontSize:9, color:C.muted, marginTop:3, fontWeight:600 }}>
+                          ID: {certId} · Earned {new Date(earnedCerts[def.id]).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}
+                        </div>
+                      )}
+                    </div>
+                    {/* ⓘ info button */}
+                    <button onClick={() => setCertInfo(showInfo ? null : def.id)}
+                      style={{ width:22, height:22, borderRadius:11, border:`1px solid ${C.border}`, background: showInfo ? C.primary : 'transparent', color: showInfo ? 'white' : C.muted, fontSize:11, fontWeight:800, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}
+                      title="How to earn">ⓘ</button>
+                    {earned && (
+                      <>
+                        <button onClick={() => handleShareCert(def, certId)}
+                          style={{ flexShrink:0, background:'transparent', color:C.primary, border:`1.5px solid ${C.primary}40`, borderRadius:9, padding:'6px 12px', fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>
+                          Share
+                        </button>
+                        <button onClick={() => handleDownloadCert(def)} disabled={downloading === def.id}
+                          style={{ flexShrink:0, background: downloading===def.id ? C.border : C.primary, color:'white', border:'none', borderRadius:9, padding:'6px 12px', fontSize:11, fontWeight:700, cursor: downloading===def.id ? 'default' : 'pointer', fontFamily:'Inter,sans-serif', opacity: downloading===def.id ? 0.7 : 1 }}>
+                          {downloading===def.id ? '…' : '⬇ PDF'}
+                        </button>
+                        <div style={{ position:'fixed', left:'-9999px', top:'-9999px', zIndex:-1 }}>
+                          <Certificate ref={el => { certRefs.current[def.id] = el }} cert={cert} profile={profile} />
+                        </div>
+                      </>
                     )}
                   </div>
-                  {earned && (
-                    <button
-                      onClick={() => handleDownloadCert(def)}
-                      disabled={downloading === def.id}
-                      style={{ flexShrink:0, background: downloading === def.id ? C.border : C.primary, color:'white', border:'none', borderRadius:9, padding:'7px 14px', fontSize:11, fontWeight:700, cursor: downloading === def.id ? 'default' : 'pointer', fontFamily:'Inter,sans-serif', opacity: downloading === def.id ? 0.7 : 1 }}
-                    >
-                      {downloading === def.id ? '…' : '⬇ Download'}
-                    </button>
-                  )}
-                  {/* Hidden off-screen certificate for html2canvas */}
-                  {earned && (
-                    <div style={{ position:'fixed', left:'-9999px', top:'-9999px', zIndex:-1 }}>
-                      <Certificate ref={el => { certRefs.current[def.id] = el }} cert={cert} profile={profile} />
+                  {showInfo && (
+                    <div style={{ background:`${C.primary}07`, border:`1px solid ${C.primary}18`, borderTop:'none', borderRadius:'0 0 14px 14px', padding:'10px 16px', fontSize:12, color:C.navy, lineHeight:1.6 }}>
+                      <strong style={{ color:C.primary }}>How to earn: </strong>{def.requires ?? def.subtitle}
+                      {earned && earnedCerts[def.id] && (
+                        <div style={{ marginTop:4, fontSize:11, color:C.muted }}>✅ Earned on {new Date(earnedCerts[def.id]).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -865,6 +974,28 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
             })}
           </div>
         </div>
+
+        {/* Share sheet — shared between desktop and mobile certs */}
+        {certShare && (
+          <>
+            <div onClick={() => { setCertShare(null); setCopyDone(false) }} style={{ position:'fixed', inset:0, zIndex:200, background:'rgba(0,0,0,0.45)' }} />
+            <div style={{ position:'fixed', top:'50%', left:'50%', transform:'translate(-50%,-50%)', zIndex:210, background:C.card, borderRadius:20, padding:'24px', width:340, boxShadow:'0 16px 64px rgba(0,0,0,0.25)' }}>
+              <div style={{ fontSize:15, fontWeight:800, color:C.navy, marginBottom:4 }}>Share Certificate</div>
+              <div style={{ fontSize:11, color:C.muted, marginBottom:16 }}>{certShare.def.title} · {certShare.certId}</div>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:12 }}>
+                {SHARE_OPTIONS(certShare.url, `I earned the "${certShare.def.title}" certificate on Nexora!`).map(opt => (
+                  <button key={opt.label} onClick={() => { opt.action(); if(opt.label !== 'Copy link') setCertShare(null) }}
+                    style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, padding:'10px 6px', background:C.bg, border:`1px solid ${C.border}`, borderRadius:10, cursor:'pointer', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}>
+                    <span style={{ fontSize:20 }}>{opt.label === 'Copy link' && copyDone ? '✅' : opt.icon}</span>
+                    <span style={{ fontSize:10, fontWeight:700, color:C.navy }}>{opt.label === 'Copy link' && copyDone ? 'Copied!' : opt.label}</span>
+                  </button>
+                ))}
+              </div>
+              <div style={{ background:C.bg, borderRadius:8, padding:'7px 10px', fontSize:10, color:C.muted, wordBreak:'break-all', marginBottom:12 }}>{certShare.url}</div>
+              <button onClick={() => { setCertShare(null); setCopyDone(false) }} style={{ width:'100%', background:'none', border:`1px solid ${C.border}`, borderRadius:9, padding:'8px', fontSize:12, fontWeight:700, color:C.muted, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>Close</button>
+            </div>
+          </>
+        )}
 
         {/* Notes */}
         <div style={{ background:C.card, borderRadius:18, border:`1px solid ${C.border}`, padding:'22px 24px', boxShadow:'0 2px 12px rgba(0,0,0,0.05)' }}>
