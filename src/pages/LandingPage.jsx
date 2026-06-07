@@ -169,10 +169,24 @@ function WhyNexora() {
 
 const UK_YEARS  = [8,9,10,11,12,13]
 const US_GRADES = [6,7,8,9,10,11,12]
+const INTL_YEARS = [9,10,11,12,13]
 const GOALS = [
   ['ivy',   '🎓 Top / Ivy League university'],
   ['top',   '🏫 Strong state / regional university'],
   ['other', '📚 Community college or unsure'],
+]
+
+const COUNTRIES = [
+  { val:'uk',            label:'🇬🇧 United Kingdom',    region:'uk' },
+  { val:'us',            label:'🇺🇸 United States',      region:'us' },
+  { val:'canada',        label:'🇨🇦 Canada',             region:'us' },
+  { val:'australia',     label:'🇦🇺 Australia',          region:'intl' },
+  { val:'india',         label:'🇮🇳 India',              region:'intl' },
+  { val:'singapore',     label:'🇸🇬 Singapore',         region:'intl' },
+  { val:'uae',           label:'🇦🇪 UAE',                region:'intl' },
+  { val:'nigeria',       label:'🇳🇬 Nigeria',            region:'intl' },
+  { val:'south_africa',  label:'🇿🇦 South Africa',       region:'intl' },
+  { val:'other',         label:'🌍 Other',               region:'intl' },
 ]
 
 function AdvisorSheet({ onClose, onAddTracks }) {
@@ -194,9 +208,11 @@ function AdvisorSheet({ onClose, onAddTracks }) {
     setLoading(false)
   }
 
+  const countryRegion = COUNTRIES.find(c => c.val === answers.country)?.region ?? 'us'
+
   const stepLabels = [
-    'Which country are you studying in?',
-    `What ${answers.country === 'uk' ? 'year' : 'grade'} are you in?`,
+    'Which country do you want to study in?',
+    `What ${countryRegion === 'uk' ? 'year' : 'grade'} are you in?`,
     "What's your university goal?",
   ]
 
@@ -233,17 +249,17 @@ function AdvisorSheet({ onClose, onAddTracks }) {
             </div>
             <div style={{ fontSize:16, fontWeight:700, color:'#1F1F1F', marginBottom:18 }}>{stepLabels[step]}</div>
             {step === 0 && (
-              <div style={{ display:'flex', gap:10 }}>
-                {[['uk','🇬🇧 United Kingdom'],['us','🇺🇸 United States']].map(([val, label]) => (
-                  <button key={val} onClick={() => choose('country', val)} style={{ flex:1, padding:'18px 0', background:'white', border:`1.5px solid ${COURSERA_BLUE}30`, borderRadius:12, fontSize:14, fontWeight:700, color:'#1F1F1F', cursor:'pointer', fontFamily:'Inter,sans-serif' }}>{label}</button>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                {COUNTRIES.map(({ val, label }) => (
+                  <button key={val} onClick={() => choose('country', val)} style={{ padding:'12px 8px', background:'white', border:`1.5px solid ${COURSERA_BLUE}30`, borderRadius:12, fontSize:13, fontWeight:700, color:'#1F1F1F', cursor:'pointer', fontFamily:'Inter,sans-serif', textAlign:'center', lineHeight:1.4 }}>{label}</button>
                 ))}
               </div>
             )}
             {step === 1 && (
               <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-                {(answers.country === 'uk' ? UK_YEARS : US_GRADES).map(y => (
+                {(countryRegion === 'uk' ? UK_YEARS : countryRegion === 'us' ? US_GRADES : INTL_YEARS).map(y => (
                   <button key={y} onClick={() => choose('year', y)} style={{ padding:'10px 18px', background:'white', border:`1.5px solid ${COURSERA_BLUE}30`, borderRadius:20, fontSize:13, fontWeight:700, color:'#1F1F1F', cursor:'pointer', fontFamily:'Inter,sans-serif' }}>
-                    {answers.country === 'uk' ? `Year ${y}` : `Grade ${y}`}
+                    {countryRegion === 'uk' ? `Year ${y}` : `Grade ${y}`}
                   </button>
                 ))}
               </div>

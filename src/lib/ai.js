@@ -23,6 +23,7 @@ export async function fetchTrackRecommendation(context) {
 }
 
 function advisorFallback({ country, year, goal }) {
+  // UK
   if (country === 'uk') {
     const tracks = year <= 11 ? ['gcse'] : ['alevel']
     return {
@@ -30,10 +31,19 @@ function advisorFallback({ country, year, goal }) {
       reason: `Year ${year} UK students typically follow the ${tracks[0].toUpperCase()} curriculum.`,
     }
   }
-  const tracks = goal === 'ivy' ? ['sat', 'ap'] : ['sat', 'act']
+  // US / Canada
+  if (country === 'us' || country === 'canada') {
+    const tracks = goal === 'ivy' ? ['sat', 'ap'] : ['sat', 'act']
+    return {
+      tracks,
+      reason: `Students aiming for ${goal === 'ivy' ? 'selective universities' : 'college'} in North America usually prepare for ${tracks.join(' + ').toUpperCase()}.`,
+    }
+  }
+  // International — IB or IGCSE depending on year
+  const tracks = year <= 11 ? ['igcse', 'ib'] : ['ib']
   return {
     tracks,
-    reason: `US students aiming for ${goal === 'ivy' ? 'selective universities' : 'college'} usually prepare for ${tracks.join(' + ').toUpperCase()}.`,
+    reason: `International students in Year/Grade ${year} typically follow the ${tracks.includes('igcse') ? 'IGCSE then IB Diploma pathway' : 'IB Diploma'}, recognised by universities worldwide.`,
   }
 }
 
