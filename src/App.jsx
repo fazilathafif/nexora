@@ -34,6 +34,7 @@ import JoinPage            from './pages/JoinPage.jsx'
 import SwitchTrackPage     from './pages/SwitchTrackPage.jsx'
 import PrivacyPage         from './pages/PrivacyPage.jsx'
 import TermsPage           from './pages/TermsPage.jsx'
+import CertVerifyPage      from './pages/CertVerifyPage.jsx'
 import LoadingSpinner      from './components/LoadingSpinner.jsx'
 import PomodoroTimer       from './components/PomodoroTimer.jsx'
 import BottomNav           from './components/BottomNav.jsx'
@@ -56,6 +57,7 @@ export default function App() {
   // Legal pages are publicly accessible — no auth required
   if (location.pathname === '/privacy') return <PrivacyPage />
   if (location.pathname === '/terms')   return <TermsPage />
+  if (location.pathname.startsWith('/cert/')) return <CertVerifyPage />
 
   // Password reset flow — show update form regardless of auth state
   if (isPasswordRecovery) return <UpdatePasswordPage />

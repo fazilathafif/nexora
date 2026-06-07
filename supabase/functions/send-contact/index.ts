@@ -45,7 +45,7 @@ Sent from nexoralearn.app
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Nexora <info@nexoralearn.app>',
+        from: 'Nexora <noreply@nexoralearn.app>',
         to: ['info@nexoralearn.app'],
         reply_to: email,
         subject: `[Nexora] ${type || 'Contact'}: ${subject || message.slice(0, 50)}`,

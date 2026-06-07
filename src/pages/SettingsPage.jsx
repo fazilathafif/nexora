@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import { Shell, getColors } from './HomePage.jsx'
@@ -10,6 +10,8 @@ import { useTheme } from '../hooks/useTheme.js'
 import { trialDaysLeft, getEffectivePlan, PLANS } from '../lib/subscription.js'
 import IGCSEGradeToggle, { useIGCSEScheme } from '../components/IGCSEGradeToggle.jsx'
 import ContactForm from '../components/ContactForm.jsx'
+import Certificate from '../components/Certificate.jsx'
+import { CERT_DEFS, getCertificates, makeCertId, downloadCertificate } from '../lib/certificates.js'
 
 const APP_VERSION = '1.0.0-beta'
 
@@ -355,6 +357,27 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
     ...NOTE_ACHIEVEMENTS.map(a => ({...a, unlocked: a.checkN(notes)})),
   ]
 
+  // Certificates
+  const earnedCerts  = getCertificates(profile)
+  const certRefs     = useRef({})
+  const [downloading, setDownloading] = useState(null)
+
+  async function handleDownloadCert(def) {
+    const el = certRefs.current[def.id]
+    if (!el) return
+    setDownloading(def.id)
+    try {
+      const certId  = makeCertId(user?.id ?? 'guest', def.id, earnedCerts[def.id] ?? new Date().toISOString().slice(0,10))
+      await downloadCertificate(el, `Nexora-${def.title.replace(/\s+/g,'-')}`)
+    } finally {
+      setDownloading(null)
+    }
+  }
+
+  const allCertDefs = CERT_DEFS.filter(d =>
+    !d.streamOnly || d.streamOnly === stream || profile?.streams?.includes(d.streamOnly)
+  )
+
   function handleDeleteNote(id) { deleteNote(id); setNotes(getNotes()) }
 
   function handleCopyAll() {
@@ -506,6 +529,39 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
       {allAchievements.map(a => (
         <AchBadge key={a.id} icon={a.icon} label={a.label} desc={a.desc} unlocked={a.unlocked} size={cols >= 4 ? 'small' : 'normal'} C={C} />
       ))}
+    </div>
+  )
+
+  const certSection = (
+    <div style={{marginBottom:22}}>
+      <SL C={C}>Certificates</SL>
+      <div style={{display:'flex', flexDirection:'column', gap:8}}>
+        {allCertDefs.map(def => {
+          const earned = !!earnedCerts[def.id]
+          const certId = earned ? makeCertId(user?.id ?? 'guest', def.id, earnedCerts[def.id]) : null
+          const cert   = { id:def.id, title:def.title, subtitle:def.subtitle, stream, certId, earnedAt:earnedCerts[def.id] }
+          return (
+            <div key={def.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 12px', background: earned ? `${C.primary}06` : C.bg, border:`1.5px solid ${earned ? C.primary+'25' : C.border}`, borderRadius:12, opacity: earned ? 1 : 0.45 }}>
+              <span style={{ fontSize:18, filter: earned ? 'none' : 'grayscale(1)' }}>{def.icon}</span>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:12, fontWeight:800, color:C.navy }}>{def.title}</div>
+                <div style={{ fontSize:10, color:C.muted }}>{def.subtitle}</div>
+              </div>
+              {earned && (
+                <>
+                  <button onClick={() => handleDownloadCert(def)} disabled={downloading === def.id}
+                    style={{ flexShrink:0, background: downloading===def.id ? C.border : C.primary, color:'white', border:'none', borderRadius:8, padding:'6px 12px', fontSize:11, fontWeight:700, cursor: downloading===def.id ? 'default' : 'pointer', fontFamily:'Inter,sans-serif' }}>
+                    {downloading===def.id ? '…' : '⬇'}
+                  </button>
+                  <div style={{ position:'fixed', left:'-9999px', top:'-9999px', zIndex:-1 }}>
+                    <Certificate ref={el => { certRefs.current[def.id] = el }} cert={cert} profile={profile} />
+                  </div>
+                </>
+              )}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 
@@ -762,6 +818,54 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
           </div>
         </div>
 
+        {/* Certificates */}
+        <div style={{ background:C.card, borderRadius:18, border:`1px solid ${C.border}`, padding:'22px 24px', boxShadow:'0 2px 12px rgba(0,0,0,0.05)' }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+            <div style={{ fontSize:13, fontWeight:800, color:C.navy, letterSpacing:'-0.2px' }}>Certificates</div>
+            <div style={{ fontSize:11, color:C.muted, fontWeight:600 }}>
+              {Object.keys(earnedCerts).length} / {allCertDefs.length} earned
+            </div>
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+            {allCertDefs.map(def => {
+              const earned  = !!earnedCerts[def.id]
+              const certId  = earned ? makeCertId(user?.id ?? 'guest', def.id, earnedCerts[def.id]) : null
+              const cert    = { id: def.id, title: def.title, subtitle: def.subtitle, stream, certId, earnedAt: earnedCerts[def.id] }
+              return (
+                <div key={def.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'12px 14px', background: earned ? `${C.primary}06` : C.bg, border:`1.5px solid ${earned ? C.primary+'25' : C.border}`, borderRadius:14, opacity: earned ? 1 : 0.45 }}>
+                  <div style={{ width:40, height:40, borderRadius:11, background: earned ? `${C.primary}15` : C.bg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0, filter: earned ? 'none' : 'grayscale(1)' }}>
+                    {def.icon}
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:13, fontWeight:800, color:C.navy }}>{def.title}</div>
+                    <div style={{ fontSize:11, color:C.muted, marginTop:1 }}>{def.subtitle}</div>
+                    {earned && certId && (
+                      <div style={{ fontSize:9, color:C.muted, marginTop:3, fontWeight:600 }}>
+                        ID: {certId} · Earned {new Date(earnedCerts[def.id]).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}
+                      </div>
+                    )}
+                  </div>
+                  {earned && (
+                    <button
+                      onClick={() => handleDownloadCert(def)}
+                      disabled={downloading === def.id}
+                      style={{ flexShrink:0, background: downloading === def.id ? C.border : C.primary, color:'white', border:'none', borderRadius:9, padding:'7px 14px', fontSize:11, fontWeight:700, cursor: downloading === def.id ? 'default' : 'pointer', fontFamily:'Inter,sans-serif', opacity: downloading === def.id ? 0.7 : 1 }}
+                    >
+                      {downloading === def.id ? '…' : '⬇ Download'}
+                    </button>
+                  )}
+                  {/* Hidden off-screen certificate for html2canvas */}
+                  {earned && (
+                    <div style={{ position:'fixed', left:'-9999px', top:'-9999px', zIndex:-1 }}>
+                      <Certificate ref={el => { certRefs.current[def.id] = el }} cert={cert} profile={profile} />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
         {/* Notes */}
         <div style={{ background:C.card, borderRadius:18, border:`1px solid ${C.border}`, padding:'22px 24px', boxShadow:'0 2px 12px rgba(0,0,0,0.05)' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
@@ -968,6 +1072,7 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
           <SL C={C}>Achievements</SL>
           {achievementsGrid(4)}
         </div>
+        {certSection}
         {ibSections}
         {igcseSection}
         {preferencesSection}
@@ -993,6 +1098,7 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
           ))}
         </div>
       </div>
+      {certSection}
       {ibSections}
       {igcseSection}
       {preferencesSection}

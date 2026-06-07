@@ -21,6 +21,7 @@ import IGCSEGradeToggle     from '../components/IGCSEGradeToggle.jsx'
 import IAChecklist          from '../components/IAChecklist.jsx'
 import { getEffectivePlan } from '../lib/subscription.js'
 import { getDayPlan, getWeekCalendar, groupTopicsBySubject } from '../lib/studySchedule.js'
+import { checkAndUnlockCertificates } from '../lib/certificates.js'
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -921,6 +922,8 @@ export default function LearnHubPage({ user, profile, isDark, signOut }) {
       }).sort((a,b) => a.pct - b.pct)
       setTopics(list)
       setWeekly(aRes.data ?? [])
+      // Check for newly unlocked certificates after stats load
+      checkAndUnlockCertificates(profile, list, cfg.subjects).catch(() => {})
     }).catch(() => {}).finally(() => setLoading(false))
   }, [user?.id, activeTrack])
 
