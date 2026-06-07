@@ -37,13 +37,16 @@ const Certificate = forwardRef(function Certificate({ cert, profile }, ref) {
       {/* Main content */}
       <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'32px 64px', position:'relative', zIndex:1 }}>
 
-        {/* Logo row */}
-        <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:28 }}>
-          <div style={{ width:36, height:36, borderRadius:9, background:`${accent}18`, border:`1.5px solid ${accent}40`, display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <span style={{ fontSize:16, fontWeight:900, color:accent }}>N</span>
+        {/* Logo — clean stacked lockup */}
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, marginBottom:24 }}>
+          <div style={{ width:44, height:44, borderRadius:12, background:`${accent}15`, border:`2px solid ${accent}30`, display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <span style={{ fontSize:20, fontWeight:900, color:accent, letterSpacing:'-0.5px' }}>N</span>
           </div>
-          <span style={{ fontSize:20, fontWeight:900, color:accent, letterSpacing:'-0.5px' }}>Nexora</span>
-          <span style={{ fontSize:9, fontWeight:800, color:accent, background:`${accent}12`, border:`1px solid ${accent}30`, borderRadius:4, padding:'2px 6px', letterSpacing:'0.06em' }}>LEARN</span>
+          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+            <span style={{ fontSize:15, fontWeight:900, color:accent, letterSpacing:'0.12em', textTransform:'uppercase' }}>Nexora</span>
+            <span style={{ width:1, height:12, background:`${accent}40` }} />
+            <span style={{ fontSize:10, fontWeight:700, color:`${accent}90`, letterSpacing:'0.2em', textTransform:'uppercase' }}>Learn</span>
+          </div>
         </div>
 
         {/* Certificate heading */}
