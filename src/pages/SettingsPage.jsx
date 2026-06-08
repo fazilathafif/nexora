@@ -662,6 +662,49 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
     </CollapsibleSection>
   )
 
+  // Share sheet rendered at top level — outside CollapsibleSection to avoid overflow:hidden clipping
+  const shareSheet = certShare ? (
+    <>
+      <div onClick={() => { setCertShare(null); setCopyDone(false) }} style={{ position:'fixed', inset:0, zIndex:200, background:'rgba(0,0,0,0.5)' }} />
+      {/* Mobile: bottom sheet */}
+      {!isDesktop && (
+        <div className="animate-slide-up" style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:210, background:C.card, borderRadius:'20px 20px 0 0', padding:'20px 20px calc(32px + env(safe-area-inset-bottom, 0px))', boxShadow:'0 -8px 40px rgba(0,0,0,0.18)' }}>
+          <div style={{ width:36, height:4, borderRadius:2, background:C.border, margin:'0 auto 16px' }} />
+          <div style={{ fontSize:14, fontWeight:800, color:C.navy, marginBottom:4 }}>Share Certificate</div>
+          <div style={{ fontSize:11, color:C.muted, marginBottom:16 }}>{certShare.def.title} · {certShare.certId}</div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:12 }}>
+            {SHARE_OPTIONS(certShare.url, `I earned the "${certShare.def.title}" certificate on Nexora!`).map(opt => (
+              <button key={opt.label} onClick={() => { opt.action(); if(opt.label !== 'Copy link') setCertShare(null) }}
+                style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, padding:'12px 8px', background:C.bg, border:`1px solid ${C.border}`, borderRadius:12, cursor:'pointer', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}>
+                <span style={{ fontSize:22 }}>{opt.label === 'Copy link' && copyDone ? '✅' : opt.icon}</span>
+                <span style={{ fontSize:10, fontWeight:700, color:C.navy }}>{opt.label === 'Copy link' && copyDone ? 'Copied!' : opt.label}</span>
+              </button>
+            ))}
+          </div>
+          <div style={{ background:C.bg, borderRadius:10, padding:'8px 12px', fontSize:11, color:C.muted, wordBreak:'break-all', marginBottom:8 }}>{certShare.url}</div>
+        </div>
+      )}
+      {/* Desktop: centred modal */}
+      {isDesktop && (
+        <div style={{ position:'fixed', top:'50%', left:'50%', transform:'translate(-50%,-50%)', zIndex:210, background:C.card, borderRadius:20, padding:'24px', width:340, boxShadow:'0 16px 64px rgba(0,0,0,0.25)' }}>
+          <div style={{ fontSize:15, fontWeight:800, color:C.navy, marginBottom:4 }}>Share Certificate</div>
+          <div style={{ fontSize:11, color:C.muted, marginBottom:16 }}>{certShare.def.title} · {certShare.certId}</div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:12 }}>
+            {SHARE_OPTIONS(certShare.url, `I earned the "${certShare.def.title}" certificate on Nexora!`).map(opt => (
+              <button key={opt.label} onClick={() => { opt.action(); if(opt.label !== 'Copy link') setCertShare(null) }}
+                style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, padding:'10px 6px', background:C.bg, border:`1px solid ${C.border}`, borderRadius:10, cursor:'pointer', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}>
+                <span style={{ fontSize:20 }}>{opt.label === 'Copy link' && copyDone ? '✅' : opt.icon}</span>
+                <span style={{ fontSize:10, fontWeight:700, color:C.navy }}>{opt.label === 'Copy link' && copyDone ? 'Copied!' : opt.label}</span>
+              </button>
+            ))}
+          </div>
+          <div style={{ background:C.bg, borderRadius:8, padding:'7px 10px', fontSize:10, color:C.muted, wordBreak:'break-all', marginBottom:12 }}>{certShare.url}</div>
+          <button onClick={() => { setCertShare(null); setCopyDone(false) }} style={{ width:'100%', background:'none', border:`1px solid ${C.border}`, borderRadius:9, padding:'8px', fontSize:12, fontWeight:700, color:C.muted, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>Close</button>
+        </div>
+      )}
+    </>
+  ) : null
+
   // ── Account section ──────────────────────────────────────────────────────────
   // ── Group section — always visible, outside any collapsible ─────────────────
   const groupSection = user?.id ? (
@@ -978,28 +1021,6 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
           </div>
         </div>
 
-        {/* Share sheet — shared between desktop and mobile certs */}
-        {certShare && (
-          <>
-            <div onClick={() => { setCertShare(null); setCopyDone(false) }} style={{ position:'fixed', inset:0, zIndex:200, background:'rgba(0,0,0,0.45)' }} />
-            <div style={{ position:'fixed', top:'50%', left:'50%', transform:'translate(-50%,-50%)', zIndex:210, background:C.card, borderRadius:20, padding:'24px', width:340, boxShadow:'0 16px 64px rgba(0,0,0,0.25)' }}>
-              <div style={{ fontSize:15, fontWeight:800, color:C.navy, marginBottom:4 }}>Share Certificate</div>
-              <div style={{ fontSize:11, color:C.muted, marginBottom:16 }}>{certShare.def.title} · {certShare.certId}</div>
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:12 }}>
-                {SHARE_OPTIONS(certShare.url, `I earned the "${certShare.def.title}" certificate on Nexora!`).map(opt => (
-                  <button key={opt.label} onClick={() => { opt.action(); if(opt.label !== 'Copy link') setCertShare(null) }}
-                    style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, padding:'10px 6px', background:C.bg, border:`1px solid ${C.border}`, borderRadius:10, cursor:'pointer', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}>
-                    <span style={{ fontSize:20 }}>{opt.label === 'Copy link' && copyDone ? '✅' : opt.icon}</span>
-                    <span style={{ fontSize:10, fontWeight:700, color:C.navy }}>{opt.label === 'Copy link' && copyDone ? 'Copied!' : opt.label}</span>
-                  </button>
-                ))}
-              </div>
-              <div style={{ background:C.bg, borderRadius:8, padding:'7px 10px', fontSize:10, color:C.muted, wordBreak:'break-all', marginBottom:12 }}>{certShare.url}</div>
-              <button onClick={() => { setCertShare(null); setCopyDone(false) }} style={{ width:'100%', background:'none', border:`1px solid ${C.border}`, borderRadius:9, padding:'8px', fontSize:12, fontWeight:700, color:C.muted, cursor:'pointer', fontFamily:'Inter,sans-serif' }}>Close</button>
-            </div>
-          </>
-        )}
-
         {/* Notes */}
         <div style={{ background:C.card, borderRadius:18, border:`1px solid ${C.border}`, padding:'22px 24px', boxShadow:'0 2px 12px rgba(0,0,0,0.05)' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
@@ -1144,7 +1165,8 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
     )
 
     return (
-      <Shell C={C} isDark={isDark} heroContent={heroEl} contentMax={1200}>
+      <>
+        <Shell C={C} isDark={isDark} heroContent={heroEl} contentMax={1200}>
         <div style={{ display:'grid', gridTemplateColumns: cols, gap:28, alignItems:'start' }}>
           {leftRail}
           {centreCol}
@@ -1193,18 +1215,50 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
           </div>
         )}
       </Shell>
+      {shareSheet}
+      </>
     )
   }
 
   if (isTablet) {
     return (
+      <>
+        <Shell C={C} isDark={isDark} heroContent={heroEl} noHomeBtn>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:24}}>
+            {statsData.map(s => <StatCard key={s.label} {...s} />)}
+          </div>
+          <div style={{marginBottom:24}}>
+            <SL C={C}>Achievements</SL>
+            {achievementsGrid(4)}
+          </div>
+          {certSection}
+          {ibSections}
+          {igcseSection}
+          {preferencesSection}
+          {groupSection}
+          {accountSection}
+          {appInfo}
+        </Shell>
+        {shareSheet}
+      </>
+    )
+  }
+
+  return (
+    <>
       <Shell C={C} isDark={isDark} heroContent={heroEl} noHomeBtn>
-        <div style={{display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:24}}>
+        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:22}}>
           {statsData.map(s => <StatCard key={s.label} {...s} />)}
         </div>
-        <div style={{marginBottom:24}}>
+        <div style={{marginBottom:22}}>
           <SL C={C}>Achievements</SL>
-          {achievementsGrid(4)}
+          <div style={{display:'flex', gap:8, overflowX:'auto', paddingBottom:4, scrollbarWidth:'none', WebkitOverflowScrolling:'touch'}}>
+            {allAchievements.map(a => (
+              <div key={a.id} style={{flexShrink:0, width:90}}>
+                <AchBadge icon={a.icon} label={a.label} desc={a.desc} unlocked={a.unlocked} size='small' C={C} />
+              </div>
+            ))}
+          </div>
         </div>
         {certSection}
         {ibSections}
@@ -1214,31 +1268,7 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
         {accountSection}
         {appInfo}
       </Shell>
-    )
-  }
-
-  return (
-    <Shell C={C} isDark={isDark} heroContent={heroEl} noHomeBtn>
-      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:22}}>
-        {statsData.map(s => <StatCard key={s.label} {...s} />)}
-      </div>
-      <div style={{marginBottom:22}}>
-        <SL C={C}>Achievements</SL>
-        <div style={{display:'flex', gap:8, overflowX:'auto', paddingBottom:4, scrollbarWidth:'none', WebkitOverflowScrolling:'touch'}}>
-          {allAchievements.map(a => (
-            <div key={a.id} style={{flexShrink:0, width:90}}>
-              <AchBadge icon={a.icon} label={a.label} desc={a.desc} unlocked={a.unlocked} size='small' C={C} />
-            </div>
-          ))}
-        </div>
-      </div>
-      {certSection}
-      {ibSections}
-      {igcseSection}
-      {preferencesSection}
-      {groupSection}
-      {accountSection}
-      {appInfo}
-    </Shell>
+      {shareSheet}
+    </>
   )
 }
