@@ -149,6 +149,15 @@ function timeAgo(dateStr) {
   return `${Math.floor(d / 365)}y ago`
 }
 
+function toIST(dateStr) {
+  if (!dateStr) return null
+  return new Date(dateStr).toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    day: '2-digit', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: true,
+  }) + ' IST'
+}
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function StatCard({ icon, label, value, color }) {
@@ -649,7 +658,7 @@ export default function SysAdminPage({ user }) {
                     </div>
                     <span style={{ fontSize:10, color:C.muted }}>Joined {timeAgo(u.created_at)}</span>
                     <span style={{ fontSize:10, color: u.last_sign_in_at ? '#10B981' : C.muted, fontWeight: u.last_sign_in_at ? 700 : 400 }}>
-                      {u.last_sign_in_at ? `Last login ${timeAgo(u.last_sign_in_at)}` : 'Never logged in'}
+                      {u.last_sign_in_at ? `🕐 ${toIST(u.last_sign_in_at)}` : 'Never logged in'}
                     </span>
                   </div>
                 </div>
