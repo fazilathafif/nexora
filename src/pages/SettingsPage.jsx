@@ -553,27 +553,39 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
 
   const SHARE_OPTIONS = (url, title) => [
     {
-      label: 'Copy link', icon: '🔗',
+      label: 'Copy link',
+      color: '#64748B',
+      icon: <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>,
       action: () => copyShareUrl(url),
     },
     {
-      label: 'Email', icon: '✉️',
+      label: 'Email',
+      color: '#6366F1',
+      icon: <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#6366F1" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
       action: () => window.open(`mailto:?subject=My Nexora Certificate&body=Check out my certificate: ${url}`),
     },
     {
-      label: 'LinkedIn', icon: '💼',
+      label: 'LinkedIn',
+      color: '#0A66C2',
+      icon: <svg width={22} height={22} viewBox="0 0 24 24" fill="#0A66C2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>,
       action: () => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`),
     },
     {
-      label: 'WhatsApp', icon: '💬',
+      label: 'WhatsApp',
+      color: '#25D366',
+      icon: <svg width={22} height={22} viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.533 5.859L.057 23.272a.75.75 0 00.914.914l5.538-1.476A11.953 11.953 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.728 9.728 0 01-4.956-1.356l-.355-.212-3.685.982.99-3.596-.232-.371A9.72 9.72 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>,
       action: () => window.open(`https://wa.me/?text=${encodeURIComponent(title + ' ' + url)}`),
     },
     {
-      label: 'Facebook', icon: '👤',
+      label: 'Facebook',
+      color: '#1877F2',
+      icon: <svg width={22} height={22} viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>,
       action: () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`),
     },
     {
-      label: 'Instagram', icon: '📸',
+      label: 'Instagram',
+      color: '#E1147A',
+      icon: <svg width={22} height={22} viewBox="0 0 24 24" fill="url(#ig-grad)"><defs><linearGradient id="ig-grad" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stopColor="#f09433"/><stop offset="25%" stopColor="#e6683c"/><stop offset="50%" stopColor="#dc2743"/><stop offset="75%" stopColor="#cc2366"/><stop offset="100%" stopColor="#bc1888"/></linearGradient></defs><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>,
       action: () => { copyShareUrl(url); alert('Link copied — paste into your Instagram bio or story!') },
     },
   ]
@@ -648,7 +660,11 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
               {SHARE_OPTIONS(certShare.url, `I earned the "${certShare.def.title}" certificate on Nexora!`).map(opt => (
                 <button key={opt.label} onClick={() => { opt.action(); if(opt.label !== 'Copy link') setCertShare(null) }}
                   style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, padding:'12px 8px', background:C.bg, border:`1px solid ${C.border}`, borderRadius:12, cursor:'pointer', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}>
-                  <span style={{ fontSize:22 }}>{opt.label === 'Copy link' && copyDone ? '✅' : opt.icon}</span>
+                  <div style={{ width:44, height:44, borderRadius:14, background: opt.label === 'Copy link' && copyDone ? '#DCFCE7' : `${opt.color}15`, border:`1.5px solid ${opt.label === 'Copy link' && copyDone ? '#16A34A40' : opt.color+'30'}`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                    {opt.label === 'Copy link' && copyDone
+                      ? <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      : opt.icon}
+                  </div>
                   <span style={{ fontSize:10, fontWeight:700, color:C.navy }}>{opt.label === 'Copy link' && copyDone ? 'Copied!' : opt.label}</span>
                 </button>
               ))}
@@ -676,7 +692,11 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
             {SHARE_OPTIONS(certShare.url, `I earned the "${certShare.def.title}" certificate on Nexora!`).map(opt => (
               <button key={opt.label} onClick={() => { opt.action(); if(opt.label !== 'Copy link') setCertShare(null) }}
                 style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, padding:'12px 8px', background:C.bg, border:`1px solid ${C.border}`, borderRadius:12, cursor:'pointer', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}>
-                <span style={{ fontSize:22 }}>{opt.label === 'Copy link' && copyDone ? '✅' : opt.icon}</span>
+                <div style={{ width:44, height:44, borderRadius:14, background: opt.label === 'Copy link' && copyDone ? '#DCFCE7' : `${opt.color}15`, border:`1.5px solid ${opt.label === 'Copy link' && copyDone ? '#16A34A40' : opt.color+'30'}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  {opt.label === 'Copy link' && copyDone
+                    ? <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    : opt.icon}
+                </div>
                 <span style={{ fontSize:10, fontWeight:700, color:C.navy }}>{opt.label === 'Copy link' && copyDone ? 'Copied!' : opt.label}</span>
               </button>
             ))}
@@ -693,7 +713,11 @@ export default function SettingsPage({ user, profile, signOut, refreshProfile, i
             {SHARE_OPTIONS(certShare.url, `I earned the "${certShare.def.title}" certificate on Nexora!`).map(opt => (
               <button key={opt.label} onClick={() => { opt.action(); if(opt.label !== 'Copy link') setCertShare(null) }}
                 style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, padding:'10px 6px', background:C.bg, border:`1px solid ${C.border}`, borderRadius:10, cursor:'pointer', fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent' }}>
-                <span style={{ fontSize:20 }}>{opt.label === 'Copy link' && copyDone ? '✅' : opt.icon}</span>
+                <div style={{ width:40, height:40, borderRadius:12, background: opt.label === 'Copy link' && copyDone ? '#DCFCE7' : `${opt.color}15`, border:`1.5px solid ${opt.label === 'Copy link' && copyDone ? '#16A34A40' : opt.color+'30'}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  {opt.label === 'Copy link' && copyDone
+                    ? <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    : opt.icon}
+                </div>
                 <span style={{ fontSize:10, fontWeight:700, color:C.navy }}>{opt.label === 'Copy link' && copyDone ? 'Copied!' : opt.label}</span>
               </button>
             ))}
