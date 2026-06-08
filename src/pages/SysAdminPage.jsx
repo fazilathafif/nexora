@@ -647,7 +647,10 @@ export default function SysAdminPage({ user }) {
                       <span style={{ fontSize:11, color:C.primary, fontWeight:700 }}>{u.xp ?? 0} XP</span>
                       <span style={{ fontSize:11, color:C.muted }}>🔥{u.streak ?? 0}</span>
                     </div>
-                    <span style={{ fontSize:10, color:C.muted }}>{timeAgo(u.created_at)}</span>
+                    <span style={{ fontSize:10, color:C.muted }}>Joined {timeAgo(u.created_at)}</span>
+                    <span style={{ fontSize:10, color: u.last_sign_in_at ? '#10B981' : C.muted, fontWeight: u.last_sign_in_at ? 700 : 400 }}>
+                      {u.last_sign_in_at ? `Last login ${timeAgo(u.last_sign_in_at)}` : 'Never logged in'}
+                    </span>
                   </div>
                 </div>
               ))}
