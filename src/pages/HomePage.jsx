@@ -239,6 +239,15 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
 
   const [dateError,  setDateError]  = useState(null)
   const [dateSaving, setDateSaving] = useState(false)
+  const [refCopied,  setRefCopied]  = useState(false)
+
+  function handleReferral() {
+    const refUrl = `https://nexoralearn.app?ref=${user?.id?.slice(0,8) ?? 'invite'}`
+    navigator.clipboard.writeText(refUrl).then(() => {
+      setRefCopied(true)
+      setTimeout(() => setRefCopied(false), 2500)
+    })
+  }
 
   async function saveExamDate(date) {
     if (!date) { setDateError('Please select a date first.'); return }
@@ -311,6 +320,12 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
               : null
           }
           <HeroIconBtn onClick={() => navigate(`/${stream}/settings?contact=1`)} title="Contact Us"><MailIcon color="white" size={16} /></HeroIconBtn>
+          <HeroIconBtn onClick={handleReferral} title={refCopied ? 'Link copied!' : 'Refer a friend'}>
+            {refCopied
+              ? <svg width={16} height={16} viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"/></svg>
+              : <svg width={16} height={16} viewBox="0 0 24 24" fill="none"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/><circle cx="9" cy="7" r="4" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/><line x1="19" y1="8" x2="19" y2="14" stroke="white" strokeWidth={2} strokeLinecap="round"/><line x1="22" y1="11" x2="16" y2="11" stroke="white" strokeWidth={2} strokeLinecap="round"/></svg>
+            }
+          </HeroIconBtn>
           <HeroIconBtn onClick={() => navigate('/landing')} title="Manage tracks"><svg width={16} height={16} viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="14" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="3" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="14" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/></svg></HeroIconBtn>
         </div>
       </div>
@@ -408,6 +423,12 @@ export default function HomePage({ user, profile, refreshProfile, signOut, start
               : null
           }
           <HeroIconBtn onClick={() => navigate(`/${stream}/settings?contact=1`)} title="Contact Us"><MailIcon color="white" size={18} /></HeroIconBtn>
+          <HeroIconBtn onClick={handleReferral} title={refCopied ? 'Link copied!' : 'Refer a friend'}>
+            {refCopied
+              ? <svg width={16} height={16} viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"/></svg>
+              : <svg width={16} height={16} viewBox="0 0 24 24" fill="none"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/><circle cx="9" cy="7" r="4" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/><line x1="19" y1="8" x2="19" y2="14" stroke="white" strokeWidth={2} strokeLinecap="round"/><line x1="22" y1="11" x2="16" y2="11" stroke="white" strokeWidth={2} strokeLinecap="round"/></svg>
+            }
+          </HeroIconBtn>
           <HeroIconBtn onClick={() => navigate('/landing')} title="Manage tracks"><svg width={16} height={16} viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="14" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="3" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/><rect x="14" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth={2}/></svg></HeroIconBtn>
         </div>
       </div>

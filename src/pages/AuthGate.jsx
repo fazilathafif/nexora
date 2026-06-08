@@ -220,6 +220,14 @@ export default function AuthGate() {
   const [done,           setDone]           = useState(false)
   const [resetSent,      setResetSent]      = useState(false)
   const [emailExpanded,  setEmailExpanded]  = useState(false)
+  const [refCopied,      setRefCopied]      = useState(false)
+
+  function handleReferral() {
+    const url = 'https://nexoralearn.app?ref=invite'
+    navigator.clipboard.writeText(url).then(() => {
+      setRefCopied(true); setTimeout(() => setRefCopied(false), 2500)
+    })
+  }
   const [expandedGroups, setExpandedGroups] = useState({})
   const [screenIndex,    setScreenIndex]    = useState(
     () => localStorage.getItem('nexora_onboarded') ? 2 : 0
@@ -452,6 +460,26 @@ export default function AuthGate() {
             <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
           </a>
         </div>
+
+        {/* Refer a friend */}
+        <button
+          onClick={handleReferral}
+          style={{
+            marginTop:12, width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+            background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.25)',
+            borderRadius:10, padding:'10px 16px', cursor:'pointer',
+            fontFamily:'Inter,sans-serif', WebkitTapHighlightColor:'transparent',
+            transition:'background 0.2s',
+          }}
+        >
+          {refCopied
+            ? <svg width={15} height={15} viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"/></svg>
+            : <svg width={15} height={15} viewBox="0 0 24 24" fill="none"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/><circle cx="9" cy="7" r="4" stroke="white" strokeWidth={2}/><line x1="19" y1="8" x2="19" y2="14" stroke="white" strokeWidth={2} strokeLinecap="round"/><line x1="22" y1="11" x2="16" y2="11" stroke="white" strokeWidth={2} strokeLinecap="round"/></svg>
+          }
+          <span style={{ fontSize:12, fontWeight:700, color:'white' }}>
+            {refCopied ? 'Invite link copied!' : 'Refer a friend — share Nexora'}
+          </span>
+        </button>
 
       </>
     )
