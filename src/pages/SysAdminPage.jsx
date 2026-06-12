@@ -103,7 +103,7 @@ function WelcomeEmailBtn({ user, C }) {
           }}>
             <div style={{ fontSize:12, fontWeight:700, color:C.navy, marginBottom:8 }}>Custom message to {user.display_name ?? 'user'}</div>
             <textarea value={custom} onChange={e => setCustom(e.target.value)} rows={4} placeholder="Type your message…"
-              style={{ width:'100%', padding:'8px 10px', borderRadius:8, border:`1.5px solid ${C.border}`, fontSize:12, color:C.navy, background:'#1E293B', resize:'vertical', fontFamily:'Inter,sans-serif', outline:'none', boxSizing:'border-box' }} />
+              style={{ width:'100%', padding:'8px 10px', borderRadius:8, border:`1.5px solid ${C.border}`, fontSize:12, color:C.navy, background:'#1E293B', resize:'vertical', fontFamily:'Inter,sans-serif', outline:'none', boxSizing:'border-box', WebkitAppearance:'none', appearance:'none' }} />
             <button onClick={() => send('new_user', custom)} disabled={custom.trim().length < 10}
               style={{ marginTop:8, width:'100%', padding:'9px', background: custom.trim().length >= 10 ? C.primary : '#D1D5DB', color:'white', border:'none', borderRadius:8, fontSize:12, fontWeight:700, cursor: custom.trim().length >= 10 ? 'pointer' : 'default', fontFamily:'Inter,sans-serif' }}>
               Send →
