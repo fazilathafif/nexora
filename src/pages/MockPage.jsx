@@ -31,6 +31,8 @@ export default function MockPage({ user, profile, refreshProfile, isDark }) {
 
   // Explore mode gate
   if (sessionStorage.getItem('nx_explore') === '1') { navigate('/', { replace: true }); return null }
+  // Wait for profile to load before checking subscription — avoids false redirect when profile is null
+  if (!profile) return null
   // Free plan gate — mock exams not included
   if (!canAccess(profile, 'mockExams')) { navigate(`/${stream}/subscription`, { replace: true }); return null }
 

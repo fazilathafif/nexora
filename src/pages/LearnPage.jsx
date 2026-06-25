@@ -24,6 +24,7 @@ export default function LearnPage({ profile, isDark }) {
 
   // Explore mode gate
   if (sessionStorage.getItem('nx_explore') === '1') { navigate('/', { replace: true }); return null }
+  if (!profile) return null
   // Free plan gate — Learn mode (deepDive) not included
   if (!canAccess(profile, 'deepDive')) { navigate(`/${stream}/subscription`, { replace: true }); return null }
 

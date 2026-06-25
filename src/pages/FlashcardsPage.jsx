@@ -62,6 +62,8 @@ export default function FlashcardsPage({ profile }) {
 
   // Explore mode gate
   if (sessionStorage.getItem('nx_explore') === '1') { navigate('/', { replace: true }); return null }
+  // Wait for profile to load before checking subscription — avoids false redirect when profile is null
+  if (!profile) return null
   // Free plan gate
   if (!canAccess(profile, 'deepDive')) { navigate(`/${stream}/subscription`, { replace: true }); return null }
   const allQs     = sortByDue(getQuestions(stream, subject))
